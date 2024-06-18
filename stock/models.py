@@ -6,11 +6,14 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
-
+class Unit(models.Model):
+    unit_name = models.CharField(max_length=10)
+    def __str__(self):
+        return self.unit_name
 class Product(models.Model):
     code = models.IntegerField()
     name = models.CharField(max_length=255)
-    unit = models.CharField(max_length=10)  # max_length biraz artırıldı
+    unit = models.ForeignKey(Unit,on_delete=models.DO_NOTHING)  # max_length biraz artırıldı
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
     def __str__(self):
