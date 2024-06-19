@@ -1,1 +1,50 @@
-tanimlar sayfası
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        {% if messages %}
+        <script>
+            {% for message in messages %}
+                Swal.fire({
+                    position: "top-end",
+                    icon: "{% if message.tags == 'success' %}success{% else %}info{% endif %}",
+                    title: "{{ message }}",
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            {% endfor %}
+        </script>
+    {% endif %}
+    
+    <div class="col-lg-3">
+        Satıcı Tanımla
+    </div>
+    <div class="col-3">
+        Ürün Kategorisi Tanımla
+        
+        <hr>
+        <label for="">Birim Tanımla</label>
+        {% for unit in units  %}
+        <li>
+            {{unit.unit_name}}
+        </li>
+        {% endfor %}
+        <form action="{% url "birim_olustur" %}" method = "POST">
+            {% csrf_token %}
+        <div class="input-group mb-3">
+            <input type="text" name="unit_name" class="form-control" placeholder="Birim Adı Giriniz...." aria-label="Username" aria-describedby="basic-addon1">
+          </div>
+        <button type="submit" class="btn btn-success">Kayıt</button>
+    </form>
+        <hr>
+        ürün tanımla
+    </div>
+    <div class="col-3">
+        
+    </div>
+    <div class="col-3">
+        col1
+    </div>
+</div>
+</div>
+{% endblock content %}
