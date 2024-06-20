@@ -15,20 +15,77 @@
             {% endfor %}
         </script>
     {% endif %}
-    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get the list of existing seller names from the Django context
+            const existingNames = {{ existing_seller_names|safe }};
+
+            function checkName() {
+                const inputField = document.querySelector('input[name="seller_name"]');
+                const warningMessage = document.getElementById('warning-message');
+                const enteredName = inputField.value;
+
+                if (existingNames.includes(enteredName)) {
+                    warningMessage.textContent = 'Bu cari ada benzer bir ad bulunuyor';
+                    inputField.classList.add('is-invalid');
+                } else {
+                    warningMessage.textContent = '';
+                    inputField.classList.remove('is-invalid');
+                }
+            }
+
+            const inputField = document.querySelector('input[name="seller_name"]');
+            inputField.addEventListener('input', checkName);
+        });
+    </script> 
     <div class="col-lg-3">
-        Satıcı Tanımla
+        Satıcı Ekle
+        {% for seller in sellers  %}
+        <li>
+            {{seller.name}}
+        </li>
+        {% endfor %}
+        <form action="{% url "cari_olustur" %}" method="POST">
+            {% csrf_token %}
+                <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1">Cari Adı</span>
+                    <input type="text" name="seller_name" class="form-control">
+                    <div id="warning-message" class="text-danger"></div>
+            </div>
+            
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">Adresi</span>
+            <input type="text" name="seller_address"  class="form-control" >
+          </div>
+          <button type="submit" class="btn btn-success">Cariyi Kaydet</button>
+        </form>
     </div>
     <div class="col-3">
         Ürün Kategorisi Tanımla
         
         <hr>
         <label for="">Birim Tanımla</label>
-        {% for unit in units  %}
-        <li>
-            {{unit.unit_name}}
-        </li>
-        {% endfor %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Unit Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for unit in units %}
+                <tr>
+                    <td>{{ unit.unit_name }}</td>
+                    <td>
+                        <form action="{% url 'birim_sil' unit.id %}" method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         <form action="{% url "birim_olustur" %}" method = "POST">
             {% csrf_token %}
         <div class="input-group mb-3">

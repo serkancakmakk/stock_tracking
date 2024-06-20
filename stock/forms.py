@@ -1,6 +1,9 @@
 from django import forms
-from .models import Category, Product, Bill, BillItem, Unit
-
+from .models import Category, Product, Bill, BillItem, Seller, Unit
+class SellerForm(forms.ModelForm):
+    class Meta:
+        model = Seller
+        fields = ['name', 'address']
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
