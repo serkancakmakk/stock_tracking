@@ -17,16 +17,16 @@
     {% endif %}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Get the list of existing seller names from the Django context
-            const existingNames = {{ existing_seller_names|safe }};
+            // Get the list of existing seller and category names from the Django context
+            const existingSellerNames = {{ existing_seller_names|safe }};
+            const existingCategoryNames = {{ existing_category_names|safe }};
 
-            function checkName() {
-                const inputField = document.querySelector('input[name="seller_name"]');
-                const warningMessage = document.getElementById('warning-message');
+            function checkName(inputField, existingNames, warningMessageId, warningText) {
+                const warningMessage = document.getElementById(warningMessageId);
                 const enteredName = inputField.value;
 
                 if (existingNames.includes(enteredName)) {
-                    warningMessage.textContent = 'Bu cari ada benzer bir ad bulunuyor';
+                    warningMessage.textContent = warningText;
                     inputField.classList.add('is-invalid');
                 } else {
                     warningMessage.textContent = '';
@@ -34,17 +34,19 @@
                 }
             }
 
-            const inputField = document.querySelector('input[name="seller_name"]');
-            inputField.addEventListener('input', checkName);
+            const sellerInputField = document.querySelector('input[name="seller_name"]');
+            sellerInputField.addEventListener('input', () => {
+                checkName(sellerInputField, existingSellerNames, 'warning-message', 'Bu cari ada benzer bir ad bulunuyor');
+            });
+
+            const categoryInputField = document.querySelector('input[name="category_name"]');
+            categoryInputField.addEventListener('input', () => {
+                checkName(categoryInputField, existingCategoryNames, 'warning-message-for-category', 'Bu kategori ada benzer bir ad bulunuyor');
+            });
         });
-    </script> 
+    </script>
     <div class="col-lg-3">
-        Satıcı Ekle
-        {% for seller in sellers  %}
-        <li>
-            {{seller.name}}
-        </li>
-        {% endfor %}
+        <label for="">Cari Tanımla</label>
         <form action="{% url "cari_olustur" %}" method="POST">
             {% csrf_token %}
                 <div class="input-group mb-3">
@@ -52,20 +54,55 @@
                     <input type="text" name="seller_name" class="form-control">
                     <div id="warning-message" class="text-danger"></div>
             </div>
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="basic-addon1">Cari Adres</span>
+                <input type="text" name="seller_name" class="form-control">
+                
+        </div>
             
-          <div class="input-group mb-3">
-            <span class="input-group-text" id="basic-addon1">Adresi</span>
-            <input type="text" name="seller_address"  class="form-control" >
-          </div>
+          
           <button type="submit" class="btn btn-success">Cariyi Kaydet</button>
         </form>
-    </div>
-    <div class="col-3">
-        Ürün Kategorisi Tanımla
-        
         <hr>
+        <table class="table">
+
+            <thead>
+              <tr>
+                <th scope="col">Cari Ad</th>
+                <th scope="col">Cari Adres</th>
+                <th scope="col">Durum</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for seller in sellers  %}
+              <tr>
+                <td>{{seller.name}}</td>
+                <td>{{seller.address}}</td>
+                <td>{{seller.status}}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+    </div>
+    <div class="col-lg-3">
         <label for="">Birim Tanımla</label>
         <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>
+                        <form action="{% url "birim_olustur" %}" method = "POST">
+                            {% csrf_token %}
+                        <div class="input-group">
+                            <input type="text" name="unit_name" class="form-control" placeholder="Birim Adı Giriniz...." aria-label="Username" aria-describedby="basic-addon1">
+                          </div>
+                        
+                    </th>
+                    <th>
+                        <button type="submit" class="btn btn-success">Kayıt</button>
+                    </form>
+                    </th>
+                </tr>
+            </thead>
             <thead>
                 <tr>
                     <th>Unit Name</th>
@@ -86,22 +123,64 @@
                 {% endfor %}
             </tbody>
         </table>
-        <form action="{% url "birim_olustur" %}" method = "POST">
-            {% csrf_token %}
-        <div class="input-group mb-3">
-            <input type="text" name="unit_name" class="form-control" placeholder="Birim Adı Giriniz...." aria-label="Username" aria-describedby="basic-addon1">
-          </div>
-        <button type="submit" class="btn btn-success">Kayıt</button>
-    </form>
-        <hr>
-        ürün tanımla
-    </div>
-    <div class="col-3">
         
+        <hr>
+       
     </div>
-    <div class="col-3">
-        col1
+    <div class="col-lg-3">
+        {% for product in products  %}
+        <li>
+            {{product.id}}
+        </li>
+        {% endfor %}
+        <form action="{% url "urun_olustur" %}" method="POST">
+            {% csrf_token %}
+       
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">Ürün Kodu</span>
+            <input type="text" name="product_code" class="form-control" aria-label="Username" aria-describedby="basic-addon1">
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">Ürün Adı</span>
+            <input type="text" name="product_name" class="form-control" aria-label="Username" aria-describedby="basic-addon1">
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">Ürün Birimi</span>
+            <select name="product_unit" class="form-select" aria-label="Default select example">
+                {% for unit in units  %}
+                <option value="{{unit.id}}">{{unit.unit_name}}</option>
+                {% endfor %}
+              </select>
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">Ürün Kategorisi</span>
+            <select name="product_category" class="form-select" aria-label="Default select example">
+                {% for category in categories  %}
+                <option value="{{category.id}}">{{category.name}}</option>
+                {% endfor %}
+              </select>
+          </div>
+          <button type="submit">Kaydet</button>
     </div>
+    
+</form>
+    <div class="col-lg-3">
+        
+        <div class="input-group mb-3">
+            <form action="{% url "kategori_olustur" %}" method="POST">
+                {% csrf_token %}
+            <span class="input-group-text" id="basic-addon1">Kategori Adı</span>
+            <input type="text" class="form-control" name="category_name" placeholder="Kategori Adı" aria-label="Username" aria-describedby="basic-addon1">
+            <div id="warning-message-for-category" class="text-danger"></div>
+          <button type="submit">Kaydet</button>
+          </div>
+        </form>
+    </div>
+    {% for category in categories  %}
+    <li>
+        {{category.name}}
+    </li>
+    {% endfor %}
 </div>
 </div>
 {% endblock content %}

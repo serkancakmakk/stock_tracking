@@ -7,4 +7,6 @@ urlpatterns = [
     path("birim_olustur",views.create_unit,name="birim_olustur"),
     path("birim_sil/<int:unit_id>/",views.delete_unit,name="birim_sil"),
     path("cari_olustur/",views.create_seller,name="cari_olustur"),
+    path("urun_olustur/",views.create_product,name="urun_olustur"),
+    path("kategori_olustur/",views.create_category,name="kategori_olustur"),
 ]

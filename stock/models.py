@@ -4,13 +4,11 @@ class Seller(models.Model):
     address = models.CharField(max_length=255)
     receivable = models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
     debt = models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)
-
+    status = models.BooleanField(default=True)
     def __str__(self):
         return self.name
 class Category(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField()
-
     def __str__(self):
         return self.name
 class Unit(models.Model):
