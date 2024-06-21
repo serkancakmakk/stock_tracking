@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create/Edit Bill</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4">Create/Edit Bill</h2>
+        {% comment %} <form method="post" action="{% url 'your_view_name' %}"> {% endcomment %}
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="seller">Seller</label>
+                <select class="form-control" id="seller" name="seller">
+                    {% for seller in sellers %}
+                        <option value="{{ seller.id }}" {% if seller.id == bill.seller.id %}selected{% endif %}>{{ seller.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="expiry_date">Expiry Date</label>
+                <input type="date" class="form-control" id="expiry_date" name="expiry_date" value="{{ bill.expiry_date }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+{% endblock content %}
+
+
+

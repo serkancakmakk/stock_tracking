@@ -39,6 +39,14 @@ class BillItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_1 = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, default=0.00)
+    discount_2 = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, default=0.00)
+    discount_3 = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, default=0.00)
+    vat = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, default=0.00)
 
     def __str__(self):
         return f"{self.product.name} - {self.quantity} {self.product.unit}"
+class Stock(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.DO_NOTHING)
+    incoming_quantity = models.IntegerField()  # for incoming stock
+    outgoing_quantity = models.IntegerField()  # for outgoing stock
