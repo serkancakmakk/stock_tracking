@@ -1,39 +1,52 @@
 {% extends "base.html" %}
 {% block content %}
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create/Edit Bill</title>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5">
-        <h2 class="mb-4">Create/Edit Bill</h2>
-        {% comment %} <form method="post" action="{% url 'your_view_name' %}"> {% endcomment %}
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="seller">Seller</label>
-                <select class="form-control" id="seller" name="seller">
-                    {% for seller in sellers %}
-                        <option value="{{ seller.id }}" {% if seller.id == bill.seller.id %}selected{% endif %}>{{ seller.name }}</option>
-                    {% endfor %}
-                </select>
+<div class="container mt-5">
+    <h2 class="mb-4">Create/Edit Bill</h2>
+    <form method="post" action="{% url 'fatura_olustur' %}">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="seller">Satıcı</label>
+                    <select class="form-control" id="seller" name="seller">
+                        {% for seller in sellers %}
+                            <option value="{{ seller.id }}" {% if seller.id == bill.seller.id %}selected{% endif %}>{{ seller.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="expiry_date">Expiry Date</label>
-                <input type="date" class="form-control" id="expiry_date" name="expiry_date" value="{{ bill.expiry_date }}">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="expiry_date">Vade Tarihi</label>
+                    <input type="date" class="form-control" id="expiry_date" name="expiry_date" value="{{ bill.expiry_date }}">
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="bill_product">Ürün</label>
+                <select class="js-example-basic-single" name="state">
+                    <option value="AL">Alabama</option>
+                      ...
+                    <option value="WY">Wyoming</option>
+                  </select>
+            </div>
+        </div>
+       
+        <div class="row">
+            <div class="col-md-12 text-right">
+                <button type="submit" class="btn btn-primary mt-2">Submit</button>
+            </div>
+        </div>
+    </form>
+</div>
     </div>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
-</html>
 
+    <script>
+        $(document).ready(function() {
+            $('.js-example-basic-single').select2();
+        });
+    </script>
 {% endblock content %}
 
 

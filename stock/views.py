@@ -139,7 +139,9 @@ def create_product(request):
     return redirect(request.META.get('HTTP_REFERER', '/'))
 def add_bill(request):
     sellers = Seller.objects.all()
+    products = Product.objects.all()
     context = {
+        'products':products,
         'sellers':sellers,
     }
     return render(request,'add_bill.html',context)

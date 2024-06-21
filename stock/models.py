@@ -25,6 +25,7 @@ class Product(models.Model):
         return self.name
 
 class Bill(models.Model):
+    number = models.CharField(max_length=255,null=False,blank=False)
     date = models.DateTimeField(auto_now_add=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     seller = models.ForeignKey(Seller,on_delete=models.DO_NOTHING)
