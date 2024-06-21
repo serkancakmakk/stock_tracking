@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Category, Product, Seller, Unit
+from .models import Bill, BillItem, Category, Product, Seller, Unit
 
 from .forms import CategoryForm, ProductForm, SellerForm, UnitForm
 
@@ -137,11 +137,73 @@ def create_product(request):
     
     messages.add_message(request, messages.SUCCESS, "Ürün Kaydedildi")
     return redirect(request.META.get('HTTP_REFERER', '/'))
+from decimal import Decimal
 def add_bill(request):
     sellers = Seller.objects.all()
     products = Product.objects.all()
+
+    if request.method == "POST":
+        bill_number = request.POST.get("bill_number")
+        bill_expiry_date = request.POST.get("bill_expiry_date")
+        bill_seller_id = request.POST.get("bill_seller")
+        bill_item_product_id = request.POST.get("bill_item_product")
+        bill_item_quantity = Decimal(request.POST.get("bill_item_quantity", '0'))
+        bill_item_price = Decimal(request.POST.get("bill_item_price", '0'))
+        bill_item_discount_1 = Decimal(request.POST.get("bill_item_discount_1", '0'))
+        bill_item_discount_2 = Decimal(request.POST.get("bill_item_discount_2", '0'))
+        bill_item_discount_3 = Decimal(request.POST.get("bill_item_discount_3", '0'))
+        bill_item_vat = Decimal(request.POST.get("bill_item_vat", '0'))
+
+        try:
+            bill_seller = Seller.objects.get(id=bill_seller_id)
+            bill = Bill.objects.create(
+                number=bill_number,
+                expiry_date=bill_expiry_date,
+                seller=bill_seller
+            )
+
+            product = Product.objects.get(id=bill_item_product_id)
+            BillItem.objects.create(
+                bill=bill,
+                product=product,
+                quantity=bill_item_quantity,
+                price=bill_item_price,
+                discount_1=bill_item_discount_1,
+                discount_2=bill_item_discount_2,
+                discount_3=bill_item_discount_3,
+                vat=bill_item_vat
+            )
+
+            messages.success(request, "Fatura ve Kalem Başarıyla Oluşturuldu")
+            return redirect('bill_details', bill_number=bill.number)
+
+        except (Seller.DoesNotExist, Product.DoesNotExist) as e:
+            messages.error(request, "Fatura Oluşturulamadı. Satıcı veya Ürün bulunamadı.")
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+        except Exception as e:
+            messages.error(request, f"Fatura Oluşturulamadı. Hata: {str(e)}")
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+
     context = {
-        'products':products,
-        'sellers':sellers,
+        'products': products,
+        'sellers': sellers,
     }
-    return render(request,'add_bill.html',context)
+    return render(request, 'add_bill.html', context)
+
+def bill_details(request, bill_number):
+    
+    bill = get_object_or_404(Bill, number=bill_number)
+    bill_items = BillItem.objects.filter(bill=bill)
+    print(bill_items)
+
+    context = {
+        'bill': bill,
+        'bill_items': bill_items,
+    }
+    return render(request, 'bill_details.html', context)
+def bills(request):
+    bills = Bill.objects.all()
+    context = {
+        'bills':bills,
+    }
+    return render(request,'bills.html',context)

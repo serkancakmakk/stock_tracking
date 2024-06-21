@@ -10,4 +10,7 @@ urlpatterns = [
     path("urun_olustur/",views.create_product,name="urun_olustur"),
     path("kategori_olustur/",views.create_category,name="kategori_olustur"),
     path("fatura_gir/",views.add_bill,name="fatura_olustur"),
+    path("faturalar/",views.bills,name="faturalar"),
+    path('fatura_detay/<str:bill_number>', views.bill_details, name='fatura_detay'),
+
 ]

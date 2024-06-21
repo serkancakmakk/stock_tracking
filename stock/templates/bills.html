@@ -1,0 +1,7 @@
+{% for bill in bills %}
+    <div>
+        <p>Satıcı: {{ bill.seller }}</p>
+        <p>Fatura Numarası: {{ bill.number }}</p>
+        <a href="{% url 'fatura_detay' bill_number=bill.number %}">Detayları Gör</a>
+    </div>
+{% endfor %}
