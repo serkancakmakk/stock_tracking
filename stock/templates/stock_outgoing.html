@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    {% if messages %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            {% for message in messages %}
+                Swal.fire({
+                    position: "top-end",
+                    icon: "{% if message.tags == 'success' %}success{% else %}info{% endif %}",
+                    title: "{{ message }}",
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            {% endfor %}
+        });
+    </script>
+    {% endif %}
+    <h2>Process Stock Outgoing</h2>
+    <form action="{% url 'stok_cikisi_yap' %}" method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="product" class="form-label">Select Product</label>
+            <select name="outgoing_product" id="select2-product" class="form-select" aria-label="Select Product">
+                <option selected>Select a product</option>
+                {% for product in products %}
+                <option value="{{ product.id }}">{{ product.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="quantity" class="form-label">Outgoing Quantity</label>
+            <input type="number" name="outgoing_quantity" class="form-control" id="quantity" step="0.001" min="0">
+        </div>
+
+        <div class="mb-3">
+            <label for="reason" class="form-label">Reason for Outgoing</label>
+            <select name="outgoing_reason" id="select2-reason" class="form-select" aria-label="Select Reason">
+                <option selected>Select a reason</option>
+                {% for reason in outgoing_reasons %}
+                <option value="{{ reason.id }}">{{ reason.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="bill" class="form-label">Bill Number</label>
+            <div class="input-group">
+                <input type="text" name="outgoing_bill_number" class="form-control" id="bill">
+                <button type="button" class="btn btn-outline-success" title="Otomatik Fatura Numarası Üret" id="generateBillNumber">+</button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('generateBillNumber').addEventListener('click', function() {
+        const billInput = document.getElementById('bill');
+        const randomBillNumber = 'OFN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+        billInput.value = randomBillNumber;
+    });
+</script>
+{% endblock content %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="mb-3 text-center">
+                <img src="https://www.pngall.com/wp-content/uploads/8/Market-PNG-File.png" alt="Market Image" width="250"height="250">
+            </div>
+            <div class="mb-3">
+                <h4 class="accordion-button text-center">Cari Tanımla</h4>
+                <form action="{% url 'cari_olustur' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="seller_name" class="form-label">Cari Adı</label>
+                        <input type="text" name="seller_name" class="form-control" id="seller_name">
+                        <div id="warning-message" class="text-danger"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="seller_address" class="form-label">Cari Adres</label>
+                        <input type="text" name="seller_address" class="form-control" id="seller_address">
+                    </div>
+                    <button type="submit" class="btn btn-success">Cariyi Kaydet</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <h4>Tanımlı Cariler</h4>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Cari Adı</th>
+                        <th>Cari Adres</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for seller in sellers %}
+                    <tr>
+                        <td>{{ seller.name }}</td>
+                        <td>{{ seller.address }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}

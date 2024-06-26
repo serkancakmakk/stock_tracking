@@ -16,11 +16,11 @@
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Dropdown
+              Raporlar
             </a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">Action</a></li>
-              <li><a class="dropdown-item" href="#">Another action</a></li>
+              <li><a class="dropdown-item" href="{% url 'stok_durumu' %}">Stok Durum</a></li>
+              <li><a class="dropdown-item" href="{% url 'stok_giris_cikislari' %}">Stok Giriş & Çıkışlar</a></li>
               <li>
                 <hr class="dropdown-divider">
               </li>
@@ -41,19 +41,20 @@
             </ul>
           </li>
           <li class="nav-item">
-            <a class="nav-link">Another Link</a>
+            <a href={% url 'stok_cikisi_yap' %} class="nav-link">Stok Çıkışı Yap</a>
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               Tanımlar
             </a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">Tanımlar</a></li>
-              <li><a class="dropdown-item" href="#">Another action</a></li>
+              <li><a class="dropdown-item" href="{% url 'cari_tanimla' %}">Cari Tanımla</a></li>
+              <li><a class="dropdown-item" href="#">Kategori Tanımla</a></li>
+              <li><a class="dropdown-item" href="{% url 'cikis_tanimlama_sayfasi' %}">Çıkış Tanımla</a></li>
               <li>
                 <hr class="dropdown-divider">
               </li>
-              <li><a class="dropdown-item" href="#">Something else here</a></li>
+              <li><a class="dropdown-item" href="{% url 'urun_olusturma_sayfasi' %}">Ürün Tanımla</a></li>
             </ul>
           </li>
         </ul>

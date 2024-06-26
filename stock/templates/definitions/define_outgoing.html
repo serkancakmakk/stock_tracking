@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4>Çıkış Nedeni Oluştur</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'cikis_nedeni_olustur' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="input-group mb-3">
+                            <input type="text" name="outgoing_reason" class="form-control" placeholder="Çıkış Nedeni" required>
+                            <button type="submit" class="btn btn-success">Kaydet</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h4>Mevcut Çıkış Nedenleri</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for reason in reasons %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ reason.name }}</span>
+                            <span class="badge {{ reason.is_active|yesno:'bg-success,text-white bg-danger' }}">{{ reason.is_active|yesno:"Active,Inactive" }}</span>
+                            <a href="{% url 'cikis_sebebini_degistir' reason.id %}" class="btn btn-sm btn-warning">Toggle Status</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

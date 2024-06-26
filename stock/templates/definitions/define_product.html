@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    {% if messages %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            {% for message in messages %}
+                Swal.fire({
+                    position: "top-end",
+                    icon: "{% if message.tags == 'success' %}success{% else %}info{% endif %}",
+                    title: "{{ message }}",
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            {% endfor %}
+        });
+    </script>
+    {% endif %}
+    <div class="row">
+        <h1 class="text-center">Ürün Tanımla</h1>
+        <div class="col-lg-6">
+            <div class="mb-4">
+                
+                <form action="{% url 'urun_tanimla' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="input-group mb-3">
+                        <input type="text" name="product_code" class="form-control" id="product_code">
+                        <button type="button" class="btn btn-outline-primary" id="generate_product_code">+ Ürün Kodu Oluştur</button>
+                    </div>
+                    <div class="mb-3">
+                        <label for="product_name" class="form-label">Ürün Adı *</label>
+                        <input type="text" name="product_name" class="form-control" id="product_name" required>
+                        <div class="invalid-feedback">Ürün adı boş bırakılamaz.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="product_unit" class="form-label">Ürün Birimi</label>
+                        <select name="product_unit" class="form-select" id="product_unit">
+                            {% for unit in units %}
+                            <option value="{{ unit.id }}">{{ unit.unit_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Ürün birimini seçiniz.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="product_category" class="form-label">Ürün Kategorisi</label>
+                        <select name="product_category" class="form-select" id="product_category">
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Ürün kategorisini seçiniz.</div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="prevent_stock_negative" class="form-check-input" id="prevent_stock_negative">
+                        <label class="form-check-label" for="prevent_stock_negative">Ürün Stoğu Eksiye Düşmesin</label>
+                        <div class="form-text">Seçiliyse, ürün stoğu eksiye düşmeyecek.</div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="critical_product" class="form-check-input" id="critical_product">
+                        <label class="form-check-label" for="critical_product">Kritik Ürün</label>
+                        <div class="form-text">Stok kritik seviyenin altına düştüğünde uyarı verecek.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="critical_stock_level" class="form-label">Kritik Ürün Stoğu Seviyesi</label>
+                        <input type="text" name="critical_stock_level" class="form-control" id="critical_stock_level">
+                        <div class="form-text">Kritik stok seviyesini belirleyin (isteğe bağlı).</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Ürünü Kaydet</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Product Code</th>
+                        <th>Unit</th>
+                        <th>Category</th>
+                        <th>Critical Product</th>
+                        <th>Critical Stock Level</th>
+                        <th>Prevent Stock Negative</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.code }}</td>
+                        <td>{{ product.unit.name }}</td>
+                        <td>{{ product.category.name }}</td>
+                        <td>{{ product.is_critical|yesno:"Yes,No" }}</td>
+                        <td>{{ product.critical_stock_level }}</td>
+                        <td>{{ product.prevent_stock_negative|yesno:"Yes,No" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const productCodeInput = document.querySelector('#product_code');
+        const generateProductCodeButton = document.querySelector('.btn-outline-primary');
+    
+        generateProductCodeButton.addEventListener('click', () => {
+            const randomCode = generateRandomProductCode();
+            productCodeInput.value = randomCode;
+        });
+    
+        function generateRandomProductCode() {
+            const characters = '0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return code;
+        }
+    });
+</script>
+{% endblock content %}

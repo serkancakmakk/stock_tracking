@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="container">
-    <div class="row">
-        {% if messages %}
-        <script>
+<div class="container mt-4">
+    {% if messages %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
             {% for message in messages %}
                 Swal.fire({
                     position: "top-end",
@@ -13,11 +14,12 @@
                     timer: 1500
                 });
             {% endfor %}
-        </script>
+        });
+    </script>
     {% endif %}
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Get the list of existing seller and category names from the Django context
             const existingSellerNames = {{ existing_seller_names|safe }};
             const existingCategoryNames = {{ existing_category_names|safe }};
 
@@ -43,144 +45,109 @@
             categoryInputField.addEventListener('input', () => {
                 checkName(categoryInputField, existingCategoryNames, 'warning-message-for-category', 'Bu kategori ada benzer bir ad bulunuyor');
             });
+
+            // Accordion işlevselliği
+            const accordionItems = document.querySelectorAll('.accordion-item');
+
+            accordionItems.forEach(item => {
+                const accordionButton = item.querySelector('.accordion-button');
+
+                accordionButton.addEventListener('click', () => {
+                    // Diğer tüm içerikleri gizle
+                    accordionItems.forEach(otherItem => {
+                        if (otherItem !== item) {
+                            otherItem.classList.remove('show');
+                        }
+                    });
+
+                    // Seçilen öğenin içeriğini göster
+                    item.classList.toggle('show');
+                });
+            });
         });
     </script>
-    <div class="col-lg-3">
-        <label for="">Cari Tanımla</label>
-        <form action="{% url "cari_olustur" %}" method="POST">
-            {% csrf_token %}
-                <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1">Cari Adı</span>
-                    <input type="text" name="seller_name" class="form-control">
-                    <div id="warning-message" class="text-danger"></div>
-            </div>
-            <div class="input-group mb-3">
-                <span class="input-group-text" id="basic-addon1">Cari Adres</span>
-                <input type="text" name="seller_name" class="form-control">
-                
-        </div>
-            
-          
-          <button type="submit" class="btn btn-success">Cariyi Kaydet</button>
-        </form>
-        <hr>
-        <table class="table">
 
-            <thead>
-              <tr>
-                <th scope="col">Cari Ad</th>
-                <th scope="col">Cari Adres</th>
-                <th scope="col">Durum</th>
-              </tr>
-            </thead>
-            <tbody>
-                {% for seller in sellers  %}
-              <tr>
-                <td>{{seller.name}}</td>
-                <td>{{seller.address}}</td>
-                <td>{{seller.status}}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-    </div>
-    <div class="col-lg-3">
-        <label for="">Birim Tanımla</label>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>
-                        <form action="{% url "birim_olustur" %}" method = "POST">
-                            {% csrf_token %}
-                        <div class="input-group">
-                            <input type="text" name="unit_name" class="form-control" placeholder="Birim Adı Giriniz...." aria-label="Username" aria-describedby="basic-addon1">
-                          </div>
-                        
-                    </th>
-                    <th>
+    <div class="row">
+        <div class="col-lg-12 d-none">
+            <div class="mb-3">
+                <h4 class="accordion-button">Cari Tanımla</h4>
+                <form action="{% url 'cari_olustur' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="seller_name" class="form-label">Cari Adı</label>
+                        <input type="text" name="seller_name" class="form-control" id="seller_name">
+                        <div id="warning-message" class="text-danger"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="seller_address" class="form-label">Cari Adres</label>
+                        <input type="text" name="seller_address" class="form-control" id="seller_address">
+                    </div>
+                    <button type="submit" class="btn btn-success">Cariyi Kaydet</button>
+                </form>
+            </div>
+        </div>
+            <hr>
+            <div class="col-lg-12">
+            <div class="mb-3">
+                <h4 class="accordion-button">Birim Tanımla</h4>
+                <form action="{% url 'birim_olustur' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="input-group mb-3">
+                        <input type="text" name="unit_name" class="form-control" placeholder="Birim Adı Giriniz...">
                         <button type="submit" class="btn btn-success">Kayıt</button>
-                    </form>
-                    </th>
-                </tr>
-            </thead>
-            <thead>
-                <tr>
-                    <th>Unit Name</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for unit in units %}
-                <tr>
-                    <td>{{ unit.unit_name }}</td>
-                    <td>
-                        <form action="{% url 'birim_sil' unit.id %}" method="POST" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger">Sil</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        <hr>
-       
+                    </div>
+                </form>
+                <hr>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Birim Adı</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for unit in units %}
+                        <tr>
+                            <td>{{ unit.unit_name }}</td>
+                            <td>
+                                <form action="{% url 'birim_sil' unit.id %}" method="POST" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">Sil</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <div class="col-lg-3">
-        {% for product in products  %}
-        <li>
-            {{product.id}}
-        </li>
-        {% endfor %}
-        <form action="{% url "urun_olustur" %}" method="POST">
-            {% csrf_token %}
-       
-        <div class="input-group mb-3">
-            <span class="input-group-text" id="basic-addon1">Ürün Kodu</span>
-            <input type="text" name="product_code" class="form-control" aria-label="Username" aria-describedby="basic-addon1">
-          </div>
-          <div class="input-group mb-3">
-            <span class="input-group-text" id="basic-addon1">Ürün Adı</span>
-            <input type="text" name="product_name" class="form-control" aria-label="Username" aria-describedby="basic-addon1">
-          </div>
-          <div class="input-group mb-3">
-            <span class="input-group-text" id="basic-addon1">Ürün Birimi</span>
-            <select name="product_unit" class="form-select" aria-label="Default select example">
-                {% for unit in units  %}
-                <option value="{{unit.id}}">{{unit.unit_name}}</option>
-                {% endfor %}
-              </select>
-          </div>
-          <div class="input-group mb-3">
-            <span class="input-group-text" id="basic-addon1">Ürün Kategorisi</span>
-            <select name="product_category" class="form-select" aria-label="Default select example">
-                {% for category in categories  %}
-                <option value="{{category.id}}">{{category.name}}</option>
-                {% endfor %}
-              </select>
-          </div>
-          <button type="submit">Kaydet</button>
+
+        <div class="col-lg-4">
+            <div class="mb-3">
+                <h4 class="accordion-button">Kategori Tanımla</h4>
+                <form action="{% url 'kategori_olustur' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="category_name" class="form-label">Kategori Adı</label>
+                        <input type="text" name="category_name" class="form-control" id="category_name">
+                        <div id="warning-message-for-category" class="text-danger"></div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Kaydet</button>
+                </form>
+            </div>
+            <hr>
+            <div class="mb-3">
+                <h4 class="accordion-button">Çıkış Nedeni Oluştur</h4>
+                <form action="{% url 'cikis_nedeni_olustur' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="input-group mb-3">
+                        <input type="text" name="outgoing_reason" class="form-control" placeholder="Çıkış Nedeni">
+                        <button type="submit" class="btn btn-success">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    
-</form>
-    <div class="col-lg-3">
-        
-        <div class="input-group mb-3">
-            <form action="{% url "kategori_olustur" %}" method="POST">
-                {% csrf_token %}
-            <span class="input-group-text" id="basic-addon1">Kategori Adı</span>
-            <input type="text" class="form-control" name="category_name" placeholder="Kategori Adı" aria-label="Username" aria-describedby="basic-addon1">
-            <div id="warning-message-for-category" class="text-danger"></div>
-          <button type="submit">Kaydet</button>
-          </div>
-        </form>
-    </div>
-    {% for category in categories  %}
-    <li>
-        {{category.name}}
-    </li>
-    {% endfor %}
-</div>
 </div>
 {% endblock content %}

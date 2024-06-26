@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <table class="table table-striped table-hover text-center">
+            <thead>
+                <tr>
+                    <th>Ürün</th>
+                    <th>Giren Miktar</th>
+                    <th>Çıkan Miktar</th>
+                    <th>Giriş Faturası</th>
+                    <th>Çıkış Faturası</th>
+                    <th>İşlem Zamanı</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stock_transactions %}
+                <tr {% if stock.outgoing_quantity > 0 %} class="table-danger" {% endif %}>
+                    <td>{{ stock.product }}</td>
+            
+                    {% if stock.incoming_quantity > 0 %}
+                    <td>{{ stock.incoming_quantity }}</td>
+                    {% else %}
+                    <td>-</td>
+                    {% endif %}
+            
+                    {% if stock.outgoing_quantity > 0 %}
+                    <td>{{ stock.outgoing_quantity }}</td>
+                    {% else %}
+                    <td>-</td>
+                    {% endif %}
+            
+                    {% if stock.incoming_bill.number %}
+                    <td>{{ stock.incoming_bill.number }}</td>
+                    {% else %}
+                    <td>-</td>
+                    {% endif %}
+            
+                    {% if stock.outgoing_bill %}
+                    <td>{{ stock.outgoing_bill }}</td>
+                    {% else %}
+                    <td>-</td>
+                    {% endif %}
+                    
+                    <td>{{ stock.processing_time|date:"j, F, Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock content %}

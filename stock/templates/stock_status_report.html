@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>Stok Durum Raporu</h2>
+    <p>Tarih: {{ today }}</p>
+    <table class="table table-striped table-hover text-center">
+        <thead>
+            <tr>
+                <th>Ürün</th>
+                <th>Giren Miktar</th>
+                <th>Çıkan Miktar</th>
+                <th>Mevcut Stok</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr {% if product.current_stock < 0 %}class="table-danger"{% endif %}>
+                <td>{{ product.name }}</td>
+                <td>{{ product.total_incoming }}</td>
+                <td>{{ product.total_outgoing }}</td>
+                <td>{{ product.current_stock }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock content %}
