@@ -108,16 +108,14 @@ def create_seller(request):
     seller_name = request.POST.get("seller_name")
     seller_address = request.POST.get("seller_address")
     
-    # Create the seller object
     Seller.objects.create(
         name=seller_name,
         address=seller_address
     )
     
-    # Add success message
+
     messages.success(request, "Cari Oluşturuldu")
     
-    # Redirect back to the previous page
     return redirect(request.META.get('HTTP_REFERER', '/'))
 def create_category(request):
     if not request.method =="POST":
@@ -156,8 +154,6 @@ def create_product(request):
     product_is_critical = request.POST.get("critical_product") == "on"
     critical_stock_level = request.POST.get("critical_stock_level")
     prevent_stock_negative = request.POST.get("prevent_stock_negative") == "on"
-
-    # Debugging prints
     print(f'Product Name: {product_name}')
     print(f'Product Code: {product_code}')
     print(f'Product Unit: {product_unit}')
@@ -237,8 +233,6 @@ def add_bill(request):
                 discount_3=bill_item_discount_3,
                 vat=bill_item_vat
             )
-
-            # Calculate total amount including VAT and discounts
             bill.total_amount = bill_item_quantity * bill_item_price
             total_amount_vat = (bill.total_amount / 100 * bill_item_vat)
             final_price_1 = bill.total_amount + total_amount_vat
@@ -249,7 +243,6 @@ def add_bill(request):
 
             bill.save()
 
-            # Update or create stock record
             stock, created = StockTransactions.objects.get_or_create(
                 product=product,
                 incoming_bill=bill,
@@ -309,7 +302,7 @@ def add_billitem(request, bill_id):
     product = get_object_or_404(Product, id=bill_item_product_id)
 
     try:
-        # Convert POST data to Decimal
+
         bill_item_quantity = Decimal(request.POST.get("bill_item_quantity", '0').replace(',', '.'))
         bill_item_price = Decimal(request.POST.get("bill_item_price", '0').replace(',', '.'))
         bill_item_discount_1 = Decimal(request.POST.get("bill_item_discount_1", '0').replace(',', '.'))
@@ -321,10 +314,9 @@ def add_billitem(request, bill_id):
         return JsonResponse({'error': 'Invalid number format.'}, status=400)
 
     try:
-        # Calculate item total
+
         item_total = bill_item_quantity * bill_item_price
 
-        # Create BillItem object
         bill_item = BillItem.objects.create(
             bill=bill,
             product=product,
@@ -336,7 +328,7 @@ def add_billitem(request, bill_id):
             vat=bill_item_vat
         )
 
-        # Update or create CurrentStock
+
         stock, created = CurrentStock.objects.get_or_create(
             product=product,
             defaults={
@@ -347,17 +339,16 @@ def add_billitem(request, bill_id):
 
         if not created:
             stock.current_stock += bill_item_quantity
-            stock.incoming_bill = bill  # Update incoming bill if necessary
-        
+            stock.incoming_bill = bill 
         stock.save()
 
-        # Update total amount in Bill object
+
         bill.total_amount += item_total
 
-        # Perform other calculations if needed (discounts, VAT, final price adjustments)
+
         bill.save()
 
-        # Prepare JSON response data
+
         response_data = {
             "bill_item_product": product.name,
             "bill_item_quantity": f"{bill_item_quantity:.2f}",
@@ -376,10 +367,8 @@ def add_billitem(request, bill_id):
         return JsonResponse({'error': str(e)}, status=500)
 from datetime import datetime
 def stock_status(request):
-    # Stokları getirirken ilişkili ürün, giriş faturası ve çıkış nedenlerini de dahil et
     stock_transactions = StockTransactions.objects.select_related('product', 'incoming_bill', 'outgoing_reasons').all()
 
-    # Her ürün için incoming ve outgoing quantity'leri toplamak için sözlükler
     incoming_quantities = {}
     outgoing_quantities = {}
 
@@ -452,7 +441,6 @@ def process_stock_outgoing(request):
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
     try:
-        # Outgoing bill numbers might be stored in a separate model/table
         if StockTransactions.objects.filter(outgoing_bill=outgoing_bill_number).exists():
             messages.error(request, 'Bill number already exists.')
             return redirect(request.META.get('HTTP_REFERER', '/'))
@@ -464,7 +452,7 @@ def process_stock_outgoing(request):
             product=outgoing_product,
             outgoing_quantity=Decimal(outgoing_quantity),
             outgoing_reasons=outgoing_reason,
-            outgoing_bill=outgoing_bill_number,  # Assuming this is the correct field
+            outgoing_bill=outgoing_bill_number,  
             processing_time=timezone.now(),
         )
         stock_outgoing.save()
