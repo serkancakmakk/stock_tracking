@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+<head>
+    
+</head>
+<style>
+    .product-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    .product-table th, .product-table td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: left;
+    }
+    .product-table th {
+        background-color: #f4f4f4;
+    }
+    .product-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    .negative-stock {
+        background-color: #f8d7da !important; /* Light red background */
+        color: #721c24; /* Dark red text */
+    }
+</style>
+<div class="container">
+    <div class="row">
+        <h1 class="text-center">Ürün Listesi</h1>
+        <table class="product-table" id="product-table1">
+            <thead>
+                <tr>
+                    <th>Ürün Adı</th>
+                    <th>Mevcut Stok</th>
+                    <th>Birim</th>
+                    <th>Kategori</th>
+                    <th>Ortalama Maliyet</th>
+                    <th>Kritik Seviye</th>
+                    <th>Negatif Stok Önleme</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr class="{% if product.current_stock < 0 %}negative-stock{% endif %}">
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.current_stock }}</td>
+                    <td>{{ product.unit }}</td>
+                    <td>{{ product.category.name }}</td>
+                    <td>{{ product.average_cost }}</td>
+                    <td>{{ product.critical_stock_level }}</td>
+                    <td>{{ product.prevent_stock_negative|yesno:"Evet,Hayır" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+<script>
+    $(document).ready(function() {
+        $('#product-table1').DataTable({
+            dom: 'Blfrtip',
+            buttons: [
+                {
+                    extend: 'copyHtml5',
+                    text: '<i class="fas fa-copy"></i> Kopyala',
+                    className: 'btn btn-primary',
+                    title: 'Ürün Listesi'
+                },
+                {
+                    extend: 'excelHtml5',
+                    text: '<i class="fas fa-file-excel"></i> Excel İndir',
+                    className: 'btn btn-success',
+                    title: 'Ürün Listesi'
+                },
+                {
+                    extend: 'csvHtml5',
+                    text: '<i class="fas fa-file-csv"></i> CSV İndir',
+                    className: 'btn btn-primary',
+                    title: 'Ürün Listesi'
+                },
+                {
+                    extend: 'pdfHtml5',
+                    text: '<i class="fas fa-file-pdf"></i> PDF İndir',
+                    className: 'btn btn-danger',
+                    title: 'Ürün Listesi',
+                    exportOptions: {
+                        columns: ':visible'
+                    },
+                    customize: function (doc) {
+                        doc.styles.tableHeader = {
+                            fillColor: '#f4f4f4',
+                            color: 'black',
+                            alignment: 'center',
+                            fontSize: 12
+                        };
+                        doc.styles.tableBodyEven = {
+                            fillColor: '#f9f9f9'
+                        };
+                        doc.styles.tableBodyOdd = {
+                            fillColor: '#ffffff'
+                        };
+                    }
+                }
+            ],
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.25/i18n/Turkish.json"
+            }
+        });
+    });
+</script>
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.0.2/js/dataTables.buttons.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.dataTables.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.html5.min.js"></script>
+{% endblock content %}
