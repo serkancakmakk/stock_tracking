@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Fatura Numarası</th>
+                <th scope="col">Fatura Tarihi</th>
+                <th scope="col">Satıcı</th>
+              </tr>
+            </thead>
+            <tbody>
+                
+                {% for bill in deleted_bills %}
+              <tr class="bill-row" data-bill-id="{{ bill.id }}">
+                <th scope="row"><i class="fa-solid fa-chevron-right"></i></th>
+                <td>{{ bill.number }}</td>
+                <td>{{ bill.date }}</td>
+                <td>{{ bill.seller.name }}</td>
+              </tr>
+              <tr class="bill-items-row" id="bill-items-{{ bill.id }}" style="display: none;">
+                <td colspan="4">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Ürün</th>
+                                <th scope="col">Miktar</th>
+                                <th scope="col">Fiyat</th>
+                                <th scope="col">İndirim 1</th>
+                                <th scope="col">İndirim 2</th>
+                                <th scope="col">İndirim 3</th>
+                                <th scope="col">KDV</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in bill_items|get_item:bill.id %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.price }}</td>
+                                <td>{{ item.discount_1 }}</td>
+                                <td>{{ item.discount_2 }}</td>
+                                <td>{{ item.discount_3 }}</td>
+                                <td>{{ item.vat }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const billRows = document.querySelectorAll('.bill-row');
+    billRows.forEach(row => {
+        row.addEventListener('click', function() {
+            const billId = this.dataset.billId;
+            const billItemsRow = document.getElementById(`bill-items-${billId}`);
+            if (billItemsRow.style.display === 'none') {
+                billItemsRow.style.display = '';
+            } else {
+                billItemsRow.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+<style>
+    .fa-chevron-right{
+        cursor:pointer;
+        color: green;
+    }
+</style>
+{% endblock content %}

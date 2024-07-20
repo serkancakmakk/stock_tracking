@@ -1,2 +1,77 @@
 {% extends "base.html" %}
-{% block content %}{% endblock content %}
+{% block content %}
+<div class="container">
+    {% if messages %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            {% for message in messages %}
+                Swal.fire({
+                    position: "top-end",
+                    icon: "{% if message.tags == 'success' %}success{% else %}info{% endif %}",
+                    title: "{{ message }}",
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            {% endfor %}
+        });
+    </script>
+    {% endif %}
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="mb-3">
+                <h4 class="accordion-button">Kategori Tanımla</h4>
+                <form action="{% url 'kategori_olustur' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="category_name" class="form-label">Kategori Adı</label>
+                        <input type="text" name="category_name" class="form-control" id="category_name">
+                        <div id="warning-message-for-category" class="text-danger"></div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Kaydet</button>
+                </form>
+            </div>
+        </div>
+            <div class="col-lg-4">
+                <table class="table">
+                    <thead>
+                      <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Kategori Adı</th>
+                        <th scope="col">Durum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories  %}
+                        <tr>
+                            <th scope="row">1</th>
+                            <td>{{category.name}}</td>
+                            <td>
+                            {% if category.is_active == True %}
+                            <form action="{% url 'kategori_durum_degistir' category.id %}"method="POST">
+                                {% csrf_token %}
+                                <button type="submit"class="btn btn-outline-success">Aktif</button>
+                            </form>
+                            {% else %}
+                            <form action="{% url 'kategori_durum_degistir' category.id %}"method="POST">
+                                {% csrf_token %}
+                                <button type="submit"class="btn btn-outline-danger">Pasif</button>
+                            </form>
+                            {% endif %}
+                            
+                                
+                            </td>
+                            <td>
+                                
+                            </td>
+                            
+                          </tr>
+                        {% endfor %}               
+                    </tbody>
+                  </table>
+    </div>
+</div>
+
+
+
+
+{% endblock content %}

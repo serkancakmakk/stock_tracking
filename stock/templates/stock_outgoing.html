@@ -24,7 +24,7 @@
             <select name="outgoing_product" id="select2-product" class="form-select" aria-label="Select Product">
                 <option selected>Select a product</option>
                 {% for product in products %}
-                <option value="{{ product.id }}">{{ product.name }}</option>
+                <option value="{{ product.id }}" data-stock="{{ product.current_stock }}">{{ product.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -32,6 +32,7 @@
         <div class="mb-3">
             <label for="quantity" class="form-label">Outgoing Quantity</label>
             <input type="number" name="outgoing_quantity" class="form-control" id="quantity" step="0.001" min="0">
+            <div id="stock-warning" class="text-danger mt-2" style="display: none;">Stok eksiye düşebilir dikkatli olunuz.</div>
         </div>
 
         <div class="mb-3">
@@ -48,7 +49,7 @@
             <label for="bill" class="form-label">Bill Number</label>
             <div class="input-group">
                 <input type="text" name="outgoing_bill_number" class="form-control" id="bill">
-                <button type="button" class="btn btn-outline-success" title="Otomatik Fatura Numarası Üret" id="generateBillNumber">+</button>
+                <button type="button" class="btn btn-outline-success" title="Generate Automatic Bill Number" id="generateBillNumber">+</button>
             </div>
         </div>
 
@@ -57,10 +58,31 @@
 </div>
 
 <script>
-    document.getElementById('generateBillNumber').addEventListener('click', function() {
-        const billInput = document.getElementById('bill');
-        const randomBillNumber = 'OFN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-        billInput.value = randomBillNumber;
+    document.addEventListener('DOMContentLoaded', function() {
+        const productSelect = document.getElementById('select2-product');
+        const quantityInput = document.getElementById('quantity');
+        const warningMessage = document.getElementById('stock-warning');
+
+        document.getElementById('generateBillNumber').addEventListener('click', function() {
+            const billInput = document.getElementById('bill');
+            const randomBillNumber = 'OFN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+            billInput.value = randomBillNumber;
+        });
+
+        function checkStock() {
+            const selectedOption = productSelect.options[productSelect.selectedIndex];
+            const currentStock = parseFloat(selectedOption.getAttribute('data-stock'));
+            const outgoingQuantity = parseFloat(quantityInput.value);
+
+            if (outgoingQuantity > currentStock) {
+                warningMessage.style.display = 'block';
+            } else {
+                warningMessage.style.display = 'none';
+            }
+        }
+
+        productSelect.addEventListener('change', checkStock);
+        quantityInput.addEventListener('input', checkStock);
     });
 </script>
 {% endblock content %}

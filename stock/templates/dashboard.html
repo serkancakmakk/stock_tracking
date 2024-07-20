@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+<div class="container mt-5">
+  <main class="main-container">
+    <div class="main-title">
+      <h2>DASHBOARD</h2>
+    </div>
+
+    <div class="main-cards">
+
+      <div class="card" id="card">
+        <div class="card-inner">
+          <h3>ÜRÜNLER</h3>
+          <span class="material-icons-outlined"><i class="fa-solid fa-boxes-stacked"></i></span>
+        </div>
+        <h1>{{products_count}}</h1>
+      </div>
+
+      <div class="card"id="card">
+        <div class="card-inner">
+          <h3>FATURALAR</h3>
+          <span class="material-icons-outlined"><i class="fa-solid fa-receipt"></i></span>
+        </div>
+        <h1>{{bill_count}}</h1>
+      </div>
+
+      <div class="card"id="card">
+        <div class="card-inner">
+          <h3>ÇIKIŞLAR</h3>
+          <span class="material-icons-outlined"><i class="fa-solid fa-cart-flatbed"></i></span>
+        </div>
+        <h1>{{outgoing_count}}</h1>
+      </div>
+
+      <div class="card {% if low_stock_count < 0 %}green-bg{% endif %}"id="card" >
+        <div class="card-inner" >
+          <h3>ALARM</h3>
+          <span class="material-icons-outlined"><i data-bs-toggle="modal" data-bs-target="#lowStockModal" class="fa-solid fa-bell"></i></span>
+        </div>
+      </div>
+    </div>
+  </main>
+  <style>
+    {% comment %} .table{
+      width:50%;
+    } {% endcomment %}
+     #seller_detail{
+      color: red;
+     }
+     @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+    
+    #seller_detail:hover {
+      animation: shake 0.5s;
+      color: green;
+    }
+  </style>
+  <div class="container">
+    <div class="row">
+
+    
+  <div class="col-8">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">First</th>
+        <th scope="col">Last</th>
+        <th scope="col">Handle</th>
+        <th scope="col">Bakiye</th>
+        <th scope="col">Detay</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for seller in sellers  %}
+      <tr>
+        <th scope="row">1</th>
+        <td>{{seller.name}}</td>
+        <td>{{seller.receivable}}</td>
+        <td>{{seller.debt}}</td>
+        <td>{{seller.balance}}</td></i>
+        <td><a class="fa-solid fa-truck-arrow-right"id="seller_detail" href="{% url 'satici_sayfasi' seller.id %}"></a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!--
+  First container
+  -->
+
+  <div class="col-4 mt-4 ml-5" id="lowStock">
+    <div class="card">
+      <h6 class="text-center">En düşük Stoklar</h6>
+      <canvas id="lowstockChart"></canvas>
+    </div>
+    
+</div>
+<div class="col-4 offset-8 mb-4  mt-4" id="lowStock">
+  <div class="card">
+    <h6 class="text-center">Kategoriye Göre Ürünler</h6>
+    <canvas id="categoryChart"></canvas>
+  </div>
+  
+</div>
+<div class="col-4 offset-8 mb-4 mt-4" id="lastBill">
+  <div class="card">
+      <h6 class="text-center">Son Fatura</h6>
+      <table class="table table-bordered">
+          <tr>
+              <th>Fatura No</th>
+              <td>{{ last_bill.number }}</td>
+          </tr>
+          <tr>
+              <th>Toplam Tutar</th>
+              <td>{{ last_bill.total_amount }} ₺</td>
+          </tr>
+          <tr>
+              <th>Tarih</th>
+              <td>{{ last_bill.date }}</td>
+          </tr>
+      </table>
+      <div class="text-center">
+          <button class="btn btn-outline-info">Detayları Görüntüle <i class="fa-solid fa-circle-info"></i></button>
+      </div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+<style>
+  #lastBill .card {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      background-color: #fff;
+      transition: transform 0.2s;
+  }
+  #lastBill .card:hover {
+      transform: scale(1.05);
+  }
+  #lastBill .card h6 {
+      margin-bottom: 15px;
+      color: #ff5722;
+  }
+  #lastBill .card p {
+      margin: 0;
+      font-size: 1.2em;
+      color: #333;
+  }
+  #lastBill .card .amount {
+      font-size: 1.5em;
+      color: #4caf50;
+      font-weight: bold;
+  }
+  #lastBill .card .icon {
+      font-size: 2em;
+      color: #03a9f4;
+      margin-right: 10px;
+  }
+</style>
+<style>
+  #lowStock .card {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      background-color: #fff;
+  }
+  #lowStock .card h6 {
+      margin-bottom: 15px;
+  }
+</style>
+
+    <script>
+        function toggleCard(element) {
+            const content = element.querySelector('.card');
+            content.classList.toggle('expanded');
+        }
+    </script>
+    
+  
+  
+  
+  
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const ctx = document.getElementById('lowstockChart').getContext('2d');
+
+      // Python'dan JavaScript'e veri geçirme
+      const productNames = [
+        {% for product in products %}
+          '{{ product.name }}',
+        {% endfor %}
+      ];
+
+      const productStocks = [
+        {% for product in products %}
+          {{ product.current_stock }},
+        {% endfor %}
+      ];
+
+      // Rastgele renkler oluşturan fonksiyon
+      function randomColor() {
+          const r = Math.floor(Math.random() * 256);
+          const g = Math.floor(Math.random() * 256);
+          const b = Math.floor(Math.random() * 256);
+          return `rgba(${r}, ${g}, ${b}, 0.6)`;
+      }
+
+      const backgroundColors = productStocks.map(() => randomColor());
+
+      new Chart(ctx, {
+          type: 'bar',
+          data: {
+              labels: productNames,
+              datasets: [{
+                  label: 'Stok Miktarı',
+                  data: productStocks,
+                  borderWidth: 1,
+                  backgroundColor: backgroundColors, // Her çubuk için rastgele renk oluştur
+                  borderColor: 'rgba(54, 162, 235, 1)',
+                  hoverBackgroundColor: backgroundColors, // Hover için sabit renkler kullan
+                  hoverBorderColor: 'rgba(54, 162, 235, 1)',
+              }]
+          },
+          options: {
+              scales: {
+                  y: {
+                      beginAtZero: true
+                  }
+              }
+          }
+      });
+  });
+</script>
+<script>
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            const categoryNames = [
+                {% for category in category_names %}
+                    '{{ category }}',
+                {% endfor %}
+            ];
+            const categoryCounts = [
+                {% for count in category_counts %}
+                    {{ count }},
+                {% endfor %}
+            ];
+            const categoryColors = categoryCounts.map(() => randomColor());
+
+            new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: categoryNames,
+                    datasets: [{
+                        label: 'Ürün Sayısı',
+                        data: categoryCounts,
+                        borderWidth: 1,
+                        backgroundColor: categoryColors,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        hoverBackgroundColor: categoryColors,
+                        hoverBorderColor: 'rgba(75, 192, 192, 1)',
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Rastgele renkler oluşturan fonksiyon
+            function randomColor() {
+                const r = Math.floor(Math.random() * 256);
+                const g = Math.floor(Math.random() * 256);
+                const b = Math.floor(Math.random() * 256);
+                return `rgba(${r}, ${g}, ${b}, 0.6)`;
+            }
+        
+    </script>
+<!--
+    modal
+    -->
+    <div class="modal fade" id="lowStockModal" tabindex="-1" aria-labelledby="lowStockModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="lowStockModalLabel">Bitmeye Yakın Stoklar</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <!-- Buraya bitmeye yakın stoklarla ilgili bilgileri ekleyebilirsiniz -->
+                {% if low_stock_products %}
+<div class="alert alert-warning" role="alert">
+    <strong>Low Stock Alert!</strong> The following products are running low on stock:
+</div>
+<ul class="list-group">
+    {% for product in low_stock_products %}
+        <li class="list-group-item">
+            <strong>{{ product.name }}</strong>
+            <span class="badge text-bg-danger">Current Stock: {{ product.current_stock }}</span>
+            <span class="badge text-bg-warning">Critical Stock Level: {{ product.critical_stock_level }}</span>
+        </li>
+    {% endfor %}
+</ul>
+    {% else %}
+<div class="alert alert-success" role="alert">
+    No products are running low on stock.
+</div>
+    {% endif %}
+            </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><strong><i class="fa-solid fa-circle-xmark"></i></strong></button>
+              </div>
+          </div>
+      </div>
+  </div>
+  <style>
+    h1,table{
+        font-family: "Oxanium", sans-serif;
+    }
+    .main-container {
+        grid-area: main;
+        overflow-y: auto;
+        padding: 20px 20px;
+        color: rgba(255, 255, 255, 0.95);
+      }
+      
+      .main-title {
+        display: flex;
+        justify-content: space-between;
+      }
+      
+      .main-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 20px;
+        margin: 20px 0;
+      }
+      
+      #card {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        padding: 25px;
+        border-radius: 5px;
+      }
+      
+      #card:first-child {
+        background-color: #2962ff;
+      }
+      
+      #card:nth-child(2) {
+        background-color: #ff6d00;
+      }
+      
+      #card:nth-child(3) {
+        background-color: #2e7d32;
+      }
+      
+      .#card:nth-child(4) {
+        background-color: #d50000;
+      }
+      
+      .card-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      
+      .card-inner > .material-icons-outlined {
+        font-size: 45px;
+      }
+   </style>
+   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@200..800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+    .main-cards{
+        font-family: "Roboto", sans-serif;
+    }
+    .fa-solid{
+        cursor:pointer;
+    }
+    .main-cards{
+        font-family: "Roboto", sans-serif;
+    }
+</style>
+<style>
+    @media screen and (max-width: 992px) {
+        .grid-container {
+          grid-template-columns: 1fr;
+          grid-template-rows: 0.2fr 3fr;
+          grid-template-areas:
+            'header'
+            'main';
+        }
+    }      
+    @media screen and (max-width: 768px) {
+        .main-cards {
+          grid-template-columns: 1fr;
+          gap: 10px;
+          margin-bottom: 0;
+        }
+    }    
+</style>
+<style>
+  .green-bg {
+      background-color: #88D66C !important;
+  }
+</style>
+{% endblock content %}

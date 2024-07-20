@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<style>
+    .mt-5 {
+        display: flex;
+        justify-content: space-between;
+    }
+    #tableDiv {
+        margin-left: 10px;
+    }
+    .card {
+        width: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-10px) scale(1.05);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    .card-img-top {
+        width: 128px;
+        justify-content: center;
+        border-radius: 50%;
+        margin: 0 auto;
+        margin-top: 20px;
+        border: 4px solid green;
+    }
+    .card-body {
+        padding: 1.25rem;
+    }
+    .list-group-item {
+        background-color: transparent !important;
+    }
+    .btn {
+        margin-left: 10px;
+    }
+    .pagination {
+        justify-content: center;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12 col-md-8 mx-auto">
+            <div class="card" id="seller_profile">
+                <img src="{% static 'delivery-truck.png' %}" class="card-img-top" alt="...">
+                <div class="card-body">
+                    <h5 class="card-title text-center">{{ seller.name }}</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Cari Adı: </strong>{{ seller.name }}</li>
+                        <li class="list-group-item"><strong>Adres: </strong>{{ seller.address }}</li>
+                        <li class="list-group-item"><strong>Borç: </strong>{{ seller.debt }}</li>
+                        <li class="list-group-item"><strong>Alacak: </strong>{{ seller.receivable }}</li>
+                        <li class="list-group-item"><strong>Bakiye: </strong>{{ seller.balance }}</li>
+                        <li class="list-group-item"><strong>Aktif / Pasif: </strong>
+                            {% if seller.status %}
+                                <span class="badge bg-success">Aktif</span>
+                            {% else %}
+                                <span class="badge bg-danger">Pasif</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item d-flex align-items-center">
+                            <strong>Ödeme Yap : </strong>
+                            <form action="{% url 'ödeme_yap' seller.id %}" method="POST" class="d-flex">
+                                {% csrf_token %}
+                                <input name="payment_amount" class="form-control" type="number" style="width: 30%; margin-left: 10px;">
+                                <button type="submit" class="btn btn-success">Kaydet</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4 mt-4 mt-md-0">
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <div class="card" style="width: 30rem;">
+                        <canvas id="balanceChart" style="height: 200px;"></canvas>
+                    </div>
+                    
+                </div>
+                <div class="col-12" id="tableDiv">
+                    <div class="card" style="width: 30rem;">
+                        <div class="card-header">
+                            <h4>Satıcı Faturaları</h4>
+                        </div>
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Fatura Numarası</th>
+                                    <th scope="col">Fatura Tutar</th>
+                                    <th scope="col">Fatura Tarihi</th>
+                                    <th scope="col">Ödendi mi?</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bill in seller_bills %}
+                                <tr>
+                                    <th>{{ bill.number }}</th>
+                                    <td>{{ bill.total_amount }}</td>
+                                    <td>{{ bill.date|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <form action="">
+                                            <button type="submit" class="btn btn-outline-primary"><i class="fa-solid fa-money-bill-1"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="pagination justify-content-center">
+                            <ul class="pagination">
+                                {% if seller_bills.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?page=1">&laquo; İlk</a></li>
+                                <li class="page-item"><a class="page-link" href="?page={{ seller_bills.previous_page_number }}">{{ seller_bills.previous_page_number }}</a></li>
+                                {% endif %}
+                                <li class="page-item active"><a class="page-link" href="?page={{ seller_bills.number }}">{{ seller_bills.number }}</a></li>
+                                {% if seller_bills.has_next %}
+                                <li class="page-item"><a class="page-link" href="?page={{ seller_bills.next_page_number }}">{{ seller_bills.next_page_number }}</a></li>
+                                <li class="page-item"><a class="page-link" href="?page={{ seller_bills.paginator.num_pages }}">Son &raquo;</a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-3d/dist/chartjs-chart-3d.js"></script>
+<script>
+    const ctx = document.getElementById('balanceChart');
+  
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Borç', 'Alacak'],
+        datasets: [{
+          label: '',
+          data: [{{seller.debt}},{{seller.receivable}}],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+</script>
+
+<style>
+    body {
+        background: rgb(2,0,36);
+        background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(11,213,89,1) 0%, rgba(11,207,87,1) 1%, rgba(0,212,255,1) 100%);
+        border-radius: 10px;
+    }
+    .card {
+        margin-bottom: 20px;
+    }
+    #seller_Table tr, td, th {
+        background-color: transparent !important; 
+    }
+    #seller_Table td:hover {
+        background-color: white !important;
+    }
+</style>
+{% endblock %}

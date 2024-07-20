@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+{% load tz %}
+
+<div class="container my-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">Expiry Date Report</h3>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'vade_tarihi_gelen_faturalar' %}" method="POST" class="form-inline">
+                        {% csrf_token %}
+                        <div class="form-group mx-sm-3 mb-2">
+                            <label for="expiry_date" class="sr-only">Expiry Date</label>
+                            <input type="date" value="{% now "Y-m-d" %}" class="form-control" id="expiry_date" name="expiry_date" placeholder="Select expiry date">                        </div>
+                        <button type="submit" class="btn btn-primary mb-2">Getir</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h3 class="card-title">Vade Tarihi Yaklaşanlar</h3>
+                        </div>
+                        <div class="card-body">
+                            {% if reports_bill %}
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Bill Number</th>
+                                            <th scope="col">Öde</th>
+                                            <!-- Add other relevant columns -->
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for bill in reports_bill %}
+                                        <tr>
+                                            <td>{{ bill.number }}</td>
+                                            <td>
+                                                <form method="POST" action="{% url 'fatura_öde' bill.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" id="paid_ico" title="Öde" class="fa-solid fa-wallet"></button>
+                                                </form>
+                                            </td>
+                                            <!-- Add other relevant columns -->
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p class="text-muted"><strong>{{expiry_date}}</strong> tarih vadeli fatura bulunamadı.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h3 class="card-title">Ödenen Faturalar</h3>
+                        </div>
+                        <div class="card-body">
+                            {% if paid_bills %}
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Fatura Numarası</th>
+                                            <th scope="col">Ödemeyi Geri Al</th>
+                                            <!-- Add other relevant columns -->
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for bill in paid_bills %}
+                                        <tr>
+                                            <td>{{ bill.number }}</td>
+                                            <td>
+                                                <form method="POST" action="{% url 'fatura_ödemesini_geri_al' bill.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" id="unpaid_ico" title="Ödemeyi Geri Al" class="fa-solid fa-wallet"></button>
+                                                </form>
+                                            </td>
+                                            <!-- Add other relevant columns -->
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                            <p class="text-muted"><strong>{{expiry_date}}</strong> tarihinde ödenen fatura bulunamadı.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .text-white{
+        color:white;
+    }
+    #paid_ico {
+        cursor: pointer;
+        transition: transform 0.2s; /* Adds a smooth transition effect */
+        color: red;
+        border: none;
+        background: none;
+    }
+
+    #paid_ico:hover {
+        transform: scale(2.4);
+        color: green;
+    }
+
+    #unpaid_ico {
+        cursor: pointer;
+        transition: transform 0.2s; /* Adds a smooth transition effect */
+        color: green;
+        border: none;
+        background: none;
+    }
+
+    #unpaid_ico:hover {
+        transform: scale(2.4);
+        color: red;
+    }
+</style>
+{% endblock content %}

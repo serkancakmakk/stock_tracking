@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    {% for category, products in products_by_category.items %}
+        <h2>{{ category.name }}</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Product Code</th>
+                    <th>Unit</th>
+                    <th>Critical Stock Level</th>
+                    <th>Current Stock</th>
+                    <th>Prevent Stock Negative</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.code }}</td>
+                        <td>{{ product.unit.unit_name }}</td>
+                        <td>{{ product.critical_stock_level }}</td>
+                        <td>{{ product.current_stock }}</td>
+                        <td>{{ product.prevent_stock_negative }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+</div>
+{% endblock content %}

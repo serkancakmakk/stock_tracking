@@ -1,15 +1,18 @@
 from django.urls import path
-
+from django.conf import settings
+from django.conf.urls.static import static
 from . import views
 urlpatterns = [
-    path("", views.create_page,name="tanimlar"),
-    path("tanimlar/", views.create_page,name="tanimlar"),
+    path("", views.dashboard,name="dashboard"),
+    # path("tanimlar/", views.create_page,name="tanimlar"),
     path("cari_tanimla/", views.create_seller,name="cari_tanimla"),
-    path("kategori_tanimla/", views.create_category,name="kategori_tanimla"),
+    path("kategori_tanimla/", views.create_category_page,name="kategori_tanimla"),
+    path("kategori_durum_degistir/<int:id>", views.change_category_status,name="kategori_durum_degistir"),
     path("urun_tanimla/", views.create_product,name="urun_tanimla"),
     path("cikis_tanimlama_sayfasi/", views.create_outgoing_reasons_page,name="cikis_tanimlama_sayfasi"),
     path('cikis_sebebini_degistir/<int:id>/', views.change_active_status, name='cikis_sebebini_degistir'),
-    path("birim_olustur",views.create_unit,name="birim_olustur"),
+    path("birim_olustur",views.create_unit_page,name="birim_olustur"),
+    path("birim_tanimla",views.create_unit,name="birim_tanimla"),
     path("birim_sil/<int:unit_id>/",views.delete_unit,name="birim_sil"),
     path("cari_olustur/",views.create_seller,name="cari_olustur"),
     path("urun_olustur/",views.product_add_page,name="urun_olustur"),
@@ -23,5 +26,20 @@ urlpatterns = [
     path('stok_durumu/',views.stock_status,name="stok_durumu"),
     path('stok_cikisi_yap/',views.process_stock_outgoing,name="stok_cikisi_yap"),
     path('stok_giris_cikislari',views.incoming_outgoing_reports,name="stok_giris_cikislari"),
+    path('kategoriye_göre_stoklar',views.stock_by_category,name="kategoriye_göre_stoklar"),
+    path('import_excel/', views.import_excel, name='import_excel'),
+    path('download_excel/', views.download_excel, name='download_excel'),
+    path('birim_durumunu_degistir/<int:unit_id>', views.change_unit_status, name='birim_durumunu_degistir'),
+    path('stok_hareketleri/', views.stock_transactions, name='stok_hareketleri'),
+    path('ürün_bilgileri/', views.product_info, name='ürün_bilgileri'),
+    path('vade_tarihi_gelen_faturalar/', views.due_date_reports, name='vade_tarihi_gelen_faturalar'),
+    path('fatura_öde/<int:id>', views.paid_bill, name='fatura_öde'),
+    path('fatura_ödemesini_geri_al/<int:id>', views.unpaid_bill, name='fatura_ödemesini_geri_al'),
+    path('delete_bill/<int:bill_id>/', views.delete_bill, name='delete_bill'),
+    path('silinen_faturalar/', views.deleted_bills, name='silinen_faturalar'),
+    path('stok_farki/', views.stock_difference_report, name='stok_farki'),
+    path('satici_sayfasi/<int:id>',views.seller_detail,name="satici_sayfasi"),
+    path('ödeme_yap/<int:id>',views.payment,name="ödeme_yap"),
+    # path('calculate_average_cost/', views.calculate_average_cost_view, name='calculate_average_cost'),
 
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
