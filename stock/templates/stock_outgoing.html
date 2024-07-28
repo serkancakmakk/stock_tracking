@@ -16,44 +16,56 @@
         });
     </script>
     {% endif %}
-    <h2>Process Stock Outgoing</h2>
-    <form action="{% url 'stok_cikisi_yap' %}" method="POST">
+    <h2 class="text-center">Stok Çıkış İşlemleri</h2>
+    <form action="{% url 'stok_cikisi_yap' company.code %}" method="POST" class="needs-validation" novalidate>
         {% csrf_token %}
         <div class="mb-3">
-            <label for="product" class="form-label">Select Product</label>
-            <select name="outgoing_product" id="select2-product" class="form-select" aria-label="Select Product">
-                <option selected>Select a product</option>
+            <label for="product" class="form-label">Çıkış Yapılacak Ürün</label>
+            <select name="outgoing_product" id="select2-product" class="form-select" aria-label="Select Product" required>
+                <option selected disabled value="">Ürün Seçiniz</option>
                 {% for product in products %}
                 <option value="{{ product.id }}" data-stock="{{ product.current_stock }}">{{ product.name }}</option>
                 {% endfor %}
             </select>
+            <div class="invalid-feedback">
+                Lütfen Bir ürün seçiniz.
+            </div>
         </div>
 
         <div class="mb-3">
-            <label for="quantity" class="form-label">Outgoing Quantity</label>
-            <input type="number" name="outgoing_quantity" class="form-control" id="quantity" step="0.001" min="0">
-            <div id="stock-warning" class="text-danger mt-2" style="display: none;">Stok eksiye düşebilir dikkatli olunuz.</div>
+            <label for="quantity" class="form-label">Çıkış Miktarı</label>
+            <input type="number" name="outgoing_quantity" class="form-control" id="quantity" step="0.001" min="0" required>
+            <div class="invalid-feedback">
+                Lütfen geçerli bir miktar giriniz.
+            </div>
+            <div id="stock-warning" class="text-danger mt-2" style="display: none;">Warning: Stock might go negative!</div>
         </div>
 
         <div class="mb-3">
-            <label for="reason" class="form-label">Reason for Outgoing</label>
-            <select name="outgoing_reason" id="select2-reason" class="form-select" aria-label="Select Reason">
-                <option selected>Select a reason</option>
+            <label for="reason" class="form-label">Çıkış Sebebi Seçin</label>
+            <select name="outgoing_reason" id="select2-reason" class="form-select" aria-label="Select Reason" required>
+                <option selected disabled value="">Select a reason</option>
                 {% for reason in outgoing_reasons %}
                 <option value="{{ reason.id }}">{{ reason.name }}</option>
                 {% endfor %}
             </select>
-        </div>
-
-        <div class="mb-3">
-            <label for="bill" class="form-label">Bill Number</label>
-            <div class="input-group">
-                <input type="text" name="outgoing_bill_number" class="form-control" id="bill">
-                <button type="button" class="btn btn-outline-success" title="Generate Automatic Bill Number" id="generateBillNumber">+</button>
+            <div class="invalid-feedback">
+                Lütfen çıkış sebebi seçiniz.
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <div class="mb-3">
+            <label for="bill" class="form-label">Çıkış Fatura Numarası</label>
+            <div class="input-group">
+                <input type="text" name="outgoing_bill_number" class="form-control" id="bill" required>
+                <button type="button" class="btn btn-outline-success" title="Generate Automatic Bill Number" id="generateBillNumber">+</button>
+                <div class="invalid-feedback">
+                    Please enter a bill number.
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-danger">Çıkış Yap <i class="fa-solid fa-shuffle"></i></button>
     </form>
 </div>
 
@@ -83,6 +95,28 @@
 
         productSelect.addEventListener('change', checkStock);
         quantityInput.addEventListener('input', checkStock);
+
+        // Initialize Select2
+        $('#select2-product').select2({
+            placeholder: "Select a product",
+            allowClear: true
+        });
+        $('#select2-reason').select2({
+            placeholder: "Select a reason",
+            allowClear: true
+        });
+
+        // Form validation
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
     });
 </script>
 {% endblock content %}

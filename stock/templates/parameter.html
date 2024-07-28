@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+{% block title %}Parametre | {{company.name}}{% endblock title %}
+<div class="container mt-5">
+    <div class="row">
+        <h1>{{ company.name }} Parametreleri</h1>
+        <div class="col">
+            <form method="post" action="{% url 'parametre' company.code %}">
+                {% csrf_token %}
+                <div>
+                    <label>Maliyet Hesaplama:</label><br>
+                    
+                    <label for="cost_calculation_fifo">
+                        <input type="radio" id="cost_calculation_fifo" name="cost_calculation" value="fifo" {% if form.instance.cost_calculation == 'fifo' %}checked{% endif %}>
+                        FIFO
+                    </label><br>
+                    
+                    <label for="cost_calculation_lifo">
+                        <input type="radio" id="cost_calculation_lifo" name="cost_calculation" value="lifo" {% if form.instance.cost_calculation == 'lifo' %}checked{% endif %}>
+                        LIFO
+                    </label><br>
+                    
+                    <label for="cost_calculation_average_cost">
+                        <input type="radio" id="cost_calculation_average_cost" name="cost_calculation" value="average_cost" {% if form.instance.cost_calculation == 'average_cost' %}checked{% endif %}>
+                        Ortalama Maliyet
+                    </label><br>
+                    
+                    <label for="cost_calculation_specific_identification">
+                        <input type="radio" id="cost_calculation_specific_identification" name="cost_calculation" value="specific_identification" {% if form.instance.cost_calculation == 'specific_identification' %}checked{% endif %}>
+                        Belirli Tanımlama
+                    </label><br>
+                    
+                    <label for="cost_calculation_standard_costing">
+                        <input type="radio" id="cost_calculation_standard_costing" name="cost_calculation" value="standard_costing" {% if form.instance.cost_calculation == 'standard_costing' %}checked{% endif %}>
+                        Standart Maliyetleme
+                    </label><br>
+                    
+                    <label for="cost_calculation_moving_average">
+                        <input type="radio" id="cost_calculation_moving_average" name="cost_calculation" value="moving_average" {% if form.instance.cost_calculation == 'moving_average' %}checked{% endif %}>
+                        Hareketli Ortalama
+                    </label><br>
+                    
+                    <label for="cost_calculation_weighted_average">
+                        <input type="radio" id="cost_calculation_weighted_average" name="cost_calculation" value="weighted_average" {% if form.instance.cost_calculation == 'weighted_average' %}checked{% endif %}>
+                        Ağırlıklı Ortalama
+                    </label><br>
+                    
+                    <label for="cost_calculation_replacement_cost">
+                        <input type="radio" id="cost_calculation_replacement_cost" name="cost_calculation" value="replacement_cost" {% if form.instance.cost_calculation == 'replacement_cost' %}checked{% endif %}>
+                        Yenileme Maliyeti
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+            </form>
+        </div>
+        <div class="col-6 text-center">
+            <a href="#" data-bs-toggle="modal" data-bs-target="#costCalculationModal">
+                <img src="{% static 'question-mark.png' %}" alt="?" style="width: 50%;">
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="costCalculationModal" tabindex="-1" aria-labelledby="costCalculationModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="costCalculationModalLabel">Maliyet Hesaplama Yöntemleri</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul>
+            <li><strong>FIFO:</strong> First In, First Out: İlk giren ilk çıkar. İlk alınan stokların ilk satıldığı yöntem.</li>
+            <li><strong>LIFO:</strong> Last In, First Out: Son giren ilk çıkar. Son alınan stokların ilk satıldığı yöntem.</li>
+            <li><strong>Ortalama Maliyet:</strong> Stokların ortalama maliyetini kullanarak hesaplama.</li>
+            <li><strong>Belirli Tanımlama:</strong> Her bir öğenin maliyetini ayrı ayrı belirleyerek hesaplama.</li>
+            <li><strong>Standart Maliyetleme:</strong> Standart maliyetler belirleyip bunları kullanarak hesaplama.</li>
+            <li><strong>Hareketli Ortalama:</strong> Her yeni satın alma işlemiyle ortalama maliyetin güncellenmesi.</li>
+            <li><strong>Ağırlıklı Ortalama:</strong> Tüm stokların toplam maliyetini stok miktarına bölerek hesaplama.</li>
+            <li><strong>Yenileme Maliyeti:</strong> Stokların yerine koyma maliyeti üzerinden hesaplama.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

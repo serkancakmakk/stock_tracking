@@ -1,0 +1,172 @@
+<head>
+	<script src="https://kit.fontawesome.com/3b161c540c.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+	<footer class="footer">
+		<div class="container row">
+			<div class="footer-col">
+				<h4>company</h4>
+				<ul>
+					<li><a href="#">Hakkımızda</a></li>
+					<li><a href="#">Servislerimiz</a></li>
+					<li><a href="#">Politikalarımız</a></li>
+					<li><a href="#">Bize Ulaşın</a></li>
+                    
+				</ul>
+			</div>
+			<div class="footer-col">
+				<h4>Destek Konuları</h4>
+				<ul>
+					<li><a href="#">s.s.s</a></li>
+					<li><a href="#">Hatalar</a></li>
+					<li><a href="#">Hata Bildir</a></li>
+					<li><a href="#">Sipariş Detayları</a></li>
+					<li><a href="#">Ödeme Seçenekleri</a></li>
+				</ul>
+			</div>
+			<div class="footer-col">
+				<h4>bize ulaşın</h4>
+				<ul>
+					<li><a href="#"><i class="fa-regular fa-envelope"></i> info@infossoft.com.tr</a></li>
+					<li><a href="#"><i class="fa-solid fa-phone"></i> 0242424242</a></li>
+					<li><a href="#"><i class="fa-brands fa-chrome"></i> ssoft.com.tr</a></li>
+					<li><a href="#">all version</a></li>
+				</ul>
+			</div>
+			<div class="footer-col">
+				<h4>bizi takip edin</h4>
+				<div class="social-links">
+					<a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+					<a href="#"><i class="fa-brands fa-x-twitter"></i></a>
+					<a href="#"><i class="fa-brands fa-instagram"></i></a>
+					<a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+				</div>
+			</div>
+		</div>
+	</footer>
+</body>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	line-height: 1.5;
+	font-family: 'Poppins', sans-serif;
+}
+
+.footer {
+    margin-top: 600px; /* Footer'ı sayfanın en altında tutar */
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 80px 0;
+}
+
+.container {
+	max-width: 1170px;
+	margin: auto;
+}
+
+.row {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+ul {
+	list-style: none;
+}
+
+.footer-col {
+	width: 25%;
+	padding: 0 15px;
+}
+
+.footer-col h4 {
+	font-size: 18px;
+	color: black;
+	margin-bottom: 35px;
+	font-weight: 500;
+	position: relative;
+}
+
+.footer-col h4::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	bottom: -10px;
+	background-color: #F6FB7A;
+	width: 50px;
+	height: 2px;
+}
+/* List item'ların altındaki çizgi */
+.footer-col ul li::after {
+    content: "";
+    display: block;
+    background-color: #B60071;
+    height: 1px;
+    width: 50%;
+    margin-top: 5px;
+}
+
+/* Son item için çizgi eklemeyi kaldır */
+.footer-col ul li:last-child::after {
+    display: none;
+}
+.footer-col ul li:not(:last-child) {
+	margin-bottom: 10px;
+}
+
+.footer-col ul li a {
+	color: #131842;
+	display: block;
+	font-size: 1rem;
+	font-weight: 300;
+	text-decoration: none;
+	transition: all 0.3s ease;
+}
+
+.footer-col ul li a:hover {
+	color: #134B70;
+	padding-left: 7px;
+}
+
+.footer-col .social-links a {
+	color: #FFF;
+	background-color: #201E43;
+	display: inline-block;
+	height: 40px;
+	width: 40px;
+	border-radius: 50%;
+	text-align: center;
+	margin: 0 10px 10px 0;
+	line-height: 40px;
+	transition: all 0.5s ease;
+}
+
+.footer-col .social-links a:hover {
+	color: #151515;
+	background-color: green;
+}
+
+@media(max-width: 767px) {
+	.footer-col {
+		width: 50%;
+		margin-bottom: 30px;
+	}
+}
+
+@media(max-width: 574px) {
+	.footer-col {
+		width: 100%;
+	}
+}
+</style>

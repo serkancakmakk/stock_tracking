@@ -8,7 +8,7 @@
             </div>
             <div class="mb-3">
                 <h4 class="accordion-button text-center">Cari Tanımla</h4>
-                <form action="{% url 'cari_olustur' %}" method="POST">
+                <form action="{% url 'cari_olustur' company.code %}" method="POST">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="seller_name" class="form-label">Cari Adı</label>

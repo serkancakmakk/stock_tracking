@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Fatura Listesi</h2>
+    
+    <form method="GET" class="mb-4">
+        <div class="form-group">
+            <label for="reasons">Çıkış Sebepleri:</label><br>
+            {% for reason in all_reasons %}
+                <div class="form-check form-check-inline">
+                    <input 
+                        class="form-check-input" 
+                        type="checkbox" 
+                        id="reason{{ reason.id }}" 
+                        name="reasons" 
+                        value="{{ reason.id }}"
+                        {% if reason.id in selected_reasons %}checked{% endif %}
+                    >
+                    <label class="form-check-label" for="reason{{ reason.id }}">{{ reason.name }}</label>
+                </div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrele</button>
+    </form>
+
+    <div class="row">
+        {% for bill in bills %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Fatura Numarası: {{ bill.number }}</h5>
+                    <p class="card-text">
+                        İşlem Tarihi: {{ bill.processing_time|date:"d F Y H:i" }}<br>
+                        Çıkış Sebebi: {{ bill.outgoing_reason.name }}<br>
+                        Çıkış Miktarı: {{ bill.quantity }}<br>
+                        Toplam Tutar: {{ bill.total_amount }}
+                    </p>
+                    <a href="{% url 'fatura_detay' bill_number=bill.number %}" class="btn btn-info">Detayları Görüntüle</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock content %}

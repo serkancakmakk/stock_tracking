@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="container mt-5">
+    <div class="text-center mb-4">
+      <div style="width:100%;height:0;padding-bottom:100%;position:relative;"><iframe src="https://giphy.com/embed/TIeTxUeyPeFI771jTF" width="100%" height="100%" style="position:absolute" frameBorder="0" class="giphy-embed" allowFullScreen></iframe></div><p><a href="https://giphy.com/gifs/TheHealthyPlace-delivery-healthyplace-findyourhealthyplace-TIeTxUeyPeFI771jTF">via GIPHY</a></p>
+    </div>
+    <h2 class="text-center mb-4">Kayıt Ol</h2>
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_username">Kullanıcı Adı</label>
+        {{ form.username|add_class:"form-control" }}
+      </div>
+      <div class="form-group">
+        <label for="id_password1">Şifre</label>
+        {{ form.password1|add_class:"form-control" }}
+      </div>
+      <div class="form-group">
+        <label for="id_password2">Şifre (Tekrar)</label>
+        {{ form.password2|add_class:"form-control" }}
+      </div>
+      <div class="form-group">
+        <label for="id_company">Şirket</label>
+        {{ form.company|add_class:"form-control" }}
+      </div>
+      <div class="form-group">
+        <label for="id_phone">Telefon</label>
+        {{ form.phone|add_class:"form-control" }}
+      </div>
+      <div class="form-group">
+        <label for="id_address">Adres</label>
+        {{ form.address|add_class:"form-control" }}
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Kayıt Ol</button>
+    </form>
+  </div>
+
+  <style>
+    .form-group label {
+      font-weight: bold;
+    }
+    .needs-validation input:invalid {
+      border-color: #dc3545;
+    }
+    .needs-validation input:valid {
+      border-color: #28a745;
+    }
+  </style>
+
+  <script>
+    (function() {
+      'use strict';
+      window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+          form.addEventListener('submit', function(event) {
+            if (form.checkValidity() === false) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+          }, false);
+        });
+      }, false);
+    })();
+  </script>
+{% endblock %}

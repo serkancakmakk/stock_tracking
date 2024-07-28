@@ -8,7 +8,7 @@
                     <h4>Çıkış Nedeni Oluştur</h4>
                 </div>
                 <div class="card-body">
-                    <form action="{% url 'cikis_nedeni_olustur' %}" method="POST">
+                    <form action="{% url 'cikis_nedeni_olustur' company.code %}" method="POST">
                         {% csrf_token %}
                         <div class="input-group mb-3">
                             <input type="text" name="outgoing_reason" class="form-control" placeholder="Çıkış Nedeni" required>

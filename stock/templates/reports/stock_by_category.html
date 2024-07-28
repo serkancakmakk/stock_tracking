@@ -6,12 +6,12 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Product Name</th>
-                    <th>Product Code</th>
-                    <th>Unit</th>
-                    <th>Critical Stock Level</th>
-                    <th>Current Stock</th>
-                    <th>Prevent Stock Negative</th>
+                    <th>Ürün Adı</th>
+                    <th>Ürün Kodu</th>
+                    <th>Birim</th>
+                    <th>Kritik Stok Seviyesi</th>
+                    <th>Mevcut Stock</th>
+                    <th>Negatif Stok Koruması</th>
                 </tr>
             </thead>
             <tbody>
@@ -22,7 +22,9 @@
                         <td>{{ product.unit.unit_name }}</td>
                         <td>{{ product.critical_stock_level }}</td>
                         <td>{{ product.current_stock }}</td>
-                        <td>{{ product.prevent_stock_negative }}</td>
+                        <td>
+                            {{ product.prevent_stock_negative|yesno:"Evet,Hayır" }}
+                        </td>                    
                     </tr>
                 {% endfor %}
             </tbody>

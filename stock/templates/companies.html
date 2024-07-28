@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Companies</h1>
+    
+    <!-- Switch Button -->
+    <div class="d-flex justify-content-center mb-3">
+        <label class="switch">
+            <input type="checkbox" id="viewSwitch">
+            <span class="slider round"></span>
+        </label>
+        <span class="ml-2" id="viewSwitchLabel">Switch to Table View</span>
+    </div>
+    
+    <!-- Card View -->
+    <div class="row" id="cardView">
+        {% for company in companies %}
+        <div class="col-md-4 mb-4">
+            <div class="card company-card">
+                <div class="card-body">
+                    <h5 class="card-title">Şirket Kodu: <span class="company-code">{{ company.code }}</span></h5>
+                    <p class="card-text"><strong>Ünvan:</strong> {{ company.name }}</p>
+                    <p class="card-text"><strong>Adres:</strong> {{ company.address }}</p>
+                    <p class="card-text"><strong>Telefon:</strong> {{ company.phone }}</p>
+                    <p class="card-text"><strong>Şehir:</strong> {{ company.city }}</p>
+                    <p class="card-text"><strong>Ülke:</strong> {{ company.country }}</p>
+                    <p class="card-text"><strong>Email:</strong> {{ company.email }}</p>
+                    <p class="card-text"><strong>Diğer Bilgiler:</strong> {{ company.other_info }}</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'dashboard' company.code %}" class="btn btn-primary">Edit</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center">No companies found.</p>
+        {% endfor %}
+    </div>
+    
+    <!-- Table View -->
+    <div class="table-responsive d-none" id="tableView">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Şirket Kodu</th>
+                    <th>Ünvan</th>
+                    <th>Adres</th>
+                    <th>Telefon</th>
+                    <th>Şehir</th>
+                    <th>Ülke</th>
+                    <th>Email</th>
+                    <th>Diğer Bilgiler</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for company in companies %}
+                <tr>
+                    <td>{{ company.code }}</td>
+                    <td>{{ company.name }}</td>
+                    <td>{{ company.address }}</td>
+                    <td>{{ company.phone }}</td>
+                    <td>{{ company.city }}</td>
+                    <td>{{ company.country }}</td>
+                    <td>{{ company.email }}</td>
+                    <td>{{ company.other_info }}</td>
+                    <td><a href="{% url 'dashboard' company.code %}" class="btn btn-primary">Edit</a></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">No companies found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Custom CSS for Switch and Card -->
+<style>
+    /* Switch Styles */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        border-radius: 50%;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+    }
+
+    input:checked + .slider {
+        background-color: #007bff;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    /* Card Styles */
+    .company-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        background: linear-gradient(to bottom right, #f9f9f9, #e0e0e0);
+    }
+
+    .company-card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .company-card .card-body {
+        padding: 15px;
+    }
+
+    .company-card .card-title {
+        color: #333;
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .company-card .company-code {
+        color: #28a745;
+        font-size: 1.2rem;
+    }
+
+    .company-card .card-footer {
+        background-color: #f1f1f1;
+        border-top: 1px solid #ddd;
+        text-align: right;
+    }
+
+    .company-card .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    .company-card .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #004085;
+    }
+
+    .card-text {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .company-card .card-body {
+            padding: 10px;
+        }
+    }
+</style>
+
+<!-- Custom JavaScript for Switch -->
+<script>
+    document.getElementById('viewSwitch').addEventListener('change', function() {
+        var cardView = document.getElementById('cardView');
+        var tableView = document.getElementById('tableView');
+        var switchLabel = document.getElementById('viewSwitchLabel');
+        if (this.checked) {
+            cardView.classList.add('d-none');
+            tableView.classList.remove('d-none');
+            switchLabel.textContent = 'Switch to Card View';
+        } else {
+            cardView.classList.remove('d-none');
+            tableView.classList.add('d-none');
+            switchLabel.textContent = 'Switch to Table View';
+        }
+    });
+</script>
+{% endblock content %}

@@ -21,7 +21,7 @@
         <div class="col-lg-6">
             <div class="mb-4">
                 
-                <form action="{% url 'urun_tanimla' %}" method="POST">
+                <form action="{% url 'urun_tanimla' company.code %}" method="POST">
                     {% csrf_token %}
                     <div class="input-group mb-3">
                         <input type="text" name="product_code" class="form-control" id="product_code">

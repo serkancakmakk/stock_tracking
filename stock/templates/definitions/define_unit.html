@@ -5,7 +5,7 @@
         <div class="col-lg-6">
 
             <h1>Birim Tanımla</h1>
-            <form action="{% url 'birim_tanimla' %}" method="POST">
+            <form action="{% url 'birim_tanimla' company.code %}" method="POST">
                 {% csrf_token %}
                 <input class="form-control"type="text"name="unit_name">
                 <button class="btn btn-outline-success mt-4" type="submit">Kaydet</button>

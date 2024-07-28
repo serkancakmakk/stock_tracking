@@ -2,7 +2,7 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <form action="{% url 'stok_hareketleri' %}" method="POST">
+        <form action="{% url 'stok_hareketleri' company.code %}" method="POST">
             {% csrf_token %}
         <select class="form-select" id="select2-product" name="selected_product" aria-label="Default select example">
             <option selected>Bir Ürün Seçiniz</option>

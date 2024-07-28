@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% block title %}Admin Alanı | {{company.name}}{% endblock title %}
 
 
 <div class="container mt-5">
@@ -33,13 +34,25 @@
         </div>
         <h1>{{outgoing_count}}</h1>
       </div>
-
       <div class="card {% if low_stock_count < 0 %}green-bg{% endif %}"id="card" >
         <div class="card-inner" >
           <h3>ALARM</h3>
           <span class="material-icons-outlined"><i data-bs-toggle="modal" data-bs-target="#lowStockModal" class="fa-solid fa-bell"></i></span>
         </div>
       </div>
+      {% if request.session.company_code == 1 %}
+      <div class="card"id="card-contract">
+        <div class="card-inner">
+          <h3>Anlaşma Bitiş Tarihi</h3>
+          <span class="material-icons-outlined">
+            <i class="fa-solid fa-calendar-days"></i>
+            </span>
+        </div>
+        <h1>{{ company.contract_end_date|date:"d F Y" }}</h1>
+
+      </div>
+      
+      {% endif %}
     </div>
   </main>
   <style>
@@ -86,7 +99,7 @@
         <td>{{seller.receivable}}</td>
         <td>{{seller.debt}}</td>
         <td>{{seller.balance}}</td></i>
-        <td><a class="fa-solid fa-truck-arrow-right"id="seller_detail" href="{% url 'satici_sayfasi' seller.id %}"></a></td>
+        <td><a class="fa-solid fa-truck-arrow-right"id="seller_detail" href="{% url 'satici_sayfasi' seller.id company.code %}"></a></td>
       </tr>
       {% endfor %}
     </tbody>
@@ -179,6 +192,7 @@
   #lowStock .card h6 {
       margin-bottom: 15px;
   }
+ 
 </style>
 
     <script>
@@ -358,7 +372,14 @@ const categoryCtx = document.getElementById('categoryChart').getContext('2d');
         padding: 25px;
         border-radius: 5px;
       }
-      
+      #card-contract {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        padding: 25px;
+        border-radius: 5px;
+        background-color: green;
+      }
       #card:first-child {
         background-color: #2962ff;
       }

@@ -10,7 +10,7 @@
                     <h3 class="card-title">Expiry Date Report</h3>
                 </div>
                 <div class="card-body">
-                    <form action="{% url 'vade_tarihi_gelen_faturalar' %}" method="POST" class="form-inline">
+                    <form action="{% url 'vade_tarihi_gelen_faturalar' company.code None %}" method="POST" class="form-inline">
                         {% csrf_token %}
                         <div class="form-group mx-sm-3 mb-2">
                             <label for="expiry_date" class="sr-only">Expiry Date</label>

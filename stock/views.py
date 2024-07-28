@@ -7,7 +7,7 @@ from django.utils import timezone
 from datetime import date
 
 from django.shortcuts import render
-from .models import Company, Parameter, Product, StockTransactions
+from .models import Company, Parameter, Product, StockTransactions, User
 from .tables import StockTransactionsTable
 from datetime import datetime, date
 
@@ -28,13 +28,16 @@ from .models import Bill, BillItem, Category, OutgoingBill, OutgoingReasons, Pro
 from .forms import CategoryForm, CompanyForm, ParameterForm, ProductForm, SellerForm, UnitForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils.crypto import get_random_string
-def companies(request):
-    if not request.session['company_code'] == 1:
-        messages.error(request, 'Bu Yetkiye Sahip Değilsiniz.')
-        return redirect('dashboard',request.session['company_code'])
-    request.session['company_code'] = 1
+def companies(request,company_code):
+    company = get_object_or_404(Company,code=company_code)
+    print(request.user.username)
+    if not request.user.username == 'ssoft' and request.user.company.code == 1:
+        messages.error(request, 'Bu Sayfaya Ulaşamazsınız.')
+        return redirect('dashboard', company.code)
     companies = Company.objects.all()
+
     context = {
+        'company':company,
         'companies':companies,
     }
     return render(request,'companies.html',context)
@@ -94,16 +97,17 @@ def create_company(request,code):
             # Şirket kodunu oluştur ve ayarla
             company.code = generate_unique_code()
             # Şirketi veritabanına kaydet
+            company.create_user = request.user
             company.save()
             
             # Şirket için varsayılan parametre oluştur
-            default_parameter = Parameter(
-                company=company,
-                fifo=True  # Varsayılan değer
-            )
-            default_parameter.save()
+            # default_parameter = Parameter(
+            #     company=company,
+            #     fifo=True  # Varsayılan değer
+            # )
+            # default_parameter.save()
             
-            return redirect('company_list')  # Başarılı bir şekilde kaydedildikten sonra yönlendirin
+            return redirect('firmalar')  # Başarılı bir şekilde kaydedildikten sonra yönlendirin
     else:
         form = CompanyForm()
     
@@ -159,6 +163,7 @@ def seller_detail(request, id ,code):
         seller_bills = paginator.page(paginator.num_pages)
 
     context = {
+        'company':company,
         'seller': seller,
         'seller_bills': seller_bills,
     }
@@ -172,10 +177,8 @@ def user_login(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         company_code = request.POST.get('company_code')
-
         company = get_object_or_404(Company, code=company_code)
         user = authenticate(request, username=username, password=password)
-
         if user is not None:
             print(user)
             # Kullanıcının bu firmaya ait olup olmadığını kontrol et
@@ -189,6 +192,9 @@ def user_login(request):
             messages.error(request, "Geçersiz kullanıcı adı veya şifre.")
     
     return render(request, 'login.html')
+from django.contrib.auth.decorators import login_required
+
+@login_required
 def dashboard(request, code):
     try:
         company = get_object_or_404(Company, code=code)
@@ -231,33 +237,64 @@ def dashboard(request, code):
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from .forms import CustomUserCreationForm
-def register(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            selected_company = form.cleaned_data.get('company').first()  # İlk şirketi al
-            if selected_company:
-                user.company_code = selected_company.code  # Şirket kodunu ayarla
-            user.save()
-            form.save_m2m()  # Many-to-many ilişkilerini kaydeder
-            login(request, user)
-            return redirect('home')  # Başarı sayfasına veya kullanıcının profil sayfasına yönlendirme yapabilirsiniz
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'definitions/define_user.html', {'form': form})
-def stock_by_category(request, code):
-    # Şirketi al
-    company = get_object_or_404(Company, code=code)
-    
-    # Kullanıcının kullanıcı adı, şirket kodu ve tag'i kontrol et
+
+def check_user_permissions(request, company):
     user_is_ssoft = request.user.username == 'ssoft'
     user_is_company_owner = request.user.company.code == company.code
     # user_is_support_tag = request.user.tag == 'Destek'
     user_company_code_is_one = request.user.company.code == 1
 
-    if not user_is_ssoft and not (user_is_company_owner or (user_company_code_is_one)): #user_is_support_tag eklennicek
-        messages.info(request, 'Kendi firmanıza yönlendirildiniz.')
+    # Master kullanıcı her zaman erişebilir
+    if user_is_ssoft:
+        return True
+
+    # Şirket kodu 1 olan kullanıcılar her firmada işlem yapabilir
+    if user_company_code_is_one:
+        return True
+    
+    # Kullanıcı kendi firmasına erişebilmeli
+    if user_is_company_owner:
+        return True
+
+    messages.info(request, 'Kendi firmanıza yönlendirildiniz.')
+    return False
+def register(request, code):
+    company = get_object_or_404(Company, code=code)
+    print('Bulunan Şirket:', company)
+    
+    if not check_user_permissions(request, company):
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.company = company
+            user.company_code = company.code
+            user.save()
+            form.save_m2m()  # Save many-to-many relationships
+            
+            login(request, user)
+            return redirect('home')  # Redirect to the home page or user profile
+        else:
+            # Render the form with errors if the form is invalid
+            return render(request, 'definitions/define_user.html', {
+                'form': form,
+                'company': company,
+            })
+    else:
+        form = CustomUserCreationForm()  # Create a new form instance for GET requests
+    
+    return render(request, 'definitions/define_user.html', {
+        'form': form,
+        'company': company,
+    })
+def stock_by_category(request, code):
+    # Şirketi al
+    company = get_object_or_404(Company, code=code)
+    
+    # Kullanıcı yetkilerini kontrol et
+    if not check_user_permissions(request, company):
         return redirect('dashboard', request.user.company.code)
     
     # Kategoriler ve ürünleri al
@@ -271,6 +308,28 @@ def stock_by_category(request, code):
     }
     
     return render(request, 'reports/stock_by_category.html', context)
+
+def change_unit_status(request, unit_id):
+    if request.method != "POST":
+        messages.add_message(request, messages.INFO, "İşlem Gerçekleşmedi")
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    unit = get_object_or_404(Unit, id=unit_id)
+
+    # Unit'in ait olduğu şirketi al
+    company = unit.company
+
+    # Kullanıcı yetkilerini kontrol et
+    if not check_user_permissions(request, company):
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    # Unit'in aktiflik durumunu değiştir
+    unit.is_active = not unit.is_active
+    unit.save()
+    
+    messages.add_message(request, messages.SUCCESS, "İşlem başarıyla gerçekleştirildi.")
+    
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 import openpyxl
 from django.http import HttpResponse
 from django.urls import path, reverse
@@ -305,31 +364,7 @@ def download_excel(request):
     wb.save(response)
 
     return response
-def change_unit_status(request, unit_id):
-    if request.method != "POST":
-        messages.add_message(request, messages.INFO, "İşlem Gerçekleşmedi")
-        return redirect(request.META.get('HTTP_REFERER', '/'))
 
-    unit = get_object_or_404(Unit, id=unit_id)
-
-    # Kullanıcının ait olduğu şirketi al
-    user_company = request.user.company
-
-    # Unit'in ait olduğu şirketi kontrol et
-    if unit.company != user_company:
-        messages.add_message(request, messages.ERROR, "Bu birime işlem yapma yetkiniz yok.")
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-
-    # Unit'in aktiflik durumunu değiştir
-    if unit.is_active:
-        unit.is_active = False
-    else:
-        unit.is_active = True
-    
-    unit.save()
-    messages.add_message(request, messages.SUCCESS, "İşlem başarıyla gerçekleştirildi.")
-    
-    return redirect(request.META.get('HTTP_REFERER', '/'))
 def import_excel(request):
     categories = Category.objects.all()
     context = {
@@ -345,7 +380,7 @@ def create_unit_page(request,code):
         'units':units,
     }
     return render(request,'definitions/define_unit.html',context)
-def create_unit(request,code):
+def create_unit(request, code):
     if request.method != "POST":
         messages.info(request, "İşlem Gerçekleşmedi")
         return redirect(request.META.get('HTTP_REFERER', '/'))
@@ -355,12 +390,11 @@ def create_unit(request,code):
         messages.info(request, "Birim Adı Boş Olamaz")
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
-    
     company = get_object_or_404(Company, code=code)
 
-    if request.user.company != company:
-        messages.error(request, "Bu şirkette işlem yapamazsınız")
-        return redirect(request.META.get('HTTP_REFERER', '/'))
+    # Kullanıcı yetkilerini kontrol et
+    if not check_user_permissions(request, company):
+        return redirect('dashboard', request.user.company.code)
 
     if Unit.objects.filter(unit_name=unit_name, company=company).exists():
         messages.info(request, "Birim Adı Zaten Kayıtlı")
@@ -1138,3 +1172,7 @@ def process_stock_outgoing(request,code):
         print(e)
 
     return redirect(request.META.get('HTTP_REFERER', '/'))
+from django.contrib.auth import logout as auth_logout
+def logout(request):
+    auth_logout(request)
+    return redirect('login')

@@ -152,7 +152,7 @@
 
 <div class="container mt-5">
     <h2 class="mb-4 text-center font-kanit">Fatura Oluştur & Düzenle</h2>
-    <form class="form-container" method="post" action="{% url 'fatura_olustur' %}">
+    <form class="form-container" method="post" action="{% url 'fatura_olustur' company.code %}">
         {% csrf_token %}
         <div class="row">
             <div class="col-12 mb-3 form-group">

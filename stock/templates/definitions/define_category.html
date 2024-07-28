@@ -20,7 +20,7 @@
         <div class="col-lg-4">
             <div class="mb-3">
                 <h4 class="accordion-button">Kategori Tanımla</h4>
-                <form action="{% url 'kategori_olustur' %}" method="POST">
+                <form action="{% url 'kategori_olustur' company.code %}" method="POST">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="category_name" class="form-label">Kategori Adı</label>

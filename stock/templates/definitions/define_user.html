@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% block title %}Kullanıcı Ekle | {{company.name}}{% endblock title %}
+  <style>
+    .container {
+      max-width: 600px;
+      margin: auto;
+    }
+    .form-floating {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+    .form-floating input {
+      border-radius: 10px;
+      border: 1px solid #ced4da;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      transition: all 0.3s ease;
+    }
+    .form-floating label {
+      position: absolute;
+      top: 0;
+      left: 0;
+      padding: 1rem;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      color: #6c757d;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    .form-floating input:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
+    }
+    .form-floating input:focus + label,
+    .form-floating input:not(:placeholder-shown) + label {
+      top: -1rem;
+      left: 90%;
+      font-size: 1.75rem;
+      color: green !important;
+    }
+    .btn-primary {
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+  </style>
+
+  <div class="container mt-5">
+    {% if form.errors %}
+    <div class="alert alert-danger" role="alert">
+      <ul>
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li>{{ field.label }}: {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+    <div class="container p-4" style="background: rgba(255, 255, 255, 0.9); border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
+      <h2 class="text-center mb-4">Kayıt Ol</h2>
+      <form method="POST" action="{% url 'kullanici_ekle' company.code %}" class="needs-validation" novalidate>
+        {% csrf_token %}
+        <div class="form-floating mb-3">
+          <input type="text" name="username" id="username" class="form-control" placeholder="Kullanıcı Adı" required>
+          <label for="username">Kullanıcı Adı</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="password" name="password1" id="password1" class="form-control" placeholder="Şifre" required>
+          <label for="password1">Şifre</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="password" name="password2" id="password2" class="form-control" placeholder="Şifre (Tekrar)" required>
+          <label for="password2">Şifre (Tekrar)</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="text" name="phone" id="phone" class="form-control" placeholder="Telefon" required>
+          <label for="phone">Telefon</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="text" name="address" id="address" class="form-control" placeholder="Adres" required>
+          <label for="address">Adres</label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Kayıt Ol</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

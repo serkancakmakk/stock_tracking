@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-w!)@mhy)u_^ib#n(0amk56d$a%4(m=^&=u$3t0p%^1kx!x8#ty'
-
+LOGIN_URL = 'login'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -58,6 +58,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join("C:/Users/Serkan/Desktop/stock_trackings/stock_tracking/static"),
 ]
+AUTH_USER_MODEL = 'stock.User'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -65,6 +66,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'stock.context_processors.today_date',
                 'stock.context_processors.low_stock_count',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
