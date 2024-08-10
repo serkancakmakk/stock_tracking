@@ -7,7 +7,7 @@ from django.utils import timezone
 from datetime import date
 
 from django.shortcuts import render
-from .models import Company, Parameter, Product, StockTransactions, User
+from .models import Company, Inventory, Parameter, Product, StockTransactions, User
 from .tables import StockTransactionsTable
 from datetime import datetime, date
 
@@ -25,7 +25,7 @@ from datetime import datetime, date
 
 from .models import Bill, BillItem, Category, OutgoingBill, OutgoingReasons, Product, Seller, StockTransactions, Unit
 
-from .forms import CategoryForm, CompanyForm, ParameterForm, ProductForm, SellerForm, UnitForm
+from .forms import CategoryForm, CompanyForm, ParameterForm, ProductForm, SellerForm, UnitForm, UserEditForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils.crypto import get_random_string
 def companies(request,company_code):
@@ -47,7 +47,9 @@ def generate_unique_code():
 def parameter(request, code):
     company = get_object_or_404(Company, code=code)
     parameters = Parameter.objects.filter(company=company)
-
+    has_permission, redirect_response = check_user_permissions(request, company)
+    if not has_permission:
+        return redirect_response
     # İlk parametreyi al veya yeni bir tane oluştur
     if parameters.exists():
         parameter = parameters.first()
@@ -80,6 +82,27 @@ def edit_parameter(request, company_code, parameter_id):
         form = ParameterForm(instance=parameter)
 
     return render(request, 'edit_parameter.html', {'company': company, 'form': form})
+def master_create_company(request):
+        # Belirtilen değerlerle yeni bir Company kaydı oluştur
+        user = User.objects.first()  # Burada, ID'si 1 olan kullanıcıyı alıyoruz, kendi kullanıcı seçiminize göre ayarlayın
+        contract_end_date = timezone.now() + timezone.timedelta(days=365)
+
+        Company.objects.create(
+            code=1,
+            name='Company 1',
+            owner='Owner 1',
+            address='Address 1',
+            phone='111-111-1111',
+            city='City 1',
+            country='Country 1',
+            email='email1@example.com',
+            other_info='Other info 1',
+            contract_end_date=contract_end_date,
+            create_user=user
+        )
+        return redirect('success_url')  # Başarı URL'si kendi URL'nize göre ayarlayın
+
+
 def create_company(request,code):
     company = get_object_or_404(Company,code=code)
     if not company.code == 1:
@@ -172,36 +195,81 @@ def seller_detail(request, id ,code):
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import AuthenticationForm
-def user_login(request):
-    if request.method == "POST":
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        company_code = request.POST.get('company_code')
-        company = get_object_or_404(Company, code=company_code)
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            print(user)
-            # Kullanıcının bu firmaya ait olup olmadığını kontrol et
-            if user.company == company or (user.company.code == 1 and user.username == "ssoft"):
-                login(request, user)
-                request.session['company_code'] = company.code
-                return redirect('dashboard', request.session['company_code'])  # Girişten sonra yönlendirilmek istenen sayfa
-            else:
-                messages.error(request, "Bu kullanıcı bu firmaya ait değil.")
-        else:
-            messages.error(request, "Geçersiz kullanıcı adı veya şifre.")
+def user_edit(request, code, uuid4):
+    company = get_object_or_404(Company, code=code)
+    has_permission, redirect_response = check_user_permissions(request, company)
     
-    return render(request, 'login.html')
+    if not has_permission:
+        return redirect_response
+
+    user = get_object_or_404(User, unique_id=uuid4)
+    if not request.method == 'POST':
+        form = UserEditForm(instance=user)
+    form = UserEditForm(request.POST, instance=user)
+    
+    if form.is_valid():
+        user = form.save(commit=False)
+        user.is_active = 'is_active' in request.POST
+        user.save()
+        # Başarılı bir şekilde kaydedildiğinde yönlendirme ekleyin
+        messages.success(request,'Güncelleme Başarılı')
+        return redirect(request.META.get('HTTP_REFERER', '/'))  # success_url'yi kendi başarılı yönlendirme URL'nizle değiştirin
+    print(form.errors)
+    return render(request, 'user_page/user_detail.html', {'form': form, 'company': company})
+def user_login(request):
+    if request.method != "POST":
+        return render(request, 'login.html')
+
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    company_code = request.POST.get('company_code')
+    company = get_object_or_404(Company, code=company_code)
+    
+    try:
+        user = User.objects.get(username=username, company=company)
+    except User.DoesNotExist:
+        messages.error(request, "Geçersiz kullanıcı adı.")
+        return render(request, 'login.html')
+    
+    if not user.check_password(password):
+        messages.error(request, "Geçersiz şifre.")
+        return render(request, 'login.html')
+    
+    if user.company != company and not (user.company.code == 1 and user.username == "ssoft"):
+        messages.error(request, "Bu kullanıcı bu firmaya ait değil.")
+        return render(request, 'login.html')
+    
+    # Kullanıcıya ait yetkilerin olup olmadığını kontrol et ve yoksa oluştur
+    permission, created = Permission.objects.get_or_create(user=user)
+    if created:
+        # Yeni oluşturulan yetkiler için varsayılan değerler atayabilirsiniz
+        permission.add_company = False
+        permission.add_user = False
+        permission.save()
+    
+    login(request, user)
+    request.session['company_code'] = company.code
+    return redirect('dashboard', request.session['company_code'])  # Girişten sonra yönlendirilmek istenen sayfa
+def user_detail(request,code,uuid4):
+    company = get_object_or_404(Company,code=code)
+    user =  get_object_or_404(User,unique_id=uuid4)
+    context = {
+        'company':company,
+        'user':user,
+    }
+    return render(request,'user_page/user_detail.html',context)
 from django.contrib.auth.decorators import login_required
 
-@login_required
+# @login_required
 def dashboard(request, code):
-    try:
-        company = get_object_or_404(Company, code=code)
-    except:
-        messages.error(request, 'Böyle bir şirket yok')
-        return redirect('dashboard', request.session['company_code'])  # Girişten sonra yönlendirilmek istenen sayfa
-
+    company = get_object_or_404(Company, code=code)
+    
+    # kullanıcı izinleri kontrol et
+    has_permission, redirect_response = check_user_permissions(request, company)
+    if not has_permission:
+        return redirect_response
+    
+    # Fetch dashboard data
     products = Product.objects.filter(company=company)
     products_count = products.count()
     sellers = Seller.objects.filter(company=company)
@@ -233,10 +301,16 @@ def dashboard(request, code):
         'category_counts': category_counts,
     }
 
+    # If the company code is 1, include all companies
+    if company.code == 1:
+        companies = Company.objects.all()
+        context['companies'] = companies
+
     return render(request, 'dashboard.html', context)
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from .forms import CustomUserCreationForm
+from .models import Permission
 
 def check_user_permissions(request, company):
     user_is_ssoft = request.user.username == 'ssoft'
@@ -246,49 +320,58 @@ def check_user_permissions(request, company):
 
     # Master kullanıcı her zaman erişebilir
     if user_is_ssoft:
-        return True
+        return True, None
 
     # Şirket kodu 1 olan kullanıcılar her firmada işlem yapabilir
     if user_company_code_is_one:
-        return True
+        return True, None
     
     # Kullanıcı kendi firmasına erişebilmeli
     if user_is_company_owner:
-        return True
+        return True, None
 
+    # Kullanıcı yetkili değilse kendi dashboardına yönlendir
     messages.info(request, 'Kendi firmanıza yönlendirildiniz.')
-    return False
+    return False, redirect('dashboard', request.user.company.code)
 def register(request, code):
     company = get_object_or_404(Company, code=code)
+    users = User.objects.filter(company=company)
     print('Bulunan Şirket:', company)
     
-    if not check_user_permissions(request, company):
-        return redirect(request.META.get('HTTP_REFERER', '/'))
+    # Kullanıcı izinlerini kontrol et
+    has_permission, redirect_response = check_user_permissions(request, company)
+    if not has_permission:
+        return redirect_response
     
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.company = company
-            user.company_code = company.code
-            user.save()
-            form.save_m2m()  # Save many-to-many relationships
-            
-            login(request, user)
-            return redirect('home')  # Redirect to the home page or user profile
-        else:
-            # Render the form with errors if the form is invalid
-            return render(request, 'definitions/define_user.html', {
-                'form': form,
-                'company': company,
-            })
-    else:
-        form = CustomUserCreationForm()  # Create a new form instance for GET requests
+    if not request.method == 'POST':
+        form = CustomUserCreationForm(company=company)
+        context = {
+            'form': form,
+            'users': users,
+            'company': company,
+        }
+        return render(request, 'definitions/define_user.html', context)
+
+    form = CustomUserCreationForm(request.POST, company=company)
+    if form.is_valid():
+        username = form.cleaned_data.get('username')
+        
+        # Aynı kullanıcı adıyla bu şirkette kullanıcı olup olmadığını kontrol et
+        if User.objects.filter(username=username, company=company).exists():
+            messages.error(request, "Bu kullanıcı adı bu şirkette zaten mevcut.")
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+        
+        user = form.save(commit=False)
+        user.company = company
+        user.company_code = company.code
+        user.save()
+        Permission.objects.create(user=user) # yetki modeline kullanıcıyı ekle
+        form.save_m2m()  # Many-to-many ilişkilerini kaydet
+        
+        login(request, user)
+        return redirect('home')  # Ana sayfaya yönlendir
     
-    return render(request, 'definitions/define_user.html', {
-        'form': form,
-        'company': company,
-    })
+    
 def stock_by_category(request, code):
     # Şirketi al
     company = get_object_or_404(Company, code=code)
@@ -400,7 +483,7 @@ def create_unit(request, code):
         messages.info(request, "Birim Adı Zaten Kayıtlı")
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
-    Unit.objects.create(company=company, unit_name=unit_name)
+    Unit.objects.create(company=company, unit_name=unit_name,is_create=request.user)
     messages.success(request, "Kayıt Gerçekleşti")
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
@@ -452,7 +535,8 @@ def create_outgoing_reasons(request, code):
     # Yeni çıkış nedenini oluştur
     cikis_nedeni = OutgoingReasons.objects.create(
         company=company,
-        name=outgoing_reasons_name
+        name=outgoing_reasons_name,
+        is_create=request.user
     )
     
     messages.success(request, f"{cikis_nedeni.name} adlı stok çıkış nedeni oluşturuldu")
@@ -481,7 +565,8 @@ def create_seller(request, code):
     Seller.objects.create(
         company=company,
         name=seller_name,
-        address=seller_address
+        address=seller_address,
+        is_create = request.user
     )
     
     messages.success(request, "Cari Oluşturuldu")
@@ -531,7 +616,7 @@ def create_category(request, code):
         messages.warning(request, "Bu isimde bir kategori zaten mevcut")
         return redirect(request.META.get('HTTP_REFERER', '/'))
     
-    Category.objects.create(company=company, name=category_name)
+    Category.objects.create(company=company, name=category_name,is_create=request.user)
     messages.success(request, "Kategori Oluşturuldu")
     
     return redirect(request.META.get('HTTP_REFERER', '/'))
@@ -549,26 +634,30 @@ def product_add_page(request,code):
     }
     
     return render(request, 'definitions/define_product.html', context)
-def create_product(request,code):
-
-    if not request.method == "POST":
+def create_product(request, code):
+    if request.method != "POST":
         messages.add_message(request, messages.ERROR, "Ürün Birimi Boş Geçilemez.")
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    products = Product.objects.all()
-    for product in products:
-        print(product)
+
     product_name = request.POST.get("product_name")
     product_code = request.POST.get("product_code")
     product_unit = request.POST.get("product_unit")
     product_category = request.POST.get("product_category")
-    product_is_critical = request.POST.get("critical_product") == "on"
-    critical_stock_level = request.POST.get("critical_stock_level")
+    product_is_inventory = request.POST.get("is_inventory") == "on"
+    barcode_1 = request.POST.get("barcode_1")
+    barcode_2 = request.POST.get("barcode_2")
+    barcode_3 = request.POST.get("barcode_3")
+    serial_number = request.POST.get("serial_number")
     prevent_stock_negative = request.POST.get("prevent_stock_negative") == "on"
+
     print(f'Product Name: {product_name}')
     print(f'Product Code: {product_code}')
     print(f'Product Unit: {product_unit}')
-    print(f'Critical Product: {product_is_critical}')
-    print(f'Critical Stock Level: {critical_stock_level}')
+    print(f'Is Inventory: {product_is_inventory}')
+    print(f'Barcode 1: {barcode_1}')
+    print(f'Barcode 2: {barcode_2}')
+    print(f'Barcode 3: {barcode_3}')
+    print(f'Serial Number: {serial_number}')
     print(f'Prevent Stock Negative: {prevent_stock_negative}')
     print(f'Product Category: {product_category}')
 
@@ -578,11 +667,8 @@ def create_product(request,code):
 
     try:
         unit = get_object_or_404(Unit, id=product_unit)
-    except ValueError:
-        messages.add_message(request, messages.ERROR, "Geçersiz Ürün Birimi ID.")
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-    except Unit.DoesNotExist:
-        messages.add_message(request, messages.ERROR, "Ürün Birimi Bulunamadı.")
+    except (ValueError, Unit.DoesNotExist):
+        messages.add_message(request, messages.ERROR, "Geçersiz veya Bulunamayan Ürün Birimi.")
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
     print('UNIT:', unit)
@@ -592,19 +678,31 @@ def create_product(request,code):
     except Category.DoesNotExist:
         messages.add_message(request, messages.ERROR, "Kategori Bulunamadı.")
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    if critical_stock_level == '':
-        critical_stock_level = 0
-    company = get_object_or_404(Company,code=code)
-    Product.objects.create(
+
+    company = get_object_or_404(Company, code=code)
+
+    new_product = Product.objects.create(
         company=company,
         name=product_name,
         code=product_code,
         unit=unit,
         category=category,
-        is_critical=product_is_critical,
-        critical_stock_level=critical_stock_level,
+        is_inventory=product_is_inventory,
         prevent_stock_negative=prevent_stock_negative,
+        is_create=request.user
     )
+
+    if product_is_inventory:
+        if barcode_1:
+            new_product.barcode_1 = barcode_1
+        if barcode_2:
+            new_product.barcode_2 = barcode_2
+        if barcode_3:
+            new_product.barcode_3 = barcode_3
+        if serial_number:
+            new_product.serial_number = serial_number
+
+    new_product.save()
 
     messages.add_message(request, messages.SUCCESS, "Ürün Kaydedildi")
     return redirect(request.META.get('HTTP_REFERER', '/'))
@@ -616,21 +714,21 @@ from django.contrib import messages
 from django.utils import timezone
 from .models import Seller, Product, Bill, BillItem, StockTransactions
 from decimal import Decimal, ROUND_DOWN
-def add_bill(request,code):
-    company = get_object_or_404(Company,code=code)
-    print('Bulunan Şirket')
+def add_bill(request, code):
+    company = get_object_or_404(Company, code=code)
     sellers = Seller.objects.all()
     products = Product.objects.all()
 
     if request.method != "POST":
         context = {
-            'company':company,
+            'company': company,
             'products': products,
             'sellers': sellers,
         }
         return render(request, 'add_bill.html', context)
 
     try:
+        # POST verilerini al
         bill_number = request.POST.get("bill_number")
         bill_expiry_date = request.POST.get("bill_expiry_date")
         bill_seller_id = request.POST.get("bill_seller")
@@ -641,7 +739,10 @@ def add_bill(request,code):
         bill_item_discount_2 = request.POST.get("bill_item_discount_2", '0').replace(',', '.')
         bill_item_discount_3 = request.POST.get("bill_item_discount_3", '0').replace(',', '.')
         bill_item_vat = request.POST.get("bill_item_vat", '0').replace(',', '.')
-
+        serial_number = request.POST.get("serial_number", None)
+        barcode_1 = request.POST.get("barcode_1", None)
+        barcode_2 = request.POST.get("barcode_2", None)
+        barcode_3 = request.POST.get("barcode_3", None)
         # Gerekli alanların kontrolü
         if not bill_number:
             raise ValueError("Fatura numarası gerekli.")
@@ -671,8 +772,20 @@ def add_bill(request,code):
             company=company,
             number=bill_number,
             expiry_date=bill_expiry_date,
-            seller=bill_seller
+            seller=bill_seller,
+            is_create=request.user,
+            total_amount=Decimal('0.00')  # Initialize to zero
         )
+
+        # Toplam tutarı hesapla
+        total_amount = bill_item_quantity * bill_item_price
+        discounted_amount = total_amount
+        for discount in [bill_item_discount_1, bill_item_discount_2, bill_item_discount_3]:
+            discounted_amount -= discounted_amount * (discount / Decimal(100))
+
+        # KDV'yi hesapla
+        vat_amount = discounted_amount * (bill_item_vat / Decimal(100))
+        row_total = discounted_amount + vat_amount
 
         # Fatura kalemi oluştur
         bill_item = BillItem.objects.create(
@@ -684,19 +797,27 @@ def add_bill(request,code):
             discount_1=bill_item_discount_1,
             discount_2=bill_item_discount_2,
             discount_3=bill_item_discount_3,
-            vat=bill_item_vat
+            vat=bill_item_vat,
+            row_total=row_total.quantize(Decimal('0.00')),  # Ensure proper decimal format
+            is_create=request.user,
         )
-
-        # İndirimler ve KDV ile toplam tutarı hesapla
-        total_amount = bill_item_quantity * bill_item_price
-        final_price = total_amount
-        for discount in [bill_item_discount_1, bill_item_discount_2, bill_item_discount_3]:
-            final_price -= final_price * (discount / Decimal(100))
-
+        
         # Faturaya toplam tutarı kaydet
-        bill.total_amount = final_price.quantize(Decimal('0.000'), rounding=ROUND_DOWN)
+        bill.total_amount += row_total  # Ensure total_amount is initialized as Decimal
         bill.save()
+        Inventory.objects.create(
+                company=company,
+                bill=bill,
+                product = product,
+                name = product.name,
+                code = product.code,
+                unit = product.unit,
+                serial_number = serial_number,
+                barcode_1=barcode_1,
+                barcode_2=barcode_2,
+                barcode_3=barcode_3
 
+            )
         # Ürünün mevcut stokunu güncelle
         product.current_stock += bill_item_quantity
         product.save()
@@ -706,6 +827,7 @@ def add_bill(request,code):
             product=product,
             company=company,
             incoming_bill=bill,
+            is_create=request.user,
             defaults={
                 'incoming_quantity': bill_item_quantity,
                 'processing_time': timezone.now(),
@@ -717,11 +839,13 @@ def add_bill(request,code):
             stock.save()
 
         # Satıcının alacaklısını güncelle
-        bill_seller.receivable = Decimal(bill_seller.receivable or '0') + bill.total_amount
+        if bill_seller.receivable is None:
+            bill_seller.receivable = Decimal('0.00')
+        bill_seller.receivable += bill.total_amount
         bill_seller.save()
 
         messages.success(request, "Fatura ve Kalemler Başarıyla Oluşturuldu")
-        return redirect('fatura_detay', bill_number=bill.number)
+        return redirect('fatura_detay', code=company.code, bill_number=bill.number)
 
     except (Seller.DoesNotExist, Product.DoesNotExist):
         messages.error(request, "Fatura Oluşturulamadı. Satıcı veya Ürün bulunamadı.")
@@ -731,8 +855,14 @@ def add_bill(request,code):
         messages.error(request, str(e))
     except Exception as e:
         messages.error(request, f"Fatura Oluşturulamadı. Hata: {str(e)}")
-
-
+    
+    # Hata durumunda aynı formu tekrar göster
+    context = {
+        'company': company,
+        'products': products,
+        'sellers': sellers,
+    }
+    return render(request, 'add_bill.html', context)
         
 from itertools import groupby
 from operator import itemgetter
@@ -761,17 +891,19 @@ def product_info(request,code):
         'products':products,
     }
     return render(request,'reports/product_info.html',context)
-def bill_details(request, bill_number):
-    products = Product.objects.all()
+def bill_details(request,code, bill_number):
+    company = get_object_or_404(Company,code=code)
+    products = Product.objects.filter(company=company)
     
     try:
-        bill = get_object_or_404(Bill, number=bill_number)
-        bill_items = BillItem.objects.filter(bill=bill)
+        bill = get_object_or_404(Bill,company=company, number=bill_number)
+        bill_items = BillItem.objects.filter(company=company,bill=bill)
     except Http404:
-        stock_transaction = get_object_or_404(OutgoingBill, number=bill_number)
+        stock_transaction = get_object_or_404(OutgoingBill,company=company, number=bill_number)
         bill_items = None  
         
         context = {
+            'company':company,
             'products': products,
             'stock_transaction': stock_transaction,
             'bill_items': bill_items,
@@ -779,6 +911,7 @@ def bill_details(request, bill_number):
         return render(request, 'bill_details.html', context)
 
     context = {
+        'company':company,
         'products': products,
         'bill': bill,
         'bill_items': bill_items,
@@ -850,8 +983,10 @@ def add_billitem(request, bill_id):
         return JsonResponse({'error': 'POST method expected.'}, status=400)
 
     bill = get_object_or_404(Bill, id=bill_id)
+    bill_company = bill.company
     if bill.is_paid:
-            return JsonResponse({'error': 'Bu fatura ödenmiş ve yeni kalem eklenemez!'}, status=400)
+        return JsonResponse({'error': 'Bu fatura ödenmiş ve yeni kalem eklenemez!'}, status=400)
+    
     bill_item_product_id = request.POST.get("bill_item_product")
     product = get_object_or_404(Product, id=bill_item_product_id)
 
@@ -862,31 +997,64 @@ def add_billitem(request, bill_id):
         bill_item_discount_2 = Decimal(request.POST.get("bill_item_discount_2", '0').replace(',', '.'))
         bill_item_discount_3 = Decimal(request.POST.get("bill_item_discount_3", '0').replace(',', '.'))
         bill_item_vat = Decimal(request.POST.get("bill_item_vat", '0').replace(',', '.'))
+
+        serial_number = request.POST.get("serial_number", None)
+        barcode_1 = request.POST.get("barcode_1", None)
+        barcode_2 = request.POST.get("barcode_2", None)
+        barcode_3 = request.POST.get("barcode_3", None)
+
     except InvalidOperation:
         return JsonResponse({'error': 'Invalid number format.'}, status=400)
 
     try:
         with transaction.atomic():
+            # Calculate row total (apply discounts first)
             item_total = bill_item_quantity * bill_item_price
+            discounted_amount = item_total
 
-            # BillItem oluştur
+            for discount in [bill_item_discount_1, bill_item_discount_2, bill_item_discount_3]:
+                discounted_amount -= discounted_amount * (discount / Decimal(100))
+            
+            # Calculate VAT
+            vat_amount = discounted_amount * (bill_item_vat / Decimal(100))
+            row_total = discounted_amount + vat_amount
+
+            # Create BillItem
             bill_item = BillItem.objects.create(
                 bill=bill,
+                company=bill_company,
                 product=product,
                 quantity=bill_item_quantity,
                 price=bill_item_price,
                 discount_1=bill_item_discount_1,
                 discount_2=bill_item_discount_2,
                 discount_3=bill_item_discount_3,
-                vat=bill_item_vat
+                vat=bill_item_vat,
+                is_create=request.user,
+                row_total=row_total.quantize(Decimal('0.00')),  # Ensure proper decimal format
             )
 
-            # Product'un mevcut stoğunu güncelle
+            # Update Product's current stock
             Product.objects.filter(id=product.id).update(current_stock=F('current_stock') + bill_item_quantity)
 
-            # Fatura toplam tutarını güncelle
-            bill.total_amount += item_total
+            # Update Bill's total amount
+            bill.total_amount += row_total
             bill.save()
+
+            # Create Inventory item if serial number is provided
+            if serial_number:
+                Inventory.objects.create(
+                    company=bill_company,
+                    bill=bill,
+                    product=product,
+                    name=product.name,
+                    code=product.code,
+                    unit=product.unit,
+                    serial_number=serial_number,
+                    barcode_1=barcode_1,
+                    barcode_2=barcode_2,
+                    barcode_3=barcode_3
+                )
 
         return JsonResponse({
             "bill_item_product": product.name,
@@ -896,7 +1064,9 @@ def add_billitem(request, bill_id):
             "bill_item_discount_2": f"{bill_item_discount_2:.2f}",
             "bill_item_discount_3": f"{bill_item_discount_3:.2f}",
             "bill_item_vat": f"{bill_item_vat:.2f}",
+            "row_total": f"{row_total:.2f}",
             "new_total_amount": f"{bill.total_amount:.2f}",
+            "is_inventory": serial_number is not None
         })
 
     except IntegrityError as e:
@@ -904,16 +1074,85 @@ def add_billitem(request, bill_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 from datetime import datetime
+def inventory(request,code):
+    company = get_object_or_404(Company,code=code)
+    outgoing_reasons = OutgoingReasons.objects.filter(company=company)
+    inventories = Inventory.objects.filter(company=company)
+    context = {
+        'outgoing_reasons':outgoing_reasons,
+        'company':company,
+        'inventories':inventories,
+    }
+    return render(request,'inventory.html',context)
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from django.utils import timezone
+from .models import Company, OutgoingReasons, Inventory, OutgoingBill, StockTransactions
+
+def outgoing_inventory(request, code):
+    company = get_object_or_404(Company, code=code)
+    serial_number = request.POST.get('serial_number')
+    outgoing_reason_id = request.POST.get('outgoing_reason')
+    
+    # Outgoing reason'ı al
+    outgoing_reason = OutgoingReasons.objects.filter(company=company, id=outgoing_reason_id).first()
+    if not outgoing_reason:
+        messages.info(request, 'Geçerli bir çıkış nedeni bulunamadı.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    # Inventory item'ı al
+    inventory_item = Inventory.objects.filter(company=company, serial_number=serial_number).first()
+    if not inventory_item:
+        messages.info(request, 'Seri numarası eşleşen ürün yok.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    # inventory_outgoing_bill değerini oluştur
+    inventory_outgoing_bill_number = request.POST.get('inventory_outgoing_bill_number', '')
+    if not inventory_outgoing_bill_number:
+        inventory_outgoing_bill_number = f"ENV-{company.code}-{serial_number}"
+
+    try:
+        # Çıkış faturası oluştur
+        outgoing_bill = OutgoingBill.objects.create(
+            company=company,
+            number=inventory_outgoing_bill_number,
+            product=inventory_item.product,
+            quantity=1,
+            processing_time=timezone.now(),
+            outgoing_reason=outgoing_reason,
+            is_create = request.user
+        )
+
+        # Stok işlemi oluştur
+        StockTransactions.objects.create(
+            company=company,
+            product=inventory_item.product,
+            outgoing_bill=outgoing_bill,
+            outgoing_quantity=1,
+            incoming_quantity=0,
+            current_stock =0, 
+            outgoing_reasons=outgoing_reason,
+            is_create = request.user
+        )
+        inventory_item.is_released=True
+        inventory_item.save()
+        messages.success(request, 'Ürün başarıyla çıkış yapıldı.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    except Exception as e:
+        messages.error(request, f'Bir hata oluştu: {str(e)}')
+        print(e)
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
 def stock_difference_report(request,code):
     # Tüm ürünleri al
     company = get_object_or_404(Company,code=code)
-    products = Product.objects.all()
+    products = Product.objects.filter(company=company)
 
     # Her ürün için giren ve çıkan miktarları hesapla
     product_reports = []
     for product in products:
-        total_incoming = StockTransactions.objects.filter(product=product).aggregate(Sum('incoming_quantity'))['incoming_quantity__sum'] or 0
-        total_outgoing = StockTransactions.objects.filter(product=product).aggregate(Sum('outgoing_quantity'))['outgoing_quantity__sum'] or 0
+        total_incoming = StockTransactions.objects.filter(product=product,company=company).aggregate(Sum('incoming_quantity'))['incoming_quantity__sum'] or 0
+        total_outgoing = StockTransactions.objects.filter(product=product,company=company).aggregate(Sum('outgoing_quantity'))['outgoing_quantity__sum'] or 0
         real_stock = total_incoming - total_outgoing
         visible_stock = product.current_stock
         product_reports.append({
@@ -975,35 +1214,14 @@ def stock_status(request, code):
     return render(request, 'stock_status_report.html', context)
 
 
-def incoming_outgoing_reports(request,code):
-    products = Product.objects.all()
-    company = get_object_or_404(Company,code=code)
-    if request.method != "POST":
-        # Get today's date
-        today = date.today()
+def incoming_outgoing_reports(request, code):
+    company = get_object_or_404(Company, code=code)
+    products = Product.objects.filter(company=company)
 
-        # Filter stock_transactions for today
-        stock_transactions = StockTransactions.objects.filter(
-            processing_time__date=today
-        )
-        table = StockTransactionsTable(stock_transactions)
-
-        context = {
-            'company':company,
-            'table': table,
-            'products': products,
-            'start_date': today,
-            'end_date': today,
-        }
-
-        return render(request, 'reports/incoming_outgoing_reports.html', context)
-
-    # Get start_date and end_date from POST request
-    start_date_str = request.POST.get("start_date")
-    end_date_str = request.POST.get("end_date")
-
-    # Use today's date if either start_date or end_date is empty
     today = date.today()
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+
     start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else today
     end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else today
 
@@ -1011,17 +1229,18 @@ def incoming_outgoing_reports(request,code):
     end_date = datetime.combine(end_date, datetime.max.time())
 
     stock_transactions = StockTransactions.objects.filter(
-        processing_time__range=(start_date, end_date)
+        processing_time__range=(start_date, end_date), company=company
     )
     table = StockTransactionsTable(stock_transactions)
 
     context = {
+        'company': company,
         'table': table,
         'products': products,
         'start_date': start_date,
         'end_date': end_date,
     }
-    print('Bitiş Tarihi',end_date)
+
     return render(request, 'reports/incoming_outgoing_reports.html', context)
 
 def get_stock_transactions(product_id):
@@ -1098,15 +1317,20 @@ def stock_transactions(request, code):
         }
     
     return render(request, 'reports/product_transactions.html', context)
-
-def process_stock_outgoing(request,code):
-    company = get_object_or_404(Company,code=code)
+def get_inventory_products(request):
+    product_id = request.GET.get('product_id')
+    inventory_products = Inventory.objects.filter(product_id=product_id)
+    data = list(inventory_products.values('id', 'serial_number'))
+    return JsonResponse(data, safe=False)
+def process_stock_outgoing(request, code):
+    company = get_object_or_404(Company, code=code)
     products = Product.objects.filter(company=company)
     outgoing_reasons = OutgoingReasons.objects.filter(company=company)
-    
+    inventories = Inventory.objects.filter(company=company)
     if request.method != "POST":
         context = {
-            'company':company,
+            'inventories':inventories,
+            'company': company,
             'products': products,
             'outgoing_reasons': outgoing_reasons,
         }
@@ -1122,43 +1346,74 @@ def process_stock_outgoing(request,code):
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
     try:
-        if StockTransactions.objects.filter(outgoing_bill__number=outgoing_bill_number).exists():
-            messages.error(request, 'Bill number already exists.')
-            return redirect(request.META.get('HTTP_REFERER', '/'))
+        with transaction.atomic():
+            if StockTransactions.objects.filter(outgoing_bill__number=outgoing_bill_number).exists():
+                messages.error(request, 'Bill number already exists.')
+                return redirect(request.META.get('HTTP_REFERER', '/'))
 
-        outgoing_product = Product.objects.get(id=outgoing_product_id)
-        outgoing_reason = OutgoingReasons.objects.get(id=outgoing_reason_id)
+            outgoing_product = Product.objects.get(id=outgoing_product_id)
+            outgoing_reason = OutgoingReasons.objects.get(id=outgoing_reason_id)
 
-        # Ensure outgoing_quantity is a valid Decimal and handle the conversion
-        outgoing_quantity = Decimal(outgoing_quantity)
-        
-        # Check if stock can go negative
-        if outgoing_product.prevent_stock_negative and outgoing_product.current_stock < outgoing_quantity:
-            messages.error(request, 'Bu üründe stok eksiye (-) düşemez.')
-            return redirect(request.META.get('HTTP_REFERER', '/'))
+            # Ensure outgoing_quantity is a valid Decimal and handle the conversion
+            outgoing_quantity = Decimal(outgoing_quantity)
+            
+            # Check if stock can go negative
+            if outgoing_product.prevent_stock_negative and outgoing_product.current_stock < outgoing_quantity:
+                messages.error(request, 'Bu üründe stok eksiye (-) düşemez.')
+                return redirect(request.META.get('HTTP_REFERER', '/'))
 
-        outgoing_product.current_stock -= outgoing_quantity
-        outgoing_product.company = company
-        outgoing_product.save()
-        print('Çıkan Tutar',outgoing_quantity)
-        outgoing_bill = OutgoingBill.objects.create(
-            company=company,
-            number=outgoing_bill_number,
-            product=outgoing_product,
-            quantity=outgoing_quantity,
-            outgoing_reason=outgoing_reason,
-            processing_time=timezone.now(),
-        )
-        
-        stock_outgoing = StockTransactions.objects.create(
-            company=company,
-            product=outgoing_product,
-            outgoing_quantity=outgoing_quantity,
-            outgoing_reasons=outgoing_reason,
-            outgoing_bill=outgoing_bill,
-            processing_time=timezone.now(),
-            current_stock=outgoing_product.current_stock,
-        )
+            # Retrieve the company's cost calculation method
+            parameter = Parameter.objects.get(company=company)
+            cost_calculation_method = parameter.cost_calculation
+
+            # Calculate total amount based on the cost calculation method
+            if cost_calculation_method == 'fifo':
+                # FIFO calculation
+                bill_items = BillItem.objects.filter(product=outgoing_product, is_delete=False).order_by('bill__date')
+            elif cost_calculation_method == 'lifo':
+                # LIFO calculation
+                bill_items = BillItem.objects.filter(product=outgoing_product, is_delete=False).order_by('-bill__date')
+            else:
+                # Default to average cost calculation
+                bill_items = BillItem.objects.filter(product=outgoing_product, is_delete=False)
+
+            total_cost = Decimal('0.00')
+            total_quantity = Decimal('0.00')
+
+            for item in bill_items:
+                item_quantity = item.quantity
+                item_cost = item.price * (1 - item.discount_1 / 100) * (1 - item.discount_2 / 100) * (1 - item.discount_3 / 100) * (1 + item.vat / 100)
+                total_cost += item_quantity * item_cost
+                total_quantity += item_quantity
+
+            average_cost = total_cost / total_quantity if total_quantity > 0 else Decimal('0.00')
+            outgoing_total_amount = average_cost * outgoing_quantity
+
+            outgoing_product.current_stock -= outgoing_quantity
+            outgoing_product.save()
+
+            outgoing_bill = OutgoingBill.objects.create(
+                is_create=request.user,
+                company=company,
+                number=outgoing_bill_number,
+                product=outgoing_product,
+                quantity=outgoing_quantity,
+                outgoing_reason=outgoing_reason,
+                processing_time=timezone.now(),
+                outgoing_total_amount=outgoing_total_amount,
+            )
+            
+            stock_outgoing = StockTransactions.objects.create(
+                company=company,
+                product=outgoing_product,
+                outgoing_quantity=outgoing_quantity,
+                outgoing_reasons=outgoing_reason,
+                outgoing_bill=outgoing_bill,
+                processing_time=timezone.now(),
+                current_stock=outgoing_product.current_stock,
+                total_amount = outgoing_total_amount,
+                is_create=request.user
+            )
         
         messages.success(request, 'Stok Çıkışı Yapıldı')
     except Product.DoesNotExist:
@@ -1172,6 +1427,14 @@ def process_stock_outgoing(request,code):
         print(e)
 
     return redirect(request.META.get('HTTP_REFERER', '/'))
+def low_stock_reports(request, code):
+    company = get_object_or_404(Company, code=code)
+    low_stock_products = Product.objects.filter(company=company, current_stock__lt=F('critical_stock_level'))
+    context = {
+        'company': company,
+        'low_stock_products': low_stock_products,
+    }
+    return render(request, 'reports/low_stock_products.html', context)
 from django.contrib.auth import logout as auth_logout
 def logout(request):
     auth_logout(request)
