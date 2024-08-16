@@ -1,21 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
+{% block title %}
+Firmalar #ssoft
+{% endblock title %}
+
 <div class="container mt-5">
-    <h1 class="text-center mb-4">Companies</h1>
-    
-    <!-- Switch Button -->
+    <h1 class="text-center mb-4">Şirketler</h1>
     <div class="d-flex justify-content-center mb-3">
         <label class="switch">
             <input type="checkbox" id="viewSwitch">
             <span class="slider round"></span>
         </label>
-        <span class="ml-2" id="viewSwitchLabel">Switch to Table View</span>
+        <span class="ml-2" id="viewSwitchLabel">Tablo Görünümüne Geç</span>
     </div>
     
     <!-- Card View -->
-    <div class="row" id="cardView">
+    <div class="row card-view" >
         {% for company in companies %}
-        <div class="col-md-4 mb-4">
+        <div class="col-md-6 col-lg-4 col-sm-2 mb-4">
             <div class="card company-card">
                 <div class="card-body">
                     <h5 class="card-title">Şirket Kodu: <span class="company-code">{{ company.code }}</span></h5>
@@ -25,6 +27,8 @@
                     <p class="card-text"><strong>Şehir:</strong> {{ company.city }}</p>
                     <p class="card-text"><strong>Ülke:</strong> {{ company.country }}</p>
                     <p class="card-text"><strong>Email:</strong> {{ company.email }}</p>
+                    <p class="card-text"><strong>Anlaşma Başlangıç Tarihi:</strong> {{ company.contract_start_date }}</p>
+                    <p class="card-text"><strong>Anlaşma Bitiş Tarihi:</strong> {{ company.contract_end_date }}</p>
                     <p class="card-text"><strong>Diğer Bilgiler:</strong> {{ company.other_info }}</p>
                 </div>
                 <div class="card-footer">
@@ -38,7 +42,7 @@
     </div>
     
     <!-- Table View -->
-    <div class="table-responsive d-none" id="tableView">
+    <div class="table-responsive d-none table-view">
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -177,9 +181,23 @@
     }
     
     /* Responsive Adjustments */
-    @media (max-width: 768px) {
-        .company-card .card-body {
-            padding: 10px;
+    @media (max-width: 1366px) {
+        .table-view table {
+            font-size: 0.8rem;
+        }
+        .card-view .col-md-6 {
+            width: 33%;
+            float: right;
+        }
+        .row {
+            float: right;
+        }
+    }
+    
+    @media (min-width: 768px) {
+        .table-view {
+            width: 85%;
+            float: right;
         }
     }
 </style>
@@ -187,17 +205,17 @@
 <!-- Custom JavaScript for Switch -->
 <script>
     document.getElementById('viewSwitch').addEventListener('change', function() {
-        var cardView = document.getElementById('cardView');
-        var tableView = document.getElementById('tableView');
+        var cardView = document.querySelector('.card-view');
+        var tableView = document.querySelector('.table-view');
         var switchLabel = document.getElementById('viewSwitchLabel');
         if (this.checked) {
             cardView.classList.add('d-none');
             tableView.classList.remove('d-none');
-            switchLabel.textContent = 'Switch to Card View';
+            switchLabel.textContent = ' Kart Görünümüne Geç';
         } else {
             cardView.classList.remove('d-none');
             tableView.classList.add('d-none');
-            switchLabel.textContent = 'Switch to Table View';
+            switchLabel.textContent = ' Tablo Görünümüne Geç';
         }
     });
 </script>

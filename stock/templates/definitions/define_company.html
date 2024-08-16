@@ -1,63 +1,77 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-5">
-    <h1 class="text-center">Şirket Oluştur</h1>
-    <small>İşlemi yapan kullanıcı : <strong>{{request.user.username}}</strong></small>
-    <form method="post" action="">
-        {% csrf_token %}
-        
-        <div class="form-floating mb-3">
-            <input type="text" name="name" id="id_name" class="form-control" placeholder="Name" required>
-            <label for="id_name">Şirket Adını Giriniz.</label>
-        </div>
-        <div class="form-floating mb-3">
-            <input type="text" name="owner" id="id_name" class="form-control" placeholder="Name" required>
-            <label for="id_name">Şirket Yetkilisi Giriniz.</label>
-        </div>
-        
-        <div class="form-floating mb-3">
-            <textarea name="address" id="id_address" class="form-control" placeholder="" required></textarea>
-            <label for="id_address">Adres Bilgisini Giriniz.</label>
-        </div>
+    <div class="row">
+        <div class="col-12 col-md-8" id="define_company_div">
+            <h1 class="text-center">Şirket Oluştur</h1>
+            <small>İşlemi yapan kullanıcı : <strong>{{request.user.username}}</strong></small>
+            <form method="post" action="">
+                {% csrf_token %}
+                
+                <div class="form-floating mb-3">
+                    <input type="text" name="name" id="id_name" class="form-control" placeholder="Name" required>
+                    <label for="id_name">Şirket Adını Giriniz.</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="text" name="owner" id="id_owner" class="form-control" placeholder="Name" required>
+                    <label for="id_owner">Şirket Yetkilisi Giriniz.</label>
+                </div>
+                
+                <div class="form-floating mb-3">
+                    <textarea name="address" id="id_address" class="form-control" placeholder="" required></textarea>
+                    <label for="id_address">Adres Bilgisini Giriniz.</label>
+                </div>
 
-        <div class="form-floating mb-3">
-            <input type="text" name="phone" id="id_phone" class="form-control" placeholder="" required>
-            <label for="id_phone">Telefon Numarası Giriniz</label>
+                <div class="form-floating mb-3">
+                    <input type="text" name="phone" id="id_phone" class="form-control" placeholder="" required>
+                    <label for="id_phone">Telefon Numarası Giriniz</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="text" name="country" id="id_country" class="form-control" placeholder="" required>
+                    <label for="id_country">Ülke Giriniz.</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="text" name="city" id="id_city" class="form-control" placeholder="City" required>
+                    <label for="id_city">Şehir Giriniz.</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="email" name="email" id="id_email" class="form-control" placeholder="Email" required>
+                    <label for="id_email">E Posta adresini giriniz.</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="date" name="contract_end_date" id="contract_end_date" class="form-control" placeholder="Anlaşma Bitiş Tarihi" required>
+                    <label for="contract_end_date">Anlaşma bitiş tarihini giriniz.</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <textarea name="other_info" id="id_other_info" class="form-control" placeholder="Other Information" required></textarea>
+                    <label for="id_other_info">Diğer Bilgiler</label>
+                </div>
+                {% if request.user.username == "ssoft" %}
+                <button type="submit" class="btn btn-success w-100 ">Oluştur </button>
+                {% else %}
+                <button type="submit" class="btn btn-danger w-100 ">Yetki yok </button>
+                {% endif %}
+            </form>
         </div>
-        <div class="form-floating mb-3">
-            <input type="text" name="country" id="id_country" class="form-control" placeholder="" required>
-            <label for="id_country">Ülke Giriniz.</label>
-        </div>
-        <div class="form-floating mb-3">
-            <input type="text" name="city" id="id_city" class="form-control" placeholder="City" required>
-            <label for="id_city">Şehir Giriniz.</label>
-        </div>
-
-        
-
-        <div class="form-floating mb-3">
-            <input type="email" name="email" id="id_email" class="form-control" placeholder="Email" required>
-            <label for="id_email">E Posta adresini giriniz.</label>
-        </div>
-        <div class="form-floating mb-3">
-            <input type="date" name="contract_end_date" id="contract_end_date" class="form-control" placeholder="Anlaşma Bitiş Tarihi" required></textarea>
-            <label for="id_other_info">Anlaşma bitiş tarihini giriniz.</label>
-        </div>
-        <div class="form-floating mb-3">
-            <textarea name="other_info" id="id_other_info" class="form-control" placeholder="Other Information" required></textarea>
-            <label for="id_other_info">Diğer Bilgiler</label>
-        </div>
-
-        <button type="submit" class="btn btn-success w-100">Oluştur</button>
-    </form>
+    </div>
 </div>
 <style>
+    body{
+        background-color: #C4FAA7;
+    }
     .form-floating > label {
         color: #6c757d; /* Normal durumda gri renk */
     }
     .form-floating > .form-control:focus ~ label,
     .form-floating > .form-control:not(:placeholder-shown) ~ label {
         color: #28a745; /* Placeholder yukarı kayınca yeşil renk */
+    }
+
+    /* Küçük ekranlar için düzenlemeler */
+    @media (width: 1366px) and (height: 768px) {
+       .row{
+            justify-content: center;
+        }
     }
 </style>
 {% endblock content %}

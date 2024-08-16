@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+{% block title %}
+Envanter | {{company.name}}
+{% endblock title %}
+<div class="container mt-4">
+    <h2 class="text-center">Envanter Listesi</h2>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Ürün Adı</th>
+                    <th>Seri Numarası</th>
+                    <th>Fatura Numarası</th>
+                    <th>Çıkış Yap</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inventory in inventories %}
+                <tr>
+                    <td>{{ inventory.product.name }}</td>
+                    <td>{{ inventory.serial_number }}</td>
+                    <td>{{ inventory.bill.number }}</td>
+                    <td>
+                        <button  class="btn btn-out btn-outgoing w-100" 
+                                data-product-name="{{ inventory.product.name }}" 
+                                data-serial-number="{{ inventory.serial_number }}" 
+                                data-bill-number="{{ inventory.bill.number }}" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#outgoingModal">
+                            <i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Outgoing Modal -->
+<div class="modal fade" id="outgoingModal" tabindex="-1" aria-labelledby="outgoingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="outgoingModalLabel">Çıkış Yap</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="outgoingForm" action="{% url 'envanter_cikis' company.code %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="modalProductName" class="form-label">Ürün Adı</label>
+                        <input type="text" class="form-control" id="modalProductName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalSerialNumber" class="form-label">Seri Numarası</label>
+                        <input type="text" class="form-control"  name="serial_number" id="modalSerialNumber" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalBillNumber" class="form-label">Fatura Numarası</label>
+                        <input type="text" class="form-control" id="modalBillNumber" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalBillNumber" class="form-label">Çıkış Faturası</label>
+                        <input type="text" name="inventory_outgoing_bill_number" placeholder="Belirtilmediği takdirde otomatik verilecektir." class="form-control" id="modalBillNumber">
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select" name="outgoing_reason" aria-label="Default select example">
+                            {% for outgoing_reason in outgoing_reasons  %}
+                            <option value="{{outgoing_reason.id}}">{{outgoing_reason.name}}</option>
+                            {% endfor %}
+                          </select>
+                    </div>
+                
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+            </div>
+        </form>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const outgoingModal = new bootstrap.Modal(document.getElementById('outgoingModal'));
+    
+    document.querySelectorAll('.btn-outgoing').forEach(button => {
+        button.addEventListener('click', event => {
+            const productName = button.getAttribute('data-product-name');
+            const serialNumber = button.getAttribute('data-serial-number');
+            const billNumber = button.getAttribute('data-bill-number');
+
+            document.getElementById('modalProductName').value = productName;
+            document.getElementById('modalSerialNumber').value = serialNumber;
+            document.getElementById('modalBillNumber').value = billNumber;
+
+            outgoingModal.show();
+        });
+    });
+});
+</script>
+<style>
+    .btn-out {
+        background-color: #4CAF50; /* İlk arka plan rengi */
+        color: white; /* İlk yazı rengi */
+        transition: all 0.5s ease; /* Geçiş efektleri için */
+    }
+    
+    /* Hover durumu */
+    .btn-out:hover {
+        background-color: red; /* Hover arka plan rengi */
+        color: white; /* Hover yazı rengi */
+
+    }
+</style>
+{% endblock content %}

@@ -20,31 +20,31 @@
     <form action="{% url 'stok_cikisi_yap' company.code %}" method="POST" class="needs-validation" novalidate>
         {% csrf_token %}
         <div class="mb-3">
-            <label for="product" class="form-label">Çıkış Yapılacak Ürün</label>
+            <label for="select2-product" class="form-label">Çıkış Yapılacak Ürün</label>
             <select name="outgoing_product" id="select2-product" class="form-select" aria-label="Select Product" required>
                 <option selected disabled value="">Ürün Seçiniz</option>
                 {% for product in products %}
-                <option value="{{ product.id }}" data-stock="{{ product.current_stock }}">{{ product.name }}</option>
+                <option value="{{ product.id }}" data-is-inventory="{{ product.is_inventory|yesno:'true,false' }}" data-stock="{{ product.current_stock }}">{{ product.name }}</option>
                 {% endfor %}
             </select>
             <div class="invalid-feedback">
-                Lütfen Bir ürün seçiniz.
+                Lütfen bir ürün seçiniz.
             </div>
         </div>
 
         <div class="mb-3">
-            <label for="quantity" class="form-label">Çıkış Miktarı</label>
-            <input type="number" name="outgoing_quantity" class="form-control" id="quantity" step="0.001" min="0" required>
+            <label for="outgoing_quantity" class="form-label">Çıkış Miktarı</label>
+            <input type="number" name="outgoing_quantity" class="form-control" id="outgoing_quantity" min="0" required>
             <div class="invalid-feedback">
                 Lütfen geçerli bir miktar giriniz.
             </div>
-            <div id="stock-warning" class="text-danger mt-2" style="display: none;">Warning: Stock might go negative!</div>
+            <div id="stock-warning" class="text-danger mt-2" style="display: none;">Stok yetersiz olabilir!</div>
         </div>
 
         <div class="mb-3">
-            <label for="reason" class="form-label">Çıkış Sebebi Seçin</label>
+            <label for="select2-reason" class="form-label">Çıkış Sebebi Seçin</label>
             <select name="outgoing_reason" id="select2-reason" class="form-select" aria-label="Select Reason" required>
-                <option selected disabled value="">Select a reason</option>
+                <option selected disabled value="">Sebep Seçiniz</option>
                 {% for reason in outgoing_reasons %}
                 <option value="{{ reason.id }}">{{ reason.name }}</option>
                 {% endfor %}
@@ -53,38 +53,135 @@
                 Lütfen çıkış sebebi seçiniz.
             </div>
         </div>
-
+        <style>
+            /* CSS Kodu */
+            .select2-container--default .select2-selection--single {
+                width: 100% !important;
+            }
+        </style>
+        
+        <div class="mb-3" id="inventory_product_group">
+            <label for="select2-inventory" class="form-label">Envanter Ürünü</label><br>
+            <select name="inventory_product" id="select2-inventory" class="form-select" aria-label="Select Inventory Product">
+                <option selected disabled value="">Ürün Seçiniz</option>
+            </select>
+            <div class="invalid-feedback">
+                Lütfen bir envanter ürünü seçiniz.
+            </div>
+            <script>
+                $('#select2-inventory').select2({
+                    width: 'resolve' // Bu, select2'nin genişliği ayarlamasına yardımcı olur
+                });
+            </script>
+        </div>
         <div class="mb-3">
             <label for="bill" class="form-label">Çıkış Fatura Numarası</label>
             <div class="input-group">
                 <input type="text" name="outgoing_bill_number" class="form-control" id="bill" required>
-                <button type="button" class="btn btn-outline-success" title="Generate Automatic Bill Number" id="generateBillNumber">+</button>
+                <button type="button" class="btn btn-outline-success" title="Otomatik Fatura Numarası Üret" id="generateBillNumber">+</button>
                 <div class="invalid-feedback">
-                    Please enter a bill number.
+                    Lütfen bir fatura numarası giriniz.
                 </div>
             </div>
-        </div>
-
-        <button type="submit" class="btn btn-danger">Çıkış Yap <i class="fa-solid fa-shuffle"></i></button>
+        
+        
+        <button type="submit" class="btn btn-danger mt-4" id="submitBtn" disabled>Çıkış Yap <i class="fa-solid fa-shuffle"></i></button>
     </form>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const productSelect = document.getElementById('select2-product');
-        const quantityInput = document.getElementById('quantity');
-        const warningMessage = document.getElementById('stock-warning');
-
-        document.getElementById('generateBillNumber').addEventListener('click', function() {
-            const billInput = document.getElementById('bill');
-            const randomBillNumber = 'OFN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-            billInput.value = randomBillNumber;
+    $(document).ready(function() {
+        // Initialize Select2
+        $('#select2-product, #select2-reason, #select2-inventory').select2({
+            placeholder: "Seçim Yapınız",
+            allowClear: true
         });
+
+        // Get elements
+        const inventoryProductGroup = $('#inventory_product_group');
+        const inventoryProductSelect = $('#select2-inventory');
+        const submitBtn = $('#submitBtn');
+        const quantityInput = $('#outgoing_quantity');
+
+        // Handle change event for Select2
+        $('#select2-product').on('change', function() {
+            const selectedOption = $(this).find('option:selected');
+            const isInventory = selectedOption.data('is-inventory') === true;
+            const productId = $(this).val();
+
+            console.log("Product Selected: ", selectedOption);
+            console.log("Is Inventory: ", isInventory);
+            console.log("Product ID: ", productId);
+
+            if (isInventory) {
+                quantityInput.val(1).prop('readonly', true);
+                inventoryProductGroup.removeClass('d-none');
+                fetchInventoryProducts(productId);
+            } else {
+                quantityInput.val('').prop('readonly', false);
+                inventoryProductGroup.addClass('d-none');
+            }
+
+            checkFormValidity();
+        });
+
+        // Enable or disable the submit button based on the inventory product selection
+        $('#select2-inventory').on('change', function() {
+            checkFormValidity();
+        });
+
+        function checkFormValidity() {
+            const selectedOption = $('#select2-product').find('option:selected');
+            const isInventory = selectedOption.data('is-inventory') === true;
+            const inventoryProductSelected = $('#select2-inventory').val() !== null;
+
+            console.log("Form Validity Check: ", isInventory, inventoryProductSelected);
+
+            if (isInventory && !inventoryProductSelected) {
+                submitBtn.prop('disabled', true);
+            } else {
+                submitBtn.prop('disabled', false);
+            }
+        }
+
+        function fetchInventoryProducts(productId) {
+            console.log("Fetching inventory products for product ID: ", productId);
+            $.ajax({
+                url: '{% url "get_inventory_products" %}',
+                data: {
+                    product_id: productId
+                },
+                success: function(data) {
+                    console.log("Fetched inventory products: ", data);
+                    inventoryProductSelect.empty();
+                    inventoryProductSelect.append('<option selected disabled value="">Ürün Seçiniz</option>');
+                    data.forEach(function(item) {
+                        inventoryProductSelect.append('<option value="' + item.id + '">' + item.serial_number + '</option>');
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching inventory products: ", status, error);
+                }
+            });
+        }
+
+        // Generate random bill number
+        $('#generateBillNumber').on('click', function() {
+            const billInput = $('#bill');
+            const randomBillNumber = 'OFN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+            billInput.val(randomBillNumber);
+        });
+
+        // Check stock warning
+        const productSelect = document.getElementById('select2-product');
+        const warningMessage = document.getElementById('stock-warning');
 
         function checkStock() {
             const selectedOption = productSelect.options[productSelect.selectedIndex];
             const currentStock = parseFloat(selectedOption.getAttribute('data-stock'));
-            const outgoingQuantity = parseFloat(quantityInput.value);
+            const outgoingQuantity = parseFloat(quantityInput.val());
+
+            console.log("Checking stock: ", currentStock, outgoingQuantity);
 
             if (outgoingQuantity > currentStock) {
                 warningMessage.style.display = 'block';
@@ -94,17 +191,7 @@
         }
 
         productSelect.addEventListener('change', checkStock);
-        quantityInput.addEventListener('input', checkStock);
-
-        // Initialize Select2
-        $('#select2-product').select2({
-            placeholder: "Select a product",
-            allowClear: true
-        });
-        $('#select2-reason').select2({
-            placeholder: "Select a reason",
-            allowClear: true
-        });
+        quantityInput.on('input', checkStock);
 
         // Form validation
         const forms = document.querySelectorAll('.needs-validation');

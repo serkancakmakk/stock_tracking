@@ -29,12 +29,23 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
-# Application definition
 
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 INSTALLED_APPS = [
+    
+    # 'stock.apps.StockConfig',
+    'channels',
     'django_tables2',
-    # 'stock',
-    'stock.apps.StockConfig',
+    'stock',
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,7 +53,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
-
+# Application definition
+ASGI_APPLICATION = 'stock_tracking.asgi.application'
+WEBSOCKET_URL = '/ws/'  # WebSocket URL'si
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -54,10 +67,14 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'stock_tracking.urls'
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    os.path.join("C:/Users/Serkan/Desktop/stock_trackings/stock_tracking/static"),
-]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # Varsayılan olarak static dosyaların bulunduğu dizin
+
+# Collect static files into STATIC_ROOT for production
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 AUTH_USER_MODEL = 'stock.User'
 TEMPLATES = [
     {
@@ -66,6 +83,8 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'stock.context_processors.waiting_for_support',
+                'stock.context_processors.user_permissions',
                 'stock.context_processors.today_date',
                 'stock.context_processors.low_stock_count',
                 'django.template.context_processors.debug',
@@ -83,10 +102,20 @@ WSGI_APPLICATION = 'stock_tracking.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'stock_tracker',
+        'USER': 'postgres',
+        'PASSWORD': 'serkan',
+        'HOST': 'localhost',
+        'PORT': '5432'
     }
 }
 

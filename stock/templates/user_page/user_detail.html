@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block content %}
+{% block title %}
+Kullanıcıyı Düzenle | {{user.username}}
+{% endblock title %}
+<div class="container mt-5">
+  <div class="row">
+    <div class="profile-wrapper page-content">
+      <div class="profile-content">
+        <div class="profile-card">
+          <style>
+            .icons {
+              font-size: 24px;
+              color: white;
+              margin-right: 4px;
+              transition: transform .2s;
+              cursor: pointer;
+            }
+            .icons:hover {
+              transform: scale(1.5);
+            }
+            .profile-info {
+              font-size: 20px;
+            }
+            .permissions-wrapper {
+              display: flex;
+              justify-content: space-between;
+            }
+            .permissions-area, .permissions_area_2 {
+              width: 48%;
+            }
+          </style>
+          <img src="{% if user.profile_image.url != None %}{{ user.profile.image.url }}{% else %}/static/default-profile.png{% endif %}" alt="Profile Image" {% if user.is_active %} class="active_user profile-img mr-10" {% else %} class="inactive_user profile-img mr-10" {% endif %}>
+          <div class="profile-info">
+            <p>
+              <script>
+                function copyText(text) {
+                  var tempInput = document.createElement("input");
+                  tempInput.value = text;
+                  document.body.appendChild(tempInput);
+                  tempInput.select();
+                  document.execCommand("copy");
+                  document.body.removeChild(tempInput);
+                  var toast = new bootstrap.Toast(document.getElementById('toast'));
+                  toast.show();
+                }
+              </script>
+              <i class="fas fa-user icons" onclick="copyText('{{ user.username }}')"></i> <strong>{{ user.username }}</strong>
+            </p>
+            <hr class="line">
+            <p>
+              <i class="fas fa-envelope icons" onclick="copyText('{{ user.email }}')"></i> {{ user.email }}
+            </p>
+            <hr class="line">
+            <p>
+              <i class="fas fa-phone icons" onclick="copyText('{{ user.phone }}')"></i> {{ user.phone }}
+            </p>
+            <hr class="line">
+            <p>
+              <i class="fas fa-home icons" onclick="copyText('{{ user.address }}')"></i> {{ user.address }}
+            </p>
+            <hr class="line">
+            {% if request.user.username == "ssoft" %}
+            <p>
+              <i class="fa-solid fa-id-badge icons" onclick="copyText('{{ user.unique_id }}')"></i> {{ user.unique_id }}
+            </p>
+            <hr class="line">
+            {% else %}
+            <p>
+              <i class="fa-solid fa-id-badge icons"></i> Bu alanı göremezsiniz.
+            </p>
+            <hr class="line">
+            {% endif %}
+            <span class="status-badge w-100 text-center {% if user.is_active %}active{% else %}inactive{% endif %}">
+              <i class="status-icon {% if user.is_active %}fa fa-check{% else %}fa fa-times{% endif %}"></i>
+              {{ user.is_active|yesno:"Aktif,Pasif" }}
+            </span>
+            <button class="btn btn-primary w-100 mt-2" data-bs-toggle="modal" data-bs-target="#editModal">
+              <i class="fa-solid fa-user-pen"></i> Düzenle
+            </button>
+          </div>
+          <div class="permissions-wrapper">
+            <form method="POST" action="{% url 'kullanici_yetkilendir' company.code user.unique_id %}">
+              {% csrf_token %}
+              <div class="permissions-container d-flex justify-content-between">
+                <div class="permissions-area">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_company" type="checkbox" role="switch" id="switchAddCompany" {% if user_permission and user_permission.add_company %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddCompany">Şirket Ekleme</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_user" type="checkbox" role="switch" id="switchAddUser" {% if user_permission.add_user %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddUser">Kullanıcı Ekleme</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_outgoing" type="checkbox" role="switch" id="switchAddOutgoing" {% if user_permission.add_outgoing %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddOutgoing">Çıkış Yapabilsin</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_bill" type="checkbox" role="switch" id="switchAddBill" {% if user_permission.add_bill %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddBill">Fatura Girebilsin</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_inventory" type="checkbox" role="switch" id="switchAddInventory" {% if user_permission.add_inventory %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddInventory">Envanter Girebilsin</label>
+                  </div>
+                  <div class="btn-area">
+                    <button type="submit" class="btn btn-primary w-100">
+                      <i class="fa-solid fa-user-gear"></i> Yetkilendir
+                    </button>
+                  </div>
+                </div>
+                <div class="permissions_area_2">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_parameter" type="checkbox" role="switch" id="switchAddParameter" {% if user.permissions.add_parameter %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddParameter">Parametreleri Görebilsin</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_product" type="checkbox" role="switch" id="switchAddProduct" {% if user.permissions.add_product %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddProduct">Ürün Eklesin</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_category" type="checkbox" role="switch" id="switchAddCategory" {% if user.permissions.add_category %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddCategory">Kategori Eklesin</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_seller" type="checkbox" role="switch" id="switchAddSeller" {% if user.permissions.add_seller %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddSeller">Cari Eklesin</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_outgoing" type="checkbox" role="switch" id="switchAddOutgoing2" {% if user.permissions.add_outgoing %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddOutgoing2">Çıkış Eklesin</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_unit" type="checkbox" role="switch" id="switchAddUnit" {% if user.permissions.add_unit %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddUnit">Birim Eklesin</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_user" type="checkbox" role="switch" id="switchAddUser2" {% if user.permissions.add_user %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddUser2">Kullanıcı Eklesin</label>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  <!--
+    User Edit Modal
+  -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5">{{user.username}}</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form method="POST" action="{% url 'kullanici_guncelle' company.code user.unique_id %}" enctype="multipart/form-data"> 
+            {% csrf_token %}
+             <div class="form-floating mb-3">
+              <input value={{user.username}} type="text" class="form-control" name="username" id="usernameInput" placeholder="Kullanıcı Adı">
+              <label for="floatingInput">Kullanıcı Adı</label>
+            </div>
+            <div class="form-floating mb-3">
+              <img src={% if user.profile_image %}"{{ user.profile_image.url }}"{% endif %} alt="Kullanıcı Fotoğrafı" class="profile-img" id="userImage" />
+              <input type="file" class="form-control mt-2" name="profile_image" id="imageInput" />
+              <label for="imageInput">Yeni Fotoğraf Yükle</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input value={{user.phone}} type="text" class="form-control" name="phone" id="phoneInput" placeholder="Kullanıcı Adı">
+              <label for="floatingInput">Telefon</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input value={{user.email}} type="text" class="form-control" name="email" id="emailInput" placeholder="Kullanıcı Adı">
+              <label for="floatingInput">Email</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input value={{user.address}} type="text" class="form-control" name="address" id="addressInput" placeholder="Kullanıcı Adı">
+              <label for="floatingInput">Adres</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="is_active" value="" id="is_active_checkbox" {% if user.is_active == True %}checked{% endif %}>
+              <label class="form-check-label" for="is_active"> Aktif mi? </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Kapat</button>
+          <button type="submit" class="btn btn-success">Değişiklikleri Kaydet</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="toast-container" class="position-fixed bottom-0 end-0 p-3">
+    <div id="toast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto">Bilgi</strong>
+            <small class="bg-success">Yeni</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            Metin kopyalandı!
+        </div>
+    </div>
+</div>
+<style>
+
+.profile-card {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: flex-start;
+    padding: 20px;
+    background-color: #00c9a7;
+}
+
+.profile-card .profile-img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-right: 30px;
+    margin-bottom: auto;
+    margin-top:auto;
+}
+.profile-img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-right: 20px;
+    margin-bottom: 10px;
+}
+.profile-card .profile-info {
+    flex: 1;
+}
+
+.profile-card .permissions-area {
+    margin-left: 20px;
+}
+
+.profile-card .profile-info h2 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.profile-card .profile-info p {
+    margin: 5px 0;
+    color: #555;
+}
+
+.profile-card .status-label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.form-check {
+    margin-bottom: 10px;
+}
+.line{
+
+    border: 1px solid white;
+}
+
+.status-badge {
+    margin-top: 5px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5em 1em;
+    border-radius: 1em;
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.875em;
+}
+
+.status-badge .status-icon {
+    margin-right: 0.5em;
+}
+
+.status-badge.active {
+    background-color: #28a745; /* Yeşil: Aktif */
+}
+
+.status-badge.inactive {
+    background-color: #dc3545; /* Kırmızı: Pasif */
+}
+.active_user{
+    filter: drop-shadow(1px 1px 20px green);
+}
+.inactive_user{
+    filter: drop-shadow(1px 1px 20px red);
+}
+</style>
+{% endblock content %}

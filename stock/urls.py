@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 from . import views
 from django.urls import path, re_path
 urlpatterns = [
+    path('', views.user_login, name='login'),
     path('login/', views.user_login, name='login'),
     path("dashboard/<int:code>", views.dashboard,name="dashboard"),
     # path("<int:code>", views.dashboard,name="dashboard"),
@@ -23,8 +24,8 @@ urlpatterns = [
     path("kategori_olustur/<int:code>",views.create_category,name="kategori_olustur"),
     path("cikis_nedeni_olustur/<int:code>",views.create_outgoing_reasons,name="cikis_nedeni_olustur"),
     path("fatura_gir/<int:code>",views.add_bill,name="fatura_olustur"),
-    path("faturalar/<int:code>",views.bills,name="faturalar"),
-    path('fatura_detay/<str:bill_number>', views.bill_details, name='fatura_detay'),
+    path("faturalar/<int:code>/",views.bills,name="faturalar"),
+    path('fatura_detay/<int:code>/<str:bill_number>/', views.bill_details, name='fatura_detay'),
     path('kalem_ekle/<int:bill_id>',views.add_billitem,name="kalem_ekle"),
     path('stok_durumu/<int:code>/',views.stock_status,name="stok_durumu"),
     path('stok_cikisi_yap/<int:code>',views.process_stock_outgoing,name="stok_cikisi_yap"),
@@ -49,6 +50,19 @@ urlpatterns = [
     path('parametre/<int:code>', views.parameter, name="parametre"),
     path('parametre_degistir/<int:company_code>/', views.edit_parameter, name='parametre_degistir'),
     path('logout', views.logout, name='logout'),
+    path('master', views.master_create_company, name='master'),
+    path('düsük_stok_uyarısı/<int:code>', views.low_stock_reports, name='düsük_stok_uyarısı'),
+    path('envanter/<int:code>', views.inventory, name='envanter'),
+    path('get_inventory_products/', views.get_inventory_products, name='get_inventory_products'),
+    path('envanter_cikis/<int:code>', views.outgoing_inventory, name='envanter_cikis'),
+    path('kullanici_detayi/<int:code>/<uuid:uuid4>/', views.user_detail, name='kullanici_detayi'),
+    path('kullanici_guncelle/<int:code>/<uuid:uuid4>/', views.user_edit, name='kullanici_guncelle'),
+    path('kullanici_yetkilendir/<int:code>/<uuid:uuid4>/',views.edit_permissions,name="kullanici_yetkilendir"),
+    # path('destek_odasi/<int:code>',views.get_support,name="destek_odasi"),
+    path('destek/<str:code>/', views.destek_view, name='destek'),
+    path('chat/<str:room_name>/<str:code>/', views.room, name='room'),
+    path('give_support/', views.give_support, name='give_support'),
+    path('end_chat/<str:room_name>',views.end_chat,name='desteği_bitir')
     # path('calculate_average_cost/', views.calculate_average_cost_view, name='calculate_average_cost'),
 
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

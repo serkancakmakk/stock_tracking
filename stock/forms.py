@@ -34,16 +34,45 @@ class CompanyForm(forms.ModelForm):
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import User
+from django.core.exceptions import ValidationError
 class CustomUserCreationForm(UserCreationForm):
-    name = forms.CharField(max_length=255, required=False)
-    surname = forms.CharField(max_length=255, required=False)
-    phone = forms.CharField(max_length=255, required=False)
-    address = forms.CharField(max_length=255, required=False)
-
-    class Meta(UserCreationForm.Meta):
+    class Meta:
         model = User
-        fields = ('username', 'password1', 'password2', 'name', 'surname', 'phone', 'address')
+        fields = ['username','phone','password1','password2','address']
+
+
+    def __init__(self, *args, **kwargs):
+        self.company = kwargs.pop('company', None)  # `company`'yi formdan al
+        super().__init__(*args, **kwargs)
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if self.company and User.objects.filter(username=username, company=self.company).exists():
+            raise ValidationError("Bu kullanıcı adı bu şirkette zaten mevcut.")
+        return username
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+
+        if password1 != password2:
+            self.add_error('password2', "Şifreler eşleşmiyor.")
+
+        return cleaned_data
 class ParameterForm(forms.ModelForm):
     class Meta:
         model = Parameter
         fields = ['cost_calculation']
+class UserEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username','phone','email','address','is_active','profile_image']
+from .models import Permission
+class PermissionForm(forms.ModelForm):
+    class Meta:
+        model = Permission
+        fields = ['add_company', 'add_user','add_bill','add_inventory','add_parameter',
+                  #define
+                'add_product','add_category','add_seller','add_outgoing','add_unit','add_user']
+        

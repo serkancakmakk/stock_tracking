@@ -64,7 +64,9 @@ class User(AbstractUser):
     is_active = models.BooleanField(default=True)
     USERNAME_FIELD = 'unique_id'  # USERNAME_FIELD'ı değiştir
     tag = models.CharField(max_length=15,null=True,blank=True)
-    image = models.ImageField(upload_to=get_upload_to,null=True,blank=True)
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
+    rating = models.PositiveIntegerField(null=True,blank=True)
+    support_given = models.PositiveIntegerField(null=True,blank=True)
     groups = models.ManyToManyField(
         Group,
         related_name='custom_user_groups',
@@ -91,10 +93,16 @@ class Permission(models.Model):
     add_company = models.BooleanField(default=False)
     add_user = models.BooleanField(default=False)
     add_bill = models.BooleanField(default=False)
-    add_outgoing = models.BooleanField(default=False)
+    
     add_inventory = models.BooleanField(default=False)
-    add_definitions = models.BooleanField(default=False)
     add_parameter = models.BooleanField(default=False)
+    # define perm
+    add_product = models.BooleanField(default=False)
+    add_category = models.BooleanField(default=False)
+    add_seller = models.BooleanField(default=False)
+    add_outgoing = models.BooleanField(default=False)
+    add_unit = models.BooleanField(default=False)
+    add_user = models.BooleanField(default=False)
 class Seller(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
@@ -232,3 +240,15 @@ class StockTransactions(models.Model):
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)
     def __str__(self):
         return self.product
+
+class ChatRoom(models.Model):
+    name = models.CharField(max_length=100)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    status = models.BooleanField(default=True) # oda durumu
+    supportive = models.ForeignKey(User, on_delete=models.CASCADE,related_name="support_team_user",null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+class Message(models.Model):
+    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)

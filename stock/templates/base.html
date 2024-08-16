@@ -108,13 +108,64 @@
     <script>
         $(document).ready(function() {
           $('#select2-seller').select2();
+          $('#select2-inventory').select2();
           $('#select2-product').select2();
           $('#select2-reason').select2();
         });
     </script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          const sidebar = document.querySelector('.sidebar');
+          const content = document.querySelector('.page-content');
+          const toggleButton = document.getElementById('sidebarToggle');
+          
+          toggleButton.addEventListener('click', function() {
+              if (sidebar.classList.contains('open')) {
+                  sidebar.classList.remove('open');
+                  sidebar.classList.add('close');
+                  content.classList.remove('sidebar-open');
+                  content.classList.add('sidebar-close');
+              } else {
+                  sidebar.classList.remove('close');
+                  sidebar.classList.add('open');
+                  content.classList.remove('sidebar-close');
+                  content.classList.add('sidebar-open');
+              }
+          });
+      });
+  </script>
+  <style>
+    @media screen and (max-width: 1366px) {
+      .page-content {
+        display: flex;
+        transition: margin-left 0.3s ease;
+    }
+    .page-content {
+        padding: 20px;
+        flex: 1;
+        transition: margin-left 0.3s ease;
+    }
+    .page-content.sidebar-open {
+        margin-left: 250px; /* Sidebar genişliği kadar kaydırma */
+    }
+    .page-content.sidebar-close {
+        margin-left: 150px; /* Sidebar kapalı olduğunda kaydırma yok */
+    }
+    }
+    /* Sidebar kapalıyken içeriğin kaymasını sağlayan CSS sınıfı */
+   
+  .user-list{
+      background-color: #fff;
+  }
+      .font-exo{
+          font-family: "Exo", sans-serif !important;
+      font-weight: 500;
+  }
+  </style>
     <script src="
     https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js
     "></script>
+    
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
    
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>

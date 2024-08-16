@@ -21,6 +21,7 @@
                     <th scope="col">Çıkış Faturası</th>
                     <th scope="col">Çıkış Sebebi</th>
                     <th scope="col">Giriş Faturası</th>
+                    <th scope="col">Fatura Tutarı</th>
                     <th scope="col">Fatura Detay</th>
                   </tr>
                 </thead>
@@ -49,11 +50,12 @@
                         <td>{{ stock_transaction.outgoing_bill }}</td>
                         <td>{{ stock_transaction.outgoing_reasons.name }}</td>
                         <td>{{ stock_transaction.incoming_bill.number }}</td>
+                        <td>{{ stock_transaction.total_amount }}</td>
                         <td>
                             {% if stock_transaction.outgoing_bill %}
-                                <a href="{% url 'fatura_detay' stock_transaction.outgoing_bill %}">Fatura Detay</a>
+                                <a href="{% url 'fatura_detay' company.code stock_transaction.outgoing_bill %}">Fatura Detay</a>
                             {% elif stock_transaction.incoming_bill %}
-                                <a href="{% url 'fatura_detay' stock_transaction.incoming_bill.number %}">Fatura Detay</a>
+                                <a href="{% url 'fatura_detay' company.code stock_transaction.incoming_bill.number %}">Fatura Detay</a>
                             {% else %}
                                 Yok
                             {% endif %}

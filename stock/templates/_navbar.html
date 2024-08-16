@@ -4,7 +4,7 @@
       rel="stylesheet"
     />  
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
-<nav class="sidebar">
+<nav class="sidebar open">
       <header>
         <div class="image-text">
           <span class="image">
@@ -16,7 +16,7 @@
             {{request.user.company.code}}
           </div>
         </div>
-        <i class="bx bx-chevron-right toggle"></i>
+        <i id="sidebarToggle" class="bx bx-chevron-right toggle"></i>
       </header>
 
       <div class="menu-bar">
@@ -29,10 +29,15 @@
             <li class="nav-link">
               <a href="{% url 'dashboard' company.code %}">
                 <i class="fa-solid fa-house-user icons"></i>
-                <span class="text nav-text">{{company.code}}</span>
+                <span class="text nav-text username"><strong>#{{request.user.username}}#</strong></span>
               </a>
             </li>
-            {% if request.user.company_code == 1 %}
+            <style>
+              .username{
+                color:black !important;
+              }
+            </style>
+            {% if request.user.company.code == 1 and request.user.permissions.add_company%}
             <li class="nav-link">
               <a href="{% url 'yeni_firma_tanimla' company.code %}">
                 <i class="fa-regular fa-address-book icons"></i>
@@ -83,14 +88,14 @@
             <li class="nav-link">
               <a href="#">
                 <i class="fa-solid fa-boxes-stacked icons"></i>
-                <span class="text nav-text">Stoklar</span>
+                <span class="text nav-text">Envanter</span>
               </a>
             </li>
             
             <li class="nav-link">
               <a href="#">
-                <i class="bx bx-wallet-alt icons"></i>
-                <span class="text nav-text">Wallets</span>
+                <i class="fa-solid fa-mortar-pestle icons"></i>
+                <span class="text nav-text">Reçete Oluştur</span>
               </a>
             </li>
             <li class="nav-item dropend">
@@ -106,6 +111,7 @@
                   <li><a class="dropdown-item" href="{% url 'ürün_bilgileri' company.code %}">Ürün Bilgileri</a></li>
                   <li><a class="dropdown-item" href="{% url 'stok_farki' company.code%}">Stok Farkı</a></li>
                   <li><a class="dropdown-item" href="{% url 'faturalar' company.code %}">Faturalar</a></li>
+                  <li><a class="dropdown-item" href="{% url 'stok_giris_cikislari' company.code %}">Kritik Stok Seviyleri</a></li>
                   <li><a class="dropdown-item" href="{% url 'vade_tarihi_gelen_faturalar' company.code today  %}">Vade Tarihi Gelen Faturalar</a></li>
               </ul>
           </li>
@@ -115,7 +121,9 @@
                 <span class="text nav-text">Tanımlar</span>
             </a>
             <ul class="dropdown-menu" aria-labelledby="raporlarDropdown">
+              {% if request.user.permissions.add_product %}
                 <li><a class="dropdown-item" href="{% url 'urun_olustur' company.code%}">Ürün</a></li>
+              {% endif %}
                 <li><a class="dropdown-item" href="{% url 'kategori_tanimla' company.code %}">Kategori</a></li>
                 <li><a class="dropdown-item" href="{% url 'cari_tanimla' company.code %}">Cari</a></li>
                 <li><a class="dropdown-item" href="{% url 'cikis_tanimlama_sayfasi' company.code %}">Çıkış</a></li>
@@ -125,7 +133,19 @@
         </li>
           </ul>
         </div>
-
+        <li class="nav-link">
+          <a href="{% url 'destek' company.code %}">
+            <i class="fa-solid fa-handshake-angle icons"></i>
+            <span class="text nav-text">Destek Ekibiyle Konuş</span>
+          </a>
+        </li>
+        <li class="nav-link">
+          <a href="{% url 'give_support' %}">
+            <i class="fa-solid fa-headset icons"></i>
+            <span class="text nav-text">Destek Odasına Katıl</span>
+            <span class="badge text-bg-danger">{{waiting_for_support}}</span>
+          </a>
+        </li>
         <div class="bottom-content">
           <li class="nav-link">
             <a href="{% url 'logout' %}">

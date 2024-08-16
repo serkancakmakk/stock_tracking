@@ -1,13 +1,14 @@
 from datetime import timedelta, timezone
 import random
+import uuid
 from django.db import IntegrityError
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from datetime import date
 
 from django.shortcuts import render
-from .models import Company, Inventory, Parameter, Product, StockTransactions, User
+from .models import ChatRoom, Company, Inventory, Parameter, Product, StockTransactions, User
 from .tables import StockTransactionsTable
 from datetime import datetime, date
 
@@ -211,6 +212,7 @@ def user_edit(request, code, uuid4):
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = 'is_active' in request.POST
+            print(user.profile_image)
             user.save()
             messages.success(request, 'Güncelleme Başarılı')
             return redirect(request.META.get('HTTP_REFERER', '/'))
@@ -642,6 +644,72 @@ def create_category_page(request,code):
         'categories':categories,
     }
     return render(request,'definitions/define_category.html',context)
+def generate_room_name():
+    return str(uuid.uuid4())
+
+# Oda oluşturma view'i
+def destek_view(request, code):
+    company = get_object_or_404(Company, code=code)
+    room_name = generate_room_name()
+
+    # company.code değeri 1 olan kullanıcıyı bul
+    owner = request.user
+    # Chat odasını oluştur ve owner alanını ayarla
+    room = ChatRoom.objects.create(name=room_name, owner=owner)
+    room.status = False
+    room.save()    # Kullanıcıyı chat odasına yönlendir
+    return redirect('room', room_name=room_name, code=code)
+def end_chat(request, room_name):
+    room = get_object_or_404(ChatRoom, name=room_name)
+    
+    # Oda sahibinin odayı hemen kapatabilmesi
+    if room.owner == request.user:
+        room.status = True
+        rating = request.POST.get('rating')
+        print('Rating Puanı', rating)
+        room.save()
+        messages.info(request, 'Destek Sonlandırıldı İyi Çalışmalar')
+        return redirect('dashboard', request.user.company.code)
+    
+    # Destek veren kullanıcının en az 1 dakika beklemesi
+    if room.supportive == request.user:
+        elapsed_time = timezone.now() - room.created_at  # Odanın oluşturulma zamanını kontrol ediyoruz
+        if elapsed_time < timedelta(minutes=1):
+            messages.error(request, 'Desteği sonlandırmak için en az 1 dakika beklemelisiniz.')
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+        
+        room.status = True
+        rating = request.POST.get('rating')
+        print('Rating Puanı', rating)
+        room.save()
+        messages.info(request, 'Destek Sonlandırıldı İyi Çalışmalar')
+        return redirect('dashboard', request.user.company.code)
+    
+    # messages.error(request, 'Sadece kendi desteğinizi sonlandırabilirsiniz.')
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+def room(request, room_name, code):
+    company = get_object_or_404(Company, code=code)
+    room = get_object_or_404(ChatRoom, name=room_name)
+    return render(request, 'chat_room.html', {
+        'room_name': room_name,
+        'company': company,
+        'room': room,
+    })
+def rating_supporter(request,room_name):
+    if not request.method == "POST":
+        room = get_object_or_404(ChatRoom,name=room_name)
+        room.supportive.rating
+
+def give_support(request):
+    room = ChatRoom.objects.filter(status=False).first()
+    if room:
+        room.supportive = request.user
+        room.save()
+        return redirect('room', room_name=room.name, code=room.owner.company.code)
+   
+    else:
+        return render(request, 'no_available_rooms.html')
 def get_company_or_redirect(request, code, error_message="Şirket Bulunamadı"):
     try:
         return get_object_or_404(Company, code=code)

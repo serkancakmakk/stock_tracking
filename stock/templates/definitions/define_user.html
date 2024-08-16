@@ -1,93 +1,167 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% block title %}Kullanıcı Ekle | {{company.name}}{% endblock title %}
-  <style>
-    .container {
-      max-width: 600px;
-      margin: auto;
-    }
-    .form-floating {
-      position: relative;
-      margin-bottom: 1.5rem;
-    }
-    .form-floating input {
-      border-radius: 10px;
-      border: 1px solid #ced4da;
-      padding: 1rem;
-      background-color: #f8f9fa;
-      transition: all 0.3s ease;
-    }
-    .form-floating label {
-      position: absolute;
-      top: 0;
-      left: 0;
-      padding: 1rem;
-      pointer-events: none;
-      transition: all 0.3s ease;
-      color: #6c757d;
-      font-size: 1rem;
-      font-weight: 500;
-    }
-    .form-floating input:focus {
-      border-color: #007bff;
-      box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
-    }
-    .form-floating input:focus + label,
-    .form-floating input:not(:placeholder-shown) + label {
-      top: -1rem;
-      left: 90%;
-      font-size: 1.75rem;
-      color: green !important;
-    }
-    .btn-primary {
-      border-radius: 10px;
-      font-size: 1.1rem;
-      font-weight: bold;
-    }
-  </style>
+{% block title %}Kullanıcı Ekle | {{ company.name }}{% endblock title %}
 
-  <div class="container mt-5">
-    {% if form.errors %}
-    <div class="alert alert-danger" role="alert">
-      <ul>
-        {% for field in form %}
-          {% for error in field.errors %}
-            <li>{{ field.label }}: {{ error }}</li>
-          {% endfor %}
-        {% endfor %}
-        {% for error in form.non_field_errors %}
-          <li>{{ error }}</li>
-        {% endfor %}
-      </ul>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&family=Exo:ital,wght@0,100..900;1,100..900&display=swap');
+    .container {
+        max-width: 600px;
+        margin: auto;
+        padding: 2rem;
+        background: #ff9671;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .btn-register {
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        width: 100%;
+        padding: 0.75rem;
+        background-color: #00FF00;
+        color: white;
+    }
+    .btn-register:hover {
+        background-color: #00FFFF;
+    }
+    .alert {
+        border-radius: 10px;
+    }
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    h2 {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #333;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    .user-list {
+        margin-top: 2rem;
+    }
+    .user-list table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+    }
+    .user-list th, .user-list td {
+        border: 1px solid #dee2e6;
+        padding: 0.75rem;
+        text-align: left;
+    }
+    .user-list th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+    .no-perm {
+        color: #999;
+        filter: blur(5px);
+        -webkit-filter: blur(5px);
+        -moz-filter: blur(5px);
+        -o-filter: blur(5px);
+        -ms-filter: blur(5px);
+    }
+    .user-list{
+        background-color: #fff;
+    }
+        .font-exo{
+            font-family: "Exo", sans-serif !important;
+        font-weight: 500;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="page-content">
+        <div class="row">
+            <div class="col-lg-12">
+                {% if form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    <ul>
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <h2>Kullanıcı Ekle</h2>
+
+                <small class="text-muted mb-4">İşlem yapılan şirket {{ company.name }} #{{ company.code }}</small>
+                <form method="POST" action="{% url 'kullanici_ekle' company.code %}" class="needs-validation " novalidate>
+                    {% csrf_token %}
+                    <div class="form-section mt-4 ">
+                        <div class="form-floating mb-3">
+                            <input type="text" name="username" id="username" class="form-control" placeholder="Kullanıcı Adı" required>
+                            <label for="username">Kullanıcı Adı</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="password" name="password1" id="password1" class="form-control" placeholder="Şifre" required>
+                            <label for="password1">Şifre</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="password" name="password2" id="password2" class="form-control" placeholder="Şifre (Tekrar)" required>
+                            <label for="password2">Şifre (Tekrar)</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" name="phone" id="phone" class="form-control" placeholder="Telefon" required>
+                            <label for="phone">Telefon</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" name="address" id="address" class="form-control" placeholder="Adres" required>
+                            <label for="address">Adres</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-register">Kayıt Ol</button>
+                </form>
+
+                <div class="user-list mb-4">
+                    <h2 class="text-center font-exo mt-2 mb-2">MEVCUT KULLANICILAR</h2>
+                    <table class="font-exo">
+                        <thead class="font-exo">
+                            <tr>
+                                <th>Kullanıcı Adı</th>
+                                <th>Telefon</th>
+                                <th>Adres</th>
+                                <th>uuid4</th>
+                                <th>Yetkilendirme Sayfası</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.phone }}</td>
+                                <td>{{ user.address }}</td>
+                                {% if request.user.username == 'ssoft1' %}
+                                <td>{{ user.unique_id }}</td>
+                                {% else %}
+                                <td class="no-perm">Sorry, you do not have these permissions</td>
+                                {% endif %}
+                                <td><a href="{% url 'kullanici_detayi' company.code user.unique_id %}" class="btn btn-gears fa-solid fa-gears w-100"></a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-  {% endif %}
-    <div class="container p-4" style="background: rgba(255, 255, 255, 0.9); border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
-      <h2 class="text-center mb-4">Kayıt Ol</h2>
-      <form method="POST" action="{% url 'kullanici_ekle' company.code %}" class="needs-validation" novalidate>
-        {% csrf_token %}
-        <div class="form-floating mb-3">
-          <input type="text" name="username" id="username" class="form-control" placeholder="Kullanıcı Adı" required>
-          <label for="username">Kullanıcı Adı</label>
-        </div>
-        <div class="form-floating mb-3">
-          <input type="password" name="password1" id="password1" class="form-control" placeholder="Şifre" required>
-          <label for="password1">Şifre</label>
-        </div>
-        <div class="form-floating mb-3">
-          <input type="password" name="password2" id="password2" class="form-control" placeholder="Şifre (Tekrar)" required>
-          <label for="password2">Şifre (Tekrar)</label>
-        </div>
-        <div class="form-floating mb-3">
-          <input type="text" name="phone" id="phone" class="form-control" placeholder="Telefon" required>
-          <label for="phone">Telefon</label>
-        </div>
-        <div class="form-floating mb-3">
-          <input type="text" name="address" id="address" class="form-control" placeholder="Adres" required>
-          <label for="address">Adres</label>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">Kayıt Ol</button>
-      </form>
-    </div>
-  </div>
+</div>
+<style>
+     .btn-gears{
+        background-color: #0089ba;
+        color:black;
+     }
+     .btn-gears:hover{
+        background-color: #0089ba;
+        color:white;
+     }
+</style>
 {% endblock %}

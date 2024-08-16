@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+{% block title %}
+{{company.name}} | Kritik Stoklar
+{% endblock title %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <style>
+                            @import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+
+                            .bg-critical{
+                                background-color:#6EACDA !important;
+                            }
+                            .table-bordered{
+                                font-family: "Ubuntu", sans-serif;
+  font-weight: 500;
+  font-style: normal;
+                            }
+                        </style>
+                        <th colspan="4" class="text-center bg-critical text-white">
+                            <h2>{{ company.name }} - Kritik Stoklar</h2>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th scope="col">Ürün Kodu</th>
+                        <th scope="col">Ürün Adı</th>
+                        <th scope="col">Kritik Stok Seviyesi</th>
+                        <th scope="col">Mevcut Stok</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in low_stock_products %}
+                        <tr class="table-danger">
+                            <th scope="row">{{ product.code }}</th>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.critical_stock_level }}</td>
+                            <td>{{ product.current_stock }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}

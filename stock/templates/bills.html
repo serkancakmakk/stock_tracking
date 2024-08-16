@@ -52,11 +52,19 @@
     .search-bar {
         margin-bottom: 20px;
     }
+   
+    @media screen and (max-width: 1366px) {
+        #bills_div{
+            width: 80%;
+            float: right;
+            margin-left: 200px;
+        }
+      }
 </style>
 
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-lg-10">
+        <div class="col-lg-12" id="bills_div">
             <div class="search-bar">
                 <div class="input-group">
                     <input type="text" id="searchInput" class="form-control" placeholder="Satıcı veya fatura numarası arayın...">
@@ -84,7 +92,7 @@
                                         <tr data-bill-number="{{ bill.number }}">
                                             <td>{{ bill.number }}</td>
                                             <td>
-                                                <a href="{% url 'fatura_detay' bill_number=bill.number %}" class="btn btn-primary btn-sm">Detayları Gör</a>
+                                                <a href="{% url 'fatura_detay' code=company.code bill_number=bill.number %}" class="btn btn-primary btn-sm">Detayları Gör</a>
                                             </td>
                                         </tr>
                                     {% endfor %}
