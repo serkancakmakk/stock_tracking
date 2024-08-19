@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+    <title>Oda Detayı - {{ room.name }}</title>
+    <style>
+        .message-right {
+            text-align: right;
+        }
+        .message-left {
+            text-align: left;
+        }
+        .message-right .media-body {
+            background-color: #EE4E4E;
+            border-radius: 15px;
+            padding: 10px;
+            display: inline-block;
+        }
+        .message-left .media-body {
+            background-color: #50B498;
+            border-radius: 15px;
+            padding: 10px;
+            display: inline-block;
+        }
+        .media-body {
+            max-width: 70%;
+        }
+        .text-white{
+            color:white;
+        }
+    </style>
+
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Şirket: {{ company.name }}</h1>
+                <h2 class="card-subtitle mb-4 text-muted">Oda: {{ room.name }}</h2>
+
+                <div class="mb-4" style="max-height: 400px; overflow-y: auto;">
+                    <h3 class="h5 mb-3">Mesajlar:</h3>
+                    <ul class="list-unstyled">
+                        {% for msg in message %}
+                        <li class="media mb-3 {% if msg.user == room.owner %}message-right{% else %}message-left{% endif %}">
+                            {% if msg.user != room.owner %}
+                            <img src="{{msg.user.profile_image.url}}" class="mr-3 rounded-circle" style="width: 50px; height: 50px;" alt="User Avatar">
+                            {% endif %}
+                            <div class="media-body">
+                                <h5 class="mt-0 mb-1">
+                                    {{ msg.user.username }}
+                                    {% if msg.user.tag != None %}({{ msg.user.tag }}){% endif %}
+                                </h5>
+                                <p>{{ msg.content }}</p>
+                                <small class="text-white">{{ msg.timestamp }}</small>
+                            </div>
+                            {% if msg.user == room.owner %}
+                            <img src="{{msg.user.profile_image.url}}" class="ml-3 rounded-circle" style="width: 50px; height: 50px;" alt="User Avatar">
+                            {% endif %}
+                        </li>
+                        {% empty %}
+                        <li class="text-white">Bu odada henüz mesaj yok.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

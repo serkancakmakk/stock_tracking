@@ -76,9 +76,9 @@
                     </tr>
                     <tr class="hidden-content" data-status="{{ room.status }}">
                         <td colspan="4">
-                            <!-- Ek bilgiler buraya eklenecek -->
                             <p>Destek Alan : {{ room.owner.username }}</p>
                             <p>Destek Veren : {{ room.supportive.username }} ({{ room.supportive.tag }})</p>
+                            <p>Odaya Gitmek için <a href="{% url 'oda_detay' room.name company.code %}">tıklayınız</a></p>
                         </td>
                     </tr>
                     {% endfor %}

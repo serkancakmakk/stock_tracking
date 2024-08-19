@@ -63,7 +63,8 @@ urlpatterns = [
     path('chat/<str:room_name>/<str:code>/', views.room, name='room'),
     path('give_support/', views.give_support, name='give_support'),
     path('end_chat/<str:room_name>',views.end_chat,name='desteği_bitir'),
-    path('destek_odalari/<int:code>',views.check_chat_room,name="destek_odalari")
+    path('destek_odalari/<int:code>',views.check_chat_room,name="destek_odalari"),
+    path('oda_detay/<str:room_name>/<int:code>',views.room_detail,name="oda_detay")
     # path('calculate_average_cost/', views.calculate_average_cost_view, name='calculate_average_cost'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

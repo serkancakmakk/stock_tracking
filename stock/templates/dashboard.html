@@ -1,12 +1,137 @@
+
+
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
 {% block title %}
 Admin Alanı | {{company.name}}
 {% endblock title %}
 
 <body>
+  {% comment %} <script>
+    const ws = new WebSocket('ws://' + window.location.host + '/ws/notifications/');
 
+    ws.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        alert(data.message);  // Bildirimi göster
+        location.reload();
+    };
+</script> {% endcomment %}
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1050;
+      min-width: 350px;
+      animation: pulse 2s infinite, blink 1s infinite; /* Animasyonları ekleyin */
+  }
 
+  .toast-body {
+      font-size: 1.25rem;
+  }
+
+  .toast-header img {
+      width: 70px;
+      height: 70px;
+      animation: blink 1s infinite; /* Yanıp sönme efekti */
+  }
+
+  @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+  }
+
+  @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.5); }
+      100% { transform: scale(1); }
+  }
+</style>
+
+<div aria-live="polite" aria-atomic="true" style="position: relative; min-height: 200px;">
+  <div id="toast-container" style="position: absolute; top: 0; right: 0;"></div>
+</div>
+
+<!-- Ses elemanı --><button id="play-sound" class="btn btn-primary">Sesi Çal</button>
+<audio id="notification-sound" src="{% static 'info.mp3' %}" preload="auto"></audio>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<audio id="notification-sound" src="{% static 'info.mp3' %}" preload="auto"></audio>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <button id="play-sound" class="btn btn-primary">Sesi Çal</button>
+    <div aria-live="polite" aria-atomic="true" style="position: relative; min-height: 200px;">
+        <div id="toast-container" style="position: absolute; top: 0; right: 0;"></div>
+    </div>
+    
+    <!-- Ses elemanı -->
+    <audio id="notification-sound" src="{% static 'info.mp3' %}" preload="auto"></audio>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const playSoundButton = document.getElementById('play-sound');
+            const notificationSound = document.getElementById('notification-sound');
+            
+            if (playSoundButton && notificationSound) {
+                playSoundButton.addEventListener('click', () => {
+                    notificationSound.play().catch(error => {
+                        console.error('Ses çalınamadı:', error);
+                    });
+                });
+            }
+
+            const ws = new WebSocket('ws://' + window.location.host + '/ws/notifications/');
+
+            ws.onmessage = function (e) {
+                const data = JSON.parse(e.data);
+                const message = data.message;
+
+                const toastContainer = document.getElementById('toast-container');
+                if (toastContainer) {
+                    const toastHTML = `
+                        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false">
+                            <div class="toast-header">
+                                <img src="{% static 'info.png' %}" class="rounded mr-2" alt="Icon">
+                                <strong class="mr-auto">Bildirim</strong>
+                                <small>Şimdi</small>
+                                <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="toast-body">
+                                ${message.content}
+                            </div>
+                        </div>
+                    `;
+                    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+
+                    const toasts = document.querySelectorAll('.toast');
+                    toasts.forEach((toast) => {
+                        const bsToast = new bootstrap.Toast(toast, {
+                            autohide: false
+                        });
+                        bsToast.show();
+                    });
+
+                    // Kullanıcı etkileşimini bekleyerek ses çalma işlemini başlat
+                    playSoundButton.click();
+                }
+            };
+        });
+    </script>
+  {% block icon %}
+  <link rel="icon" type="image/x-icon" href="{% static 'admin.png' %}">
+  {% endblock icon %}
 <div class="container mt-5 ">
   <main class="main-container">
     <div class="main-title">

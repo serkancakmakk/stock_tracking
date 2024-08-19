@@ -10,7 +10,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.username = self.scope['user'].username  # Kullanıcı adı
         self.user_id = self.scope['user'].id  # Kullanıcı ID
         self.user_tag = self.scope['user'].tag  # Kullanıcı etiketi
-        self.uuid4 = str(self.scope['user'].unique_id)  # Kullanıcı uuid4 as string
 
         # Odaya katıl
         await self.channel_layer.group_add(
@@ -118,7 +117,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'profile_image': profile_image,
             'message': message,
             'timestamp': timestamp,
-            'uuid4': uuid4
         }))
 
     async def user_left(self, event):
@@ -167,3 +165,38 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return user.profile_image.url if user.profile_image else ''
         except User.DoesNotExist:
             return ''
+class NotificationConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.group_name = 'company_1_group'
+
+        await self.channel_layer.group_add(
+            self.group_name,
+            self.channel_name
+        )
+
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(
+            self.group_name,
+            self.channel_name
+        )
+
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+
+        await self.channel_layer.group_send(
+            self.group_name,
+            {
+                'type': 'chat_message',
+                'message': message
+            }
+        )
+
+    async def chat_message(self, event):
+        message = event['message']
+
+        await self.send(text_data=json.dumps({
+            'message': message
+        }))

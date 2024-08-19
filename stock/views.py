@@ -8,7 +8,7 @@ from django.utils import timezone
 from datetime import date
 
 from django.shortcuts import render
-from .models import ChatRoom, Company, Inventory, Parameter, Product, StockTransactions, User
+from .models import ChatRoom, Company, Inventory, Parameter, Product, StockTransactions, User,Message
 from .tables import StockTransactionsTable
 from datetime import datetime, date
 
@@ -661,8 +661,16 @@ def destek_view(request, code):
     return redirect('room', room_name=room_name, code=code)
 def end_chat(request, room_name):
     room = get_object_or_404(ChatRoom, name=room_name)
-    
-    # Oda sahibinin odayı hemen kapatabilmesi
+    if room.supportive == request.user:
+        elapsed_time = timezone.now() - room.created_at  # Odanın oluşturulma zamanını kontrol ediyoruz
+        remaining_time = timedelta(minutes=1) - elapsed_time
+        
+        if elapsed_time < timedelta(minutes=1):
+            minutes, seconds = divmod(remaining_time.seconds, 60)
+            messages.error(request, f'Desteği sonlandırmak için en az 1 dakika beklemelisiniz. Kalan süre: {minutes} dakika {seconds} saniye.')
+            print(f'Desteği sonlandırmak için en az 1 dakika beklemelisiniz. Kalan süre: {minutes} dakika {seconds} saniye.')
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+    # Oda sahibinin odayı hemen kapatabilmesi veya yetkili kullanıcının kapatabilmesi
     if room.owner == request.user:
         room.status = True
         rating = request.POST.get('rating')
@@ -672,21 +680,29 @@ def end_chat(request, room_name):
         return redirect('dashboard', request.user.company.code)
     
     # Destek veren kullanıcının en az 1 dakika beklemesi
-    if room.supportive == request.user:
-        elapsed_time = timezone.now() - room.created_at  # Odanın oluşturulma zamanını kontrol ediyoruz
-        if elapsed_time < timedelta(minutes=1):
-            messages.error(request, 'Desteği sonlandırmak için en az 1 dakika beklemelisiniz.')
-            return redirect(request.META.get('HTTP_REFERER', '/'))
-        
-        room.status = True
-        rating = request.POST.get('rating')
-        print('Rating Puanı', rating)
-        room.save()
-        messages.info(request, 'Destek Sonlandırıldı İyi Çalışmalar')
-        return redirect('dashboard', request.user.company.code)
     
-    # messages.error(request, 'Sadece kendi desteğinizi sonlandırabilirsiniz.')
+        
+    room.status = True
+    rating = request.POST.get('rating')
+    print('Rating Puanı', rating)
+    room.save()
+    messages.info(request, 'Destek Sonlandırıldı İyi Çalışmalar')
+    return redirect('dashboard', request.user.company.code)
+    
+    # Diğer durumlarda hata mesajı gönder
+    messages.error(request, 'Sadece kendi desteğinizi sonlandırabilirsiniz.')
     return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+def room_detail(request,room_name,code):
+    company = get_object_or_404(Company,code=code)
+    room = get_object_or_404(ChatRoom,name = room_name)
+    message = Message.objects.filter(room=room)
+    context = {
+        'company':company,
+        'room':room,
+        'message':message,
+    }
+    return render(request,'room_detail.html',context)
 def check_chat_room(request,code):
     company = get_object_or_404(Company,code=code)
 
@@ -702,6 +718,16 @@ def check_chat_room(request,code):
 def room(request, room_name, code):
     company = get_object_or_404(Company, code=code)
     room = get_object_or_404(ChatRoom, name=room_name)
+    if request.user.username == 'ssoft':
+        return render(request, 'chat_room.html', {
+        'room_name': room_name,
+        'company': company,
+        'room': room,
+    })
+    if room.status == True:
+        messages.info(request, "Kapalı Bir odaya ulaşamazsınız")
+        return redirect('dashboard',request.user.company.code)
+  
     return render(request, 'chat_room.html', {
         'room_name': room_name,
         'company': company,

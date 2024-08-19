@@ -3,7 +3,7 @@ from django.dispatch import receiver
 from django.db import transaction
 from django.db.models import Sum, F
 from decimal import Decimal
-from .models import BillItem, Parameter, Product, Seller, User
+from .models import BillItem, ChatRoom, Parameter, Product, Seller, User
 from django.db import transaction
 from django.db.models import Sum, F, DecimalField, ExpressionWrapper
 from decimal import Decimal
@@ -104,3 +104,23 @@ def update_product_average_cost(sender, instance, created, **kwargs):
 #     # Balance hesaplaması
 #     instance.balance = instance.receivable - instance.debt
 #     instance.save()
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+def notify_users():
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "company_1_group",
+        {
+            "type": "chat_message",
+            "message": {
+                "type": "info",
+                "content": "Yeni bir destek odası oluşturuldu!"
+            }
+        }
+    )
+@receiver(post_save, sender=ChatRoom)
+def notify_company_one_users(sender, instance, created, **kwargs):
+    if created:
+        # Destek odası oluşturuldu
+        # Firma kodu 1 olan kullanıcıları bilgilendirme işlemini buraya ekleyin
+        notify_users()
