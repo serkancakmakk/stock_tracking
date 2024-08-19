@@ -74,7 +74,11 @@
         <div class="bg-white p-6 rounded shadow-md">
             <div class="flex items-center justify-between mb-4">
                 <h1 class="text-2xl font-bold">Chat Room: {{ room_name }}</h1>
+                <br>
+                <hr>
                 <h3>{{room.owner.company.code}}</h3>
+                <br>
+                <a href="{% url 'kullanici_detayi' room.owner.company.code room.owner.unique_id %}">Kullanıcı detayı</a>
                 {% if messages %}
                 <li>
                     {% for message in messages  %}
@@ -203,7 +207,7 @@
                 chatLog.appendChild(messageElement);
                 chatLog.scrollTop = chatLog.scrollHeight; // Scroll to the bottom
     
-                // Mesajları localStorage'a kaydet
+                // Mesajı localStorage'a kaydet
                 const messages = JSON.parse(localStorage.getItem(`chat_messages_${roomName}`)) || [];
                 messages.push(data);
                 localStorage.setItem(`chat_messages_${roomName}`, JSON.stringify(messages));

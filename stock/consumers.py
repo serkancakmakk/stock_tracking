@@ -10,6 +10,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.username = self.scope['user'].username  # Kullanıcı adı
         self.user_id = self.scope['user'].id  # Kullanıcı ID
         self.user_tag = self.scope['user'].tag  # Kullanıcı etiketi
+        self.uuid4 = str(self.scope['user'].unique_id)  # Kullanıcı uuid4 as string
 
         # Odaya katıl
         await self.channel_layer.group_add(
@@ -28,7 +29,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'username': self.username,
                 'profile_image': profile_image,
                 'message': f'{self.username}{(" (" + self.user_tag + ")" if self.user_tag else "")} desteğe katıldı.',
-                'timestamp': timestamp
+                'timestamp': timestamp,
+                'uuid4': self.uuid4,
             }
         )
 
@@ -107,6 +109,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         profile_image = event['profile_image']
         message = event['message']
         timestamp = event['timestamp']
+        uuid4 = event['uuid4']
 
         # Kullanıcı katıldığında WebSocket üzerinden mesaj gönder
         await self.send(text_data=json.dumps({
@@ -114,7 +117,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'username': username,
             'profile_image': profile_image,
             'message': message,
-            'timestamp': timestamp
+            'timestamp': timestamp,
+            'uuid4': uuid4
         }))
 
     async def user_left(self, event):

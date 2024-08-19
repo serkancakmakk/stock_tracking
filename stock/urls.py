@@ -62,7 +62,8 @@ urlpatterns = [
     path('destek/<str:code>/', views.destek_view, name='destek'),
     path('chat/<str:room_name>/<str:code>/', views.room, name='room'),
     path('give_support/', views.give_support, name='give_support'),
-    path('end_chat/<str:room_name>',views.end_chat,name='desteği_bitir')
+    path('end_chat/<str:room_name>',views.end_chat,name='desteği_bitir'),
+    path('destek_odalari/<int:code>',views.check_chat_room,name="destek_odalari")
     # path('calculate_average_cost/', views.calculate_average_cost_view, name='calculate_average_cost'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

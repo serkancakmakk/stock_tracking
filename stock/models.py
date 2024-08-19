@@ -18,6 +18,8 @@ class Company(models.Model):
     contract_start_date = models.DateTimeField(auto_now_add=True)
     contract_end_date = models.DateTimeField()
     create_user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='created_companies')
+    class Meta:
+        db_table = 'Company'
 class Parameter(models.Model):
     COST_CHOICES = [
         ('fifo', 'FIFO'),
@@ -39,6 +41,8 @@ class Parameter(models.Model):
     is_inventory = models.BooleanField(default=False)
     def __str__(self):
         return f'{self.company} - {self.get_cost_calculation_display()}'
+    class Meta:
+        db_table = 'Parameter'
 import os
 
 def get_upload_to(instance, filename):
@@ -85,7 +89,8 @@ class User(AbstractUser):
     class Meta:
         unique_together = ('username', 'company')  # username ve company birlikte benzersiz
 
-
+    class Meta:
+        db_table = 'User'
      
 class Permission(models.Model):
     # Kullanıcıya özel izinler
@@ -103,6 +108,8 @@ class Permission(models.Model):
     add_outgoing = models.BooleanField(default=False)
     add_unit = models.BooleanField(default=False)
     add_user = models.BooleanField(default=False)
+    class Meta:
+        db_table = 'Permission'
 class Seller(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
@@ -114,6 +121,8 @@ class Seller(models.Model):
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)
     def __str__(self):
         return self.name
+    class Meta:
+        db_table = 'Seller'
 class Category(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
@@ -121,6 +130,8 @@ class Category(models.Model):
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)
     def __str__(self):
         return self.name
+    class Meta:
+        db_table = 'Category'
 class Unit(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     unit_name = models.CharField(max_length=10)
@@ -128,7 +139,8 @@ class Unit(models.Model):
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)
     def __str__(self):
         return self.unit_name
-
+    class Meta:
+        db_table = 'Unit'
 class Product(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     code = models.IntegerField()
@@ -145,17 +157,22 @@ class Product(models.Model):
     
     def __str__(self):
         return self.name
-
+    class Meta:
+        db_table = 'Product'
 class Recipe(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)  # Recipe name
     total_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0)
     def __str__(self):
         return self.name
+    class Meta:
+        db_table = 'Recipe'
 class RecipeProduct(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='recipe_products')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.DecimalField(max_digits=10, decimal_places=3)  # Quantity of product in the recipe
+    class Meta:
+        db_table = 'RecipeProduct'
 
     def __str__(self):
         return f'{self.product.name} ({self.quantity})'
@@ -172,6 +189,8 @@ class Bill(models.Model):
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)
     def __str__(self):
         return f"Bill {self.id} - {self.date}"
+    class Meta:
+        db_table = 'Bill'
 class Inventory(models.Model):
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -186,6 +205,8 @@ class Inventory(models.Model):
     is_released = models.BooleanField(default=False)
     def __str__(self):
         return self.serial_number if self.serial_number else f"Inventory for {self.product.name}"
+    class Meta:
+        db_table = 'Inventory'
 class BillItem(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE)
@@ -207,11 +228,15 @@ class BillItem(models.Model):
     row_total = models.DecimalField(max_digits=255, decimal_places=3, null=True, blank=True, default=0.00)
     def __str__(self):
         return f"{self.product.name} - {self.quantity} {self.product.unit}"
+    class Meta:
+        db_table = 'BillItem'
 class OutgoingReasons(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)
+    class Meta:
+        db_table = 'OutgoingReasons'
 class OutgoingBill(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     number = models.CharField(max_length=255,null=False,blank=False)
@@ -226,6 +251,8 @@ class OutgoingBill(models.Model):
     serial_number = models.CharField(max_length=255,null=True,blank=True)
     def __str__(self):
         return self.number
+    class Meta:
+        db_table = 'OutgoingBill'
 class StockTransactions(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     product = models.ForeignKey(Product,on_delete=models.DO_NOTHING,verbose_name='Ürün')  # Ürün adı veya açıklaması
@@ -240,6 +267,8 @@ class StockTransactions(models.Model):
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)
     def __str__(self):
         return self.product
+    class Meta:
+        db_table = 'StockTransactions'
 
 class ChatRoom(models.Model):
     name = models.CharField(max_length=100)
@@ -247,8 +276,13 @@ class ChatRoom(models.Model):
     status = models.BooleanField(default=True) # oda durumu
     supportive = models.ForeignKey(User, on_delete=models.CASCADE,related_name="support_team_user",null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    rating = models.IntegerField(default=0,null=True,blank=True)
+    class Meta:
+        db_table = 'ChatRoom'
 class Message(models.Model):
     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = 'Message'

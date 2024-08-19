@@ -687,7 +687,18 @@ def end_chat(request, room_name):
     
     # messages.error(request, 'Sadece kendi desteğinizi sonlandırabilirsiniz.')
     return redirect(request.META.get('HTTP_REFERER', '/'))
+def check_chat_room(request,code):
+    company = get_object_or_404(Company,code=code)
 
+    if company.code != 1:
+        messages.error(request,'Bu alana erişemezsiniz')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    rooms = ChatRoom.objects.all()
+    context = {
+        'company':company,
+        'rooms':rooms
+    }
+    return render(request,'check_chat_room.html',context)
 def room(request, room_name, code):
     company = get_object_or_404(Company, code=code)
     room = get_object_or_404(ChatRoom, name=room_name)
