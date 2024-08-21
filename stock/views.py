@@ -519,19 +519,30 @@ def import_excel(request):
     }
     return render(request, 'import_excel.html', context)
 from django.contrib import messages
-def create_unit_page(request,code):
-    company = get_object_or_404(Company,code=code)
+def create_unit_page(request, code):
+    company = get_object_or_404(Company, code=code)
+    user_company_code = request.user.company.code
+
+    # Kullanıcının yalnızca kendi firmasına ait işlemler yapmasına izin verilir
+    if user_company_code != company.code and user_company_code != 1:
+        messages.info(request, "Sadece kendi firmanızda işlem yapabilirsiniz.")
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
     units = Unit.objects.filter(company=company)
+    
     context = {
-        'company':company,
-        'units':units,
+        'company': company,
+        'units': units,
     }
-    return render(request,'definitions/define_unit.html',context)
+
+    return render(request, 'definitions/define_unit.html', context)
 def create_unit(request, code):
     if request.method != "POST":
         messages.info(request, "İşlem Gerçekleşmedi")
         return redirect(request.META.get('HTTP_REFERER', '/'))
-
+    if not request.user.permissions.add_unit:
+        messages.info(request, "Birim Ekleme Yetkisine Sahip Değilsiniz.")
+        return redirect(request.META.get('HTTP_REFERER', '/'))
     unit_name = request.POST.get("unit_name")
     if not unit_name:
         messages.info(request, "Birim Adı Boş Olamaz")
@@ -540,6 +551,7 @@ def create_unit(request, code):
     company = get_object_or_404(Company, code=code)
 
     # Kullanıcı yetkilerini kontrol et
+
     if not check_user_permissions(request, company):
         return redirect('dashboard', request.user.company.code)
 
@@ -692,7 +704,13 @@ def end_chat(request, room_name):
     # Diğer durumlarda hata mesajı gönder
     messages.error(request, 'Sadece kendi desteğinizi sonlandırabilirsiniz.')
     return redirect(request.META.get('HTTP_REFERER', '/'))
-    
+from django.views.decorators.csrf import csrf_exempt
+@csrf_exempt
+def set_notifications(request):
+    if request.method == 'POST':
+        # İşlem yap
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
 def room_detail(request,room_name,code):
     company = get_object_or_404(Company,code=code)
     room = get_object_or_404(ChatRoom,name = room_name)

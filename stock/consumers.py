@@ -29,7 +29,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'profile_image': profile_image,
                 'message': f'{self.username}{(" (" + self.user_tag + ")" if self.user_tag else "")} desteğe katıldı.',
                 'timestamp': timestamp,
-                'uuid4': self.uuid4,
             }
         )
 
@@ -108,7 +107,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         profile_image = event['profile_image']
         message = event['message']
         timestamp = event['timestamp']
-        uuid4 = event['uuid4']
 
         # Kullanıcı katıldığında WebSocket üzerinden mesaj gönder
         await self.send(text_data=json.dumps({
