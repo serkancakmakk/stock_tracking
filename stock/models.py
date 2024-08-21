@@ -95,7 +95,13 @@ class User(AbstractUser):
 class Permission(models.Model):
     # Kullanıcıya özel izinler
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='permissions')
+    # support user perm
     add_company = models.BooleanField(default=False)
+    list_company = models.BooleanField(default=False)
+    set_agreement_date = models.BooleanField(default=False)
+
+
+
     add_user = models.BooleanField(default=False)
     add_bill = models.BooleanField(default=False)
     

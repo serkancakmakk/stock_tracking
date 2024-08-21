@@ -131,21 +131,36 @@
                 <li><a class="dropdown-item" href="{% url 'kullanici_ekle' company.code %}">Kullanıcı</a></li>
             </ul>
         </li>
+        <li class="nav-item dropend">
+          <a class="nav-link dropdown-toggle" href="#" id="raporlarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-solid fa-headset icons"></i>
+              <span class="text nav-text">Destek</span>
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="raporlarDropdown">
+            {% if request.user.permissions.add_product %}
+              <li><a class="dropdown-item" href="{% url 'urun_olustur' company.code%}">Ürün</a></li>
+            {% endif %}
+            <li class="nav-link">
+              <a href="{% url 'destek' company.code %}">
+                <i class="fa-solid fa-handshake-angle icons"></i>
+                <span class="text nav-text">Destek Ekibiyle Konuş</span>
+              </a>
+            </li>
+           {% if request.user.company.code == 1 %}
+            <li class="nav-link">
+              <a href="{% url 'destek_odalari' company.code %}">
+                <i class="fa-solid fa-people-roof icons"></i>
+                <span class="text nav-text">Geçmiş Odalar</span>
+               
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+      </li>
           </ul>
         </div>
-        <li class="nav-link">
-          <a href="{% url 'destek' company.code %}">
-            <i class="fa-solid fa-handshake-angle icons"></i>
-            <span class="text nav-text">Destek Ekibiyle Konuş</span>
-          </a>
-        </li>
-        <li class="nav-link">
-          <a href="{% url 'destek_odalari' company.code %}">
-            <i class="fa-solid fa-people-roof icons"></i>
-            <span class="text nav-text">Geçmiş Odalar</span>
-           
-          </a>
-        </li>
+       
+       
         <li class="nav-link">
           <a href="{% url 'give_support' %}">
             <i class="fa-solid fa-headset icons"></i>

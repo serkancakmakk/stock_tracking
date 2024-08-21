@@ -537,49 +537,62 @@ def create_unit_page(request, code):
 
     return render(request, 'definitions/define_unit.html', context)
 def create_unit(request, code):
+    # Yalnızca POST isteklerine izin verilir
     if request.method != "POST":
-        messages.info(request, "İşlem Gerçekleşmedi")
+        messages.info(request, "İşlem Gerçekleşmedi.")
         return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    # Kullanıcının birim ekleme yetkisi olup olmadığını kontrol et
     if not request.user.permissions.add_unit:
-        messages.info(request, "Birim Ekleme Yetkisine Sahip Değilsiniz.")
+        messages.info(request, "Birim ekleme yetkisine sahip değilsiniz.")
         return redirect(request.META.get('HTTP_REFERER', '/'))
+
     unit_name = request.POST.get("unit_name")
+    
+    # Birim adı boş olamaz
     if not unit_name:
-        messages.info(request, "Birim Adı Boş Olamaz")
+        messages.info(request, "Birim adı boş olamaz.")
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
     company = get_object_or_404(Company, code=code)
 
     # Kullanıcı yetkilerini kontrol et
-
     if not check_user_permissions(request, company):
         return redirect('dashboard', request.user.company.code)
 
+    # Aynı isimde birim olup olmadığını kontrol et
     if Unit.objects.filter(unit_name=unit_name, company=company).exists():
-        messages.info(request, "Birim Adı Zaten Kayıtlı")
+        messages.info(request, "Bu birim adı zaten kayıtlı.")
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
-    Unit.objects.create(company=company, unit_name=unit_name,is_create=request.user)
-    messages.success(request, "Kayıt Gerçekleşti")
+    # Yeni birim oluştur ve başarı mesajı göster
+    Unit.objects.create(company=company, unit_name=unit_name, is_create=request.user)
+    messages.success(request, "Birim başarıyla eklendi.")
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
-def delete_unit(request, unit_id):
+def delete_unit(request, unit_id, code):
+    company = get_object_or_404(Company, code=code)
+    user_company_code = request.user.company.code
     if request.method != "POST":
         messages.add_message(request, messages.INFO, "Silme İşlemi Gerçekleşmedi")
         return redirect(request.META.get('HTTP_REFERER', '/'))
-
+    # Kullanıcının yalnızca kendi firmasına ait işlemler yapmasına ve gerekli izne sahip olmasına izin verilir
+    if (user_company_code != company.code and user_company_code != 1) or not (
+        request.user.permissions.delete_unit):
+        messages.info(request, "Sadece kendi firmanızda işlem yapabilirsiniz veya birim silme yetkisine sahip değilsiniz.")
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    # Birimi Bul
     try:
         unit = Unit.objects.get(id=unit_id)
     except Unit.DoesNotExist:
-        messages.add_message(request, messages.ERROR, "Unit bulunamadı")
+        messages.add_message(request, messages.ERROR, "Birim bulunamadı")
         return redirect(request.META.get('HTTP_REFERER', '/'))
-
-    if Product.objects.filter(unit=unit).exists():
+    # herhangi bir üründe o birim tanımlıysa işlemi durdur
+    if Product.objects.filter(unit=unit,company=company).exists():
         messages.add_message(request, messages.WARNING, "Bu birim bir ürüne bağlı olduğu için silinemez")
     else:
         unit.delete()
         messages.add_message(request, messages.SUCCESS, "Birim başarıyla silindi")
-
     return redirect(request.META.get('HTTP_REFERER', '/'))
 def create_outgoing_reasons_page(request,code):
     try:

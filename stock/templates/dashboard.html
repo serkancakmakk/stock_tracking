@@ -47,7 +47,7 @@ Admin Alanı | {{company.name}}
 <audio id="notification-sound" src="{% static 'info.mp3' %}" preload="auto"></audio>
 <!-- SweetAlert2 JavaScript dosyası -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{% if request.user.company == 1 %}
+{% if request.user.company.code == 1 %}
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const startButton = document.getElementById('start-notifications');

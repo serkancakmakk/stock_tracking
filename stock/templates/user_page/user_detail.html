@@ -30,7 +30,7 @@ Kullanıcıyı Düzenle | {{user.username}}
               width: 48%;
             }
           </style>
-          <img src="{% if user.profile_image.url != None %}{{ user.profile.image.url }}{% else %}/static/default-profile.png{% endif %}" alt="Profile Image" {% if user.is_active %} class="active_user profile-img mr-10" {% else %} class="inactive_user profile-img mr-10" {% endif %}>
+          <img src="{% if user.profile_image.url != None %}{{ user.profile_image.url }}{% else %}/static/default-profile.png{% endif %}" alt="Profile Image" {% if user.is_active %} class="active_user profile-img mr-10" {% else %} class="inactive_user profile-img mr-10" {% endif %}>
           <div class="profile-info">
             <p>
               <script>
@@ -92,6 +92,13 @@ Kullanıcıyı Düzenle | {{user.username}}
                     <input class="form-check-input" name="add_user" type="checkbox" role="switch" id="switchAddUser" {% if user_permission.add_user %}checked{% endif %}>
                     <label class="form-check-label" for="switchAddUser">Kullanıcı Ekleme</label>
                   </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="list_company" type="checkbox" role="switch" id="switchAddUser" {% if user_permission.list_company %}checked{% endif %}>
+                    <label class="form-check-label" for="switchAddUser">list_company</label>
+                  </div>
+
+
+                  
                   <div class="form-check form-switch">
                     <input class="form-check-input" name="add_outgoing" type="checkbox" role="switch" id="switchAddOutgoing" {% if user_permission.add_outgoing %}checked{% endif %}>
                     <label class="form-check-label" for="switchAddOutgoing">Çıkış Yapabilsin</label>

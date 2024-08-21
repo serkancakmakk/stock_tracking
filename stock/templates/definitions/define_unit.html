@@ -19,6 +19,7 @@
                         <th scope="col">#</th>
                         <th scope="col">Birim Adı</th>
                         <th scope="col">Durum Değiştir</th>
+                        <th scope="col">Sil</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -34,6 +35,12 @@
                             <form action="{% url 'birim_durumunu_degistir' unit.id %}" method="POST">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success" >Değiştir</button>
+                            </form>
+                        </td>
+                        <td>
+                            <form action="{% url 'birim_sil' unit.id company.code %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger" >Sil</button>
                             </form>
                         </td>
                       </tr>
