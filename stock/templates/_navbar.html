@@ -14,6 +14,7 @@
             <span class="main">Slight</span><br>
             <span class="sub">SOFT</span>
             {{request.user.company.code}}
+            {{request.user.id}}
           </div>
         </div>
         <i id="sidebarToggle" class="bx bx-chevron-right toggle"></i>
@@ -29,7 +30,7 @@
             <li class="nav-link">
               <a href="{% url 'dashboard' company.code %}">
                 <i class="fa-solid fa-house-user icons"></i>
-                <span class="text nav-text username"><strong>#{{request.user.username}}#</strong></span>
+                <span class="text nav-text username"><strong>{{request.user.username}}({{request.user.tag}})</strong></span>
               </a>
             </li>
             <style>
@@ -44,6 +45,8 @@
                 <span class="text nav-text">Şirket Oluştur</span>
               </a>
             </li>
+            {% endif %}
+            {% if request.user.company.code == 1 and request.user.permissions.list_company%}
             <li class="nav-link">
               <a href="{% url 'firmalar' company.code %}">
                 <i class="fa-solid fa-layer-group icons"></i>
@@ -124,11 +127,21 @@
               {% if request.user.permissions.add_product %}
                 <li><a class="dropdown-item" href="{% url 'urun_olustur' company.code%}">Ürün</a></li>
               {% endif %}
+              {% if request.user.permissions.add_category %}
                 <li><a class="dropdown-item" href="{% url 'kategori_tanimla' company.code %}">Kategori</a></li>
+              {% endif %}
+                {% if request.user.permissions.add_seller %}
                 <li><a class="dropdown-item" href="{% url 'cari_tanimla' company.code %}">Cari</a></li>
+              {% endif %}
+              {% if request.user.permissions.add_outgoing %}
                 <li><a class="dropdown-item" href="{% url 'cikis_tanimlama_sayfasi' company.code %}">Çıkış</a></li>
+              {% endif %}
+              {% if request.user.permissions.add_unit %}
                 <li><a class="dropdown-item" href="{% url 'birim_olustur' company.code %}">Birim</a></li>
+              {% endif %}
+              {% if request.user.permissions.add_user %}
                 <li><a class="dropdown-item" href="{% url 'kullanici_ekle' company.code %}">Kullanıcı</a></li>
+              {% endif %}
             </ul>
         </li>
         <li class="nav-item dropend">
@@ -137,9 +150,6 @@
               <span class="text nav-text">Destek</span>
           </a>
           <ul class="dropdown-menu" aria-labelledby="raporlarDropdown">
-            {% if request.user.permissions.add_product %}
-              <li><a class="dropdown-item" href="{% url 'urun_olustur' company.code%}">Ürün</a></li>
-            {% endif %}
             <li class="nav-link">
               <a href="{% url 'destek' company.code %}">
                 <i class="fa-solid fa-handshake-angle icons"></i>

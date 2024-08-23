@@ -5,11 +5,20 @@
         <div class="col-lg-6">
 
             <h1>Birim Tanımla</h1>
+            {% if request.user.permissions.add_unit %}
             <form action="{% url 'birim_tanimla' company.code %}" method="POST">
                 {% csrf_token %}
                 <input class="form-control"type="text"name="unit_name">
+                
                 <button class="btn btn-outline-success mt-4" type="submit">Kaydet</button>
+               
+                
+                
+                
             </form>
+            {% else %}
+            <button class="btn btn-outline-danger mt-4 w-100" type="button" disabled><strong>Yetki Yok</strong></button>
+            {% endif %}
             </div>
             <div class="col-lg-6">
                 <h1>Tanımlı Birimler</h1>
@@ -32,10 +41,14 @@
                         <td class="text-bold-inactive">{{unit.unit_name}}</td>
                         {% endif %}
                         <td>
-                            <form action="{% url 'birim_durumunu_degistir' unit.id %}" method="POST">
+                            {% if request.user.permissions.update_unit %}
+                            <form action="{% url 'birim_durumunu_degistir' company.code unit.id %}" method="POST">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success" >Değiştir</button>
                             </form>
+                            {% else %}
+                            <button type="button" class="btn btn-danger" >Yetki Yok</button>
+                            {% endif %}
                         </td>
                         <td>
                             <form action="{% url 'birim_sil' unit.id company.code %}" method="POST">

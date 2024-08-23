@@ -29,19 +29,23 @@ from .models import Bill, BillItem, Category, OutgoingBill, OutgoingReasons, Pro
 from .forms import CategoryForm, CompanyForm, ParameterForm, PermissionForm, ProductForm, SellerForm, UnitForm, UserEditForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils.crypto import get_random_string
-def companies(request,company_code):
-    company = get_object_or_404(Company,code=company_code)
-    print(request.user.username)
-    # if not request.user.username == 'ssoft' and request.user.company.code == 1:
-    #     messages.error(request, 'Bu Sayfaya Ulaşamazsınız.')
-    #     return redirect('dashboard', company.code)
-    companies = Company.objects.all()
 
+
+def companies(request, company_code):
+    company = get_object_or_404(Company, code=company_code)
+    
+    # `ssoft` değil ve `list_company` izni yoksa
+    if request.user.username != 'ssoft' and not request.user.permissions.list_company:
+        messages.error(request, 'Bu Sayfaya Ulaşamazsınız.')
+        return redirect('dashboard', company.code)
+    
+    companies = Company.objects.all()
+    
     context = {
-        'company':company,
-        'companies':companies,
+        'company': company,
+        'companies': companies,
     }
-    return render(request,'companies.html',context)
+    return render(request, 'companies.html', context)
 def generate_unique_code():
     """Generate a unique 9-digit code."""
     return str(random.randint(100000000, 999999999))
@@ -105,33 +109,34 @@ def master_create_company(request):
 
 
 def create_company(request, code):
+    # Şirketi al
     company = get_object_or_404(Company, code=code)
-    
-    if request.user.company.code != 1:
-        messages.error(request, 'Bu Yetkiye Sahip Değilsiniz.')
-        return redirect('dashboard', code=request.user.company.code)
-    
-    if request.method != 'POST':
-        form = CompanyForm()
-        context = {
-            'form': form,
-            'company': company,
-        }
-        return render(request, 'definitions/define_company.html', context)
-    
+    print('Bu kontrole geliyor.')
+    # Kullanıcının şirkete erişim izni olup olmadığını kontrol et
+   
+
+    if request.method == 'POST':
+        if not (request.user.company.code == 1 and request.user.permissions.add_company):
+            print('Bu kontrole geliyor.')
+            # print(request.user.user_permissions.add_company)
+            messages.error(request, 'Bu işlemi yapma yetkiniz yok.')
+            return redirect('dashboard', code=request.user.company.code)
+    # Formu al ve doğrula
     form = CompanyForm(request.POST)
     if form.is_valid():
         # Yeni şirket oluştur
         new_company = form.save(commit=False)
-        # Şirket kodunu oluştur ve ayarla
-        new_company.code = generate_unique_code()
-        # Şirketi veritabanına kaydet
-        new_company.create_user = request.user
-        new_company.save()
+        new_company.code = generate_unique_code()  # Şirket kodunu oluştur
+        new_company.create_user = request.user  # Şirketi oluşturan kullanıcıyı ayarla
+        new_company.save()  # Veritabanına kaydet
         
         messages.success(request, 'Yeni şirket başarıyla oluşturuldu.')
-        return redirect('firmalar',request.user.company.code)  # Başarılı bir şekilde kaydedildikten sonra yönlendirin
+        return redirect('firmalar', request.user.company.code)  # Başarılı bir şekilde kaydedildikten sonra yönlendirin
+    else:
+        # GET isteği için formu oluştur
+        form = CompanyForm()
     
+    # Şablona verileri gönder
     context = {
         'form': form,
         'company': company,
@@ -211,9 +216,22 @@ def user_edit(request, code, uuid4):
         form = UserEditForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
             user = form.save(commit=False)
+            
+            # is_active değeri güncelleniyor
             user.is_active = 'is_active' in request.POST
+            
+            # Formdan gelen tag değeri kontrol ediliyor
+            new_tag = request.POST.get('tag')
+            if new_tag == '':  # Eğer tag değeri varsa, güncelle
+                user.tag = user.tag
+            # Eğer tag değeri yoksa, user.tag olduğu gibi kalır
+            
+            # Diğer işlemler
             print(user.profile_image)
+            
+            # Kullanıcıyı kaydet
             user.save()
+            
             messages.success(request, 'Güncelleme Başarılı')
             return redirect(request.META.get('HTTP_REFERER', '/'))
         else:
@@ -225,11 +243,12 @@ def user_edit(request, code, uuid4):
     
     return render(request, 'user_page/user_detail.html', {'form': form, 'company': company})
 def edit_permissions(request, code, uuid4):
-    if not (request.user.username == 'sssoft' or request.user.company.code == code):
+    if not (request.user.username == 'ssoft' or request.user.company.code == code):
         messages.error(request, 'Sadece kendi firmanız için işlem yapabilirsiniz.')
         return redirect('dashboard', request.user.company.code)
 
     user = get_object_or_404(User, unique_id=uuid4)
+    print(user.id)
     company = get_object_or_404(Company, code=code)
     permission, created = Permission.objects.get_or_create(user=user)
     
@@ -249,6 +268,8 @@ def edit_permissions(request, code, uuid4):
         'company': company,
         'user': user
     })
+from django.db import models
+
 def user_login(request):
     if request.method == "POST":
         username = request.POST.get('username')
@@ -277,10 +298,12 @@ def user_login(request):
 
         # Kullanıcıya ait yetkilerin olup olmadığını kontrol et ve yoksa oluştur
         permission, created = Permission.objects.get_or_create(user=user)
-        if created:
-            # Yeni oluşturulan yetkiler için varsayılan değerler atayabilirsiniz
-            permission.add_company = False
-            permission.add_user = False
+
+        # Eğer kullanıcı ssoft ise, tüm boolean izinlerini True yap
+        if user.username == 'ssoft':
+            for field in Permission._meta.get_fields():
+                if isinstance(field, models.BooleanField):
+                    setattr(permission, field.name, True)
             permission.save()
 
         # Giriş işlemini gerçekleştir
@@ -288,7 +311,7 @@ def user_login(request):
         request.session['company_code'] = company.code
 
         # Başarıyla giriş yaptıktan sonra yönlendirme
-        return redirect('dashboard', code=company.code)  # Yönlendirme parametresi doğru mu?
+        return redirect('dashboard', code=company.code)
 
     return render(request, 'login.html')
 
@@ -296,21 +319,14 @@ def user_detail(request, code, uuid4):
     company = get_object_or_404(Company, code=code)
     user = get_object_or_404(User, unique_id=uuid4)
     
-    # Get the permissions for the user being viewed
-    try:
-        user_permission = Permission.objects.get(user=user)
-    except Permission.DoesNotExist:
-        user_permission = None
-
     # Check if the authenticated user is 'sssoft', belongs to the company, or has the required permission
-    if not (request.user.username == 'sssoft' or request.user.company == company or (user_permission and user_permission.can_view_other_companies)):
+    if not (request.user.username == 'ssoft' or request.user.company == company):
         messages.error(request, 'Sadece kendi firmanız için işlem yapabilirsiniz.')
         return redirect('dashboard', request.user.company.code)
     
     context = {
         'company': company,
         'user': user,
-        'user_permission': user_permission  # Pass the permissions to the template
     }
     return render(request, 'user_page/user_detail.html', context)
 from django.contrib.auth.decorators import login_required
@@ -456,18 +472,22 @@ def stock_by_category(request, code):
     
     return render(request, 'reports/stock_by_category.html', context)
 
-def change_unit_status(request, unit_id):
+def change_unit_status(request, code, unit_id):
     if request.method != "POST":
         messages.add_message(request, messages.INFO, "İşlem Gerçekleşmedi")
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
-    unit = get_object_or_404(Unit, id=unit_id)
+    company = get_object_or_404(Company, code=code)
+    unit = get_object_or_404(Unit, id=unit_id, company=company)
 
-    # Unit'in ait olduğu şirketi al
-    company = unit.company
+    # Kullanıcı yetkileri ve şirket kodu kontrolü
+    has_permission = (
+        (request.user.company == company and request.user.permissions.update_unit) or
+        request.user.company.code == 1
+    )
 
-    # Kullanıcı yetkilerini kontrol et
-    if not check_user_permissions(request, company):
+    if not has_permission:
+        messages.add_message(request, messages.ERROR, "Yetkiniz Yok")
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
     # Unit'in aktiflik durumunu değiştir
@@ -475,6 +495,39 @@ def change_unit_status(request, unit_id):
     unit.save()
     
     messages.add_message(request, messages.SUCCESS, "İşlem başarıyla gerçekleştirildi.")
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+def delete_unit(request, unit_id, code):
+    company = get_object_or_404(Company, code=code)
+    user_company_code = request.user.company.code
+    
+    # Yalnızca POST istekleriyle işleme izin verilir
+    if request.method != "POST":
+        messages.add_message(request, messages.INFO, "Silme işlemi gerçekleşmedi.")
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    # Kullanıcı izinleri kontrol edilir
+    has_permission = (
+        (user_company_code == company.code or user_company_code == 1) and
+        request.user.permissions.delete_unit
+    )
+
+    if not has_permission:
+        messages.info(request, "Bu işleme yetkiniz yok.")
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    # Birim bulunur, bulunamazsa hata döner
+    try:
+        unit = Unit.objects.get(id=unit_id, company=company)
+    except Unit.DoesNotExist:
+        messages.add_message(request, messages.ERROR, "Birim bulunamadı.")
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    # Birime bağlı ürün var mı kontrol edilir
+    if Product.objects.filter(unit=unit, company=company).exists():
+        messages.add_message(request, messages.WARNING, "Bu birim bir ürüne bağlı olduğu için silinemez.")
+    else:
+        unit.delete()
+        messages.add_message(request, messages.SUCCESS, "Birim başarıyla silindi.")
     
     return redirect(request.META.get('HTTP_REFERER', '/'))
 import openpyxl
@@ -570,30 +623,7 @@ def create_unit(request, code):
     messages.success(request, "Birim başarıyla eklendi.")
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
-def delete_unit(request, unit_id, code):
-    company = get_object_or_404(Company, code=code)
-    user_company_code = request.user.company.code
-    if request.method != "POST":
-        messages.add_message(request, messages.INFO, "Silme İşlemi Gerçekleşmedi")
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-    # Kullanıcının yalnızca kendi firmasına ait işlemler yapmasına ve gerekli izne sahip olmasına izin verilir
-    if (user_company_code != company.code and user_company_code != 1) or not (
-        request.user.permissions.delete_unit):
-        messages.info(request, "Sadece kendi firmanızda işlem yapabilirsiniz veya birim silme yetkisine sahip değilsiniz.")
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-    # Birimi Bul
-    try:
-        unit = Unit.objects.get(id=unit_id)
-    except Unit.DoesNotExist:
-        messages.add_message(request, messages.ERROR, "Birim bulunamadı")
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-    # herhangi bir üründe o birim tanımlıysa işlemi durdur
-    if Product.objects.filter(unit=unit,company=company).exists():
-        messages.add_message(request, messages.WARNING, "Bu birim bir ürüne bağlı olduğu için silinemez")
-    else:
-        unit.delete()
-        messages.add_message(request, messages.SUCCESS, "Birim başarıyla silindi")
-    return redirect(request.META.get('HTTP_REFERER', '/'))
+
 def create_outgoing_reasons_page(request,code):
     try:
         company=get_object_or_404(Company,code=code)
@@ -640,27 +670,47 @@ def change_active_status(request, id):
 def create_seller(request, code):
     company = get_object_or_404(Company, code=code)
     
-    if request.method != "POST":
-        sellers = Seller.objects.all()
-        context = {
-            'sellers': sellers,
-            'company': company
-        }
-        return render(request, 'definitions/define_seller.html', context)
+    if request.method == "POST":
+        # Kullanıcının izinlerini kontrol et
+        if not request.user.permissions.add_seller:
+            messages.error(request, "Cari Oluşturma Yetkisine Sahip Değilsiniz.")
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+        
+        seller_name = request.POST.get("seller_name")
+        seller_address = request.POST.get("seller_address")
+        
+        # Veri doğrulama
+        if not seller_name or not seller_address:
+            messages.error(request, "Cari Adı ve Adresi Boş Olamaz.")
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+        
+        # Kullanıcının yalnızca kendi firmasına ait işlemler yapmasına izin verilir
+        if not check_user_permissions(request, company):
+            return redirect('dashboard', request.user.company.code)
+        
+        # Seller adı daha önce oluşturulmuş mu kontrol et
+        if Seller.objects.filter(company=company, name=seller_name).exists():
+            messages.info(request, "Cari Adı Zaten Kayıtlı.")
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+        
+        # Seller oluştur
+        Seller.objects.create(
+            company=company,
+            name=seller_name,
+            address=seller_address,
+            is_create=request.user
+        )
+        
+        messages.success(request, "Cari Oluşturuldu")
+        return redirect(request.META.get('HTTP_REFERER', '/'))
     
-    seller_name = request.POST.get("seller_name")
-    seller_address = request.POST.get("seller_address")
-    
-    Seller.objects.create(
-        company=company,
-        name=seller_name,
-        address=seller_address,
-        is_create = request.user
-    )
-    
-    messages.success(request, "Cari Oluşturuldu")
-    
-    return redirect(request.META.get('HTTP_REFERER', '/'))
+    # GET isteği ile formu render et
+    sellers = Seller.objects.filter(company=company)
+    context = {
+        'sellers': sellers,
+        'company': company
+    }
+    return render(request, 'definitions/define_seller.html', context)
 def create_category_page(request,code):
     company = get_object_or_404(Company,code=code)
     categories = Category.objects.all()
@@ -1674,3 +1724,5 @@ from django.contrib.auth import logout as auth_logout
 def logout(request):
     auth_logout(request)
     return redirect('login')
+def webrtc(request):
+    return render(request, 'webrtc.html')

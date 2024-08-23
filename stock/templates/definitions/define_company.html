@@ -1,11 +1,23 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
+{% block title %}
+Yeni Firma Tanımla
+{% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'company.png' %}">
+{% endblock icon %}
 <div class="container mt-5">
     <div class="row">
+        {% if not request.user.permissions.add_company %}
+        <h1 class="text-center">Bu Yetkiye Sahip Değilsin.</h1>
+                {% else %}
+                
+               
         <div class="col-12 col-md-8" id="define_company_div">
             <h1 class="text-center">Şirket Oluştur</h1>
             <small>İşlemi yapan kullanıcı : <strong>{{request.user.username}}</strong></small>
-            <form method="post" action="">
+            <form method="post" action="{% url 'yeni_firma_tanimla' company.code %}">
                 {% csrf_token %}
                 
                 <div class="form-floating mb-3">
@@ -46,15 +58,85 @@
                     <textarea name="other_info" id="id_other_info" class="form-control" placeholder="Other Information" required></textarea>
                     <label for="id_other_info">Diğer Bilgiler</label>
                 </div>
-                {% if request.user.username == "ssoft" %}
-                <button type="submit" class="btn btn-success w-100 ">Oluştur </button>
-                {% else %}
-                <button type="submit" class="btn btn-danger w-100 ">Yetki yok </button>
-                {% endif %}
+                
+                <div class="btn-container">
+                    <button type="submit" class="btn btn-success w-100 animate-btn">Oluştur</button>
+                </div>
+<style>
+    
+    /* Buton kabını oluşturun */
+.btn-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+
+}
+
+/* Butonun başlangıç stili */
+.animate-btn {
+    width: 100%;
+    position: relative;
+    background-color: #28a745; /* Başlangıç rengi */
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    transition: all 0.3s ease; /* Animasyon süresi ve türü */
+    overflow: hidden;
+}
+
+/* Buton çevresinde dönen ışık efekti */
+.animate-btn:hover::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 5px;
+    border: 2px solid #fff;
+    box-shadow: 0 0 15px #fff;
+    opacity: 0;
+    animation: spin 1.5s linear infinite;
+}
+
+/* Işık döndürme animasyonu */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Hover durumunda (üzerine gelince) */
+.animate-btn:hover {
+    background-color: #218838; /* Renk değişimi */
+    transform: scale(1.05); /* Butonu hafifçe büyütme */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3); /* Gölge ekleme */
+}
+
+/* Click durumunda (tıklama) */
+.animate-btn:active {
+    background-color: #1e7e34; /* Daha koyu bir renk */
+    transform: scale(0.95); /* Butonu hafifçe küçültme */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Gölgeyi azaltma */
+}
+</style>
+
             </form>
         </div>
     </div>
 </div>
+{% endif %}
 <style>
     body{
         background-color: #C4FAA7;
@@ -74,4 +156,5 @@
         }
     }
 </style>
+
 {% endblock content %}

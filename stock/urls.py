@@ -33,7 +33,7 @@ urlpatterns = [
     path('kategoriye_göre_stoklar/<int:code>/',views.stock_by_category,name="kategoriye_göre_stoklar"),
     path('import_excel/', views.import_excel, name='import_excel'),
     path('download_excel/', views.download_excel, name='download_excel'),
-    path('birim_durumunu_degistir/<int:unit_id>', views.change_unit_status, name='birim_durumunu_degistir'),
+    path('birim_durumunu_degistir/<int:code>/<int:unit_id>', views.change_unit_status, name='birim_durumunu_degistir'),
     path('stok_hareketleri/<int:code>', views.stock_transactions, name='stok_hareketleri'),
     path('ürün_bilgileri/<int:code>/', views.product_info, name='ürün_bilgileri'),
     path('vade_tarihi_gelen_faturalar/<int:code>/<str:expiry_date>/', views.due_date_reports, name='vade_tarihi_gelen_faturalar'),
@@ -66,6 +66,7 @@ urlpatterns = [
     path('destek_odalari/<int:code>',views.check_chat_room,name="destek_odalari"),
     path('oda_detay/<str:room_name>/<int:code>',views.room_detail,name="oda_detay"),
     path('set-notifications/', views.set_notifications, name='set_notifications'),
+    path('webrtc', views.webrtc, name='webrtc'),
     # path('check-notifications/', views.check_notification_preference, name='check_notifications'),
     # path('calculate_average_cost/', views.calculate_average_cost_view, name='calculate_average_cost'),
 

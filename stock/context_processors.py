@@ -55,6 +55,8 @@ def user_permissions(request):
                 'add_outgoing':permissions.add_outgoing,
                 'add_unit':permissions.add_unit,
                 'add_user':permissions.add_user,
+                #update perm
+                'update_unit':permissions.update_unit,
             }
         except Permission.DoesNotExist:
             permission = {}

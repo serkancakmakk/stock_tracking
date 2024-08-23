@@ -67,7 +67,15 @@ class User(AbstractUser):
     address = models.CharField(max_length=255, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     USERNAME_FIELD = 'unique_id'  # USERNAME_FIELD'ı değiştir
-    tag = models.CharField(max_length=15,null=True,blank=True)
+    TAG_CHOICES = [
+        ('Kurucu','Kurucu'),
+        ('Yönetici', 'Yönetici'),
+        ('Yetkili', 'Yetkili'),
+        ('Destek', 'Destek'),
+        ('Kullanıcı', 'Kullanıcı'),
+    ]
+
+    tag = models.CharField(max_length=15, choices=TAG_CHOICES, null=True, blank=True,default='Kullanıcı')
     profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
     rating = models.PositiveIntegerField(null=True,blank=True)
     support_given = models.PositiveIntegerField(null=True,blank=True)
@@ -99,7 +107,7 @@ class Permission(models.Model):
     add_company = models.BooleanField(default=False)
     list_company = models.BooleanField(default=False)
     set_agreement_date = models.BooleanField(default=False)
-
+    set_company_status = models.BooleanField(default=False)
 
 
     add_user = models.BooleanField(default=False)
@@ -114,8 +122,22 @@ class Permission(models.Model):
     add_outgoing = models.BooleanField(default=False)
     add_unit = models.BooleanField(default=False)
     add_user = models.BooleanField(default=False)
+    # update perm
+    update_unit = models.BooleanField(default=False)
+
+    #delete perm
+    delete_unit = models.BooleanField(default=False)
     class Meta:
         db_table = 'Permission'
+    def save(self, *args, **kwargs):
+        if self.user.company.code != 1:
+            # Firma kodu 1 değilse belirli yetkileri devre dışı bırak
+            self.add_company = False
+            self.list_company = False
+            self.set_agreement_date = False
+            self.set_company_status = False
+            # Diğer yetkileri de buraya ekleyebilirsiniz
+        super(Permission, self).save(*args, **kwargs)   
 class Seller(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)

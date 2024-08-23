@@ -45,24 +45,33 @@ Kullanıcıyı Düzenle | {{user.username}}
                   toast.show();
                 }
               </script>
-              <i class="fas fa-user icons" onclick="copyText('{{ user.username }}')"></i> <strong>{{ user.username }}</strong>
+              <i class="fas fa-user icons" title="Kullanıcı Adı" onclick="copyText('{{ user.username }}')"></i> <strong>{{ user.username }}</strong>
             </p>
             <hr class="line">
             <p>
-              <i class="fas fa-envelope icons" onclick="copyText('{{ user.email }}')"></i> {{ user.email }}
+              <i class="fa-solid fa-building icons" title="Kullanıcı Şirket" onclick="copyText('{{ user.company.code }}')"></i> {{ user.company.code }}
             </p>
             <hr class="line">
             <p>
-              <i class="fas fa-phone icons" onclick="copyText('{{ user.phone }}')"></i> {{ user.phone }}
+              <i class="fas fa-envelope icons" title="Kullanıcı E-postası" onclick="copyText('{{ user.email }}')"></i> {{ user.email }}
             </p>
             <hr class="line">
             <p>
-              <i class="fas fa-home icons" onclick="copyText('{{ user.address }}')"></i> {{ user.address }}
+              <i class="fas fa-phone icons" title="Kullanıcı Telefon" onclick="copyText('{{ user.phone }}')"></i> {{ user.phone }}
             </p>
+            <hr class="line">
+            <p>
+              <i class="fas fa-home icons" title="Kullanıcı Adres" onclick="copyText('{{ user.address }}')"></i> {{ user.address }}
+            </p>
+            <hr class="line">
+            <p>
+              <i class="fa-solid fa-user-tag icons" title="Kullanıcı Etiketi" onclick="copyText('{{ user.get_tag_display }}')"></i> {{ user.get_tag_display }}
+          </p>
+          
             <hr class="line">
             {% if request.user.username == "ssoft" %}
             <p>
-              <i class="fa-solid fa-id-badge icons" onclick="copyText('{{ user.unique_id }}')"></i> {{ user.unique_id }}
+              <i class="fa-solid fa-id-badge icons" title="Kullanıcı Benzersiz Id" onclick="copyText('{{ user.unique_id }}')"></i> {{ user.unique_id }}
             </p>
             <hr class="line">
             {% else %}
@@ -79,36 +88,43 @@ Kullanıcıyı Düzenle | {{user.username}}
               <i class="fa-solid fa-user-pen"></i> Düzenle
             </button>
           </div>
+          <!--
+          for master user
+          -->
           <div class="permissions-wrapper">
             <form method="POST" action="{% url 'kullanici_yetkilendir' company.code user.unique_id %}">
               {% csrf_token %}
               <div class="permissions-container d-flex justify-content-between">
                 <div class="permissions-area">
+                  {% if company.code == 1  %}
                   <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_company" type="checkbox" role="switch" id="switchAddCompany" {% if user_permission and user_permission.add_company %}checked{% endif %}>
+                    <input class="form-check-input" name="add_company" type="checkbox" role="switch" id="switchAddCompany" {% if user.permissions.add_company %}checked{% endif %}>
                     <label class="form-check-label" for="switchAddCompany">Şirket Ekleme</label>
                   </div>
+                 
                   <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_user" type="checkbox" role="switch" id="switchAddUser" {% if user_permission.add_user %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddUser">Kullanıcı Ekleme</label>
+                    <input class="form-check-input" name="list_company" type="checkbox" role="switch" id="switchAddUser" {% if user.permissions.list_company %}checked{% endif %}>
+                    <label class="form-check-label" for="switchListCompany">Şirketleri Listele</label>
                   </div>
                   <div class="form-check form-switch">
-                    <input class="form-check-input" name="list_company" type="checkbox" role="switch" id="switchAddUser" {% if user_permission.list_company %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddUser">list_company</label>
+                    <input class="form-check-input" name="list_company" type="checkbox" role="switch" id="switchAddUser" {% if user.permissions.list_company %}checked{% endif %}>
+                    <label class="form-check-label" for="switchListCompany">Anlaşma Tarihi Ayarlasın</label>
                   </div>
-
-
-                  
                   <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_outgoing" type="checkbox" role="switch" id="switchAddOutgoing" {% if user_permission.add_outgoing %}checked{% endif %}>
+                    <input class="form-check-input" name="list_company" type="checkbox" role="switch" id="switchAddUser" {% if user.permissions.list_company %}checked{% endif %}>
+                    <label class="form-check-label" for="switchListCompany">Şirket Durumunu Değiştirebilsin</label>
+                  </div>
+                  {% endif %}
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" name="add_outgoing" type="checkbox" role="switch" id="switchAddOutgoing" {% if user.permissions.add_outgoing %}checked{% endif %}>
                     <label class="form-check-label" for="switchAddOutgoing">Çıkış Yapabilsin</label>
                   </div>
                   <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_bill" type="checkbox" role="switch" id="switchAddBill" {% if user_permission.add_bill %}checked{% endif %}>
+                    <input class="form-check-input" name="add_bill" type="checkbox" role="switch" id="switchAddBill" {% if user.permissions.add_bill %}checked{% endif %}>
                     <label class="form-check-label" for="switchAddBill">Fatura Girebilsin</label>
                   </div>
                   <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_inventory" type="checkbox" role="switch" id="switchAddInventory" {% if user_permission.add_inventory %}checked{% endif %}>
+                    <input class="form-check-input" name="add_inventory" type="checkbox" role="switch" id="switchAddInventory" {% if user.permissions.add_inventory %}checked{% endif %}>
                     <label class="form-check-label" for="switchAddInventory">Envanter Girebilsin</label>
                   </div>
                   <div class="btn-area">
@@ -189,6 +205,22 @@ Kullanıcıyı Düzenle | {{user.username}}
               <input value={{user.address}} type="text" class="form-control" name="address" id="addressInput" placeholder="Kullanıcı Adı">
               <label for="floatingInput">Adres</label>
             </div>
+            {% if request.user.tag == "Yönetici" %}
+            <div class="form-floating mb-3 ">
+              <select class="form-select" name ="tag"  aria-label="Default select example">
+                <option selected value="{{user.tag}}">{{user.tag}}</option>
+                <option value="Yönetici">Yönetici</option>
+                <option value="Yetkili">Yetkili</option>
+                <option value="Destek">Destek</option>
+              </select>
+            </div>
+            {% else %}
+            <div class="form-floating mb-3 ">
+              <select class="form-select" name ="tag"  aria-label="Default select example">
+                <option selected value="{{user.tag}}">{{user.tag}}</option>
+              </select>
+            </div>
+            {% endif %}
             <div class="form-check">
               <input class="form-check-input" type="checkbox" name="is_active" value="" id="is_active_checkbox" {% if user.is_active == True %}checked{% endif %}>
               <label class="form-check-label" for="is_active"> Aktif mi? </label>

@@ -38,7 +38,7 @@ from django.core.exceptions import ValidationError
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ['username','phone','password1','password2','address']
+        fields = ['username','phone','password1','password2','address','tag']
 
 
     def __init__(self, *args, **kwargs):
@@ -67,7 +67,7 @@ class ParameterForm(forms.ModelForm):
 class UserEditForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['username','phone','email','address','is_active','profile_image']
+        fields = ['username','phone','email','address','is_active','profile_image','tag']
 from .models import Permission
 class PermissionForm(forms.ModelForm):
     class Meta:
