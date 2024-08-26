@@ -123,10 +123,14 @@ class Permission(models.Model):
     add_unit = models.BooleanField(default=False)
     add_user = models.BooleanField(default=False)
     # update perm
-    update_unit = models.BooleanField(default=False)
+    update_unit = models.BooleanField(default=False),
+    update_seller = models.BooleanField(default=False),
 
     #delete perm
     delete_unit = models.BooleanField(default=False)
+    # access perm
+    access_to_reports = models.BooleanField(default=False)
+
     class Meta:
         db_table = 'Permission'
     def save(self, *args, **kwargs):
@@ -142,8 +146,8 @@ class Seller(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
-    receivable = models.DecimalField(max_digits=10, decimal_places=5,null=True,blank=True)
-    debt = models.DecimalField(max_digits=10, decimal_places=5,null=True,blank=True)
+    receivable = models.DecimalField(max_digits=10, decimal_places=5,null=True,blank=True,default=0)
+    debt = models.DecimalField(max_digits=10, decimal_places=5,null=True,blank=True,default=0)
     status = models.BooleanField(default=True)
     balance = models.DecimalField(max_digits=10, decimal_places=5,null=True,blank=True,default=0)
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)

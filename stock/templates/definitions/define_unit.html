@@ -1,81 +1,87 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container">
+{% block title %}
+Birim Tanımla
+{% endblock title %}
+<div class="container mt-5">
     <div class="row">
         <div class="col-lg-6">
+            <!-- Birim Tanımla Kartı -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Birim Tanımla</h5>
+                </div>
+                <div class="card-body">
+                    {% if request.user.permissions.add_unit %}
+                    <form action="{% url 'birim_tanimla' company.code %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="unit_name" class="form-label">Birim Adı</label>
+                            <input class="form-control" type="text" name="unit_name" id="unit_name" required>
+                        </div>
+                        <button class="btn btn-outline-success w-100" type="submit">Kaydet</button>
+                    </form>
+                    {% else %}
+                    <button class="btn btn-outline-danger w-100" type="button" disabled><strong>Yetki Yok</strong></button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
-            <h1>Birim Tanımla</h1>
-            {% if request.user.permissions.add_unit %}
-            <form action="{% url 'birim_tanimla' company.code %}" method="POST">
-                {% csrf_token %}
-                <input class="form-control"type="text"name="unit_name">
-                
-                <button class="btn btn-outline-success mt-4" type="submit">Kaydet</button>
-               
-                
-                
-                
-            </form>
-            {% else %}
-            <button class="btn btn-outline-danger mt-4 w-100" type="button" disabled><strong>Yetki Yok</strong></button>
-            {% endif %}
+        <div class="col-lg-6">
+            <!-- Tanımlı Birimler Kartı -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tanımlı Birimler</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table text-center">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Birim Adı</th>
+                                <th scope="col"><span class="badge text-bg-success">Aktif</span> / <span class="badge text-bg-danger">Pasif</span></th>
+                                <th scope="col">Sil</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for unit in units %}
+                            <tr>
+                                <th scope="row">{{ unit.id }}</th>
+                                {% if unit.is_active %}
+                                <td class="text-bold-active"><span class="badge text-bg-success w-100">{{ unit.unit_name }}</span></td>
+                                {% else %}
+                                <td class="text-bold-inactive"><span class="badge text-bg-danger w-100">{{ unit.unit_name }}</span></td>
+                                {% endif %}
+                                <td>
+                                    {% if request.user.permissions.update_unit %}
+                                    <form action="{% url 'birim_durumunu_degistir' company.code unit.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success">Değiştir</button>
+                                    </form>
+                                    {% else %}
+                                    <button type="button" class="btn btn-danger" disabled>Yetki Yok</button>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if request.user.permissions.delete_unit %}
+                                    <form action="{% url 'birim_sil' unit.id company.code %}" method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Sil</button>
+                                    </form>
+                                    {% else %}
+                                    <button type="button" class="btn btn-danger" disabled>Yetki Yok</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="col-lg-6">
-                <h1>Tanımlı Birimler</h1>
-                <table class="table text-center">
-                    <thead>
-                      <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Birim Adı</th>
-                        <th scope="col">Durum Değiştir</th>
-                        <th scope="col">Sil</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                        {% for unit in units  %}
-                      <tr>
-                        <th scope="row">{{unit.id}}</th>
-                        {% if unit.is_active == True %}
-                        <td class="text-bold-active">{{unit.unit_name}}</td>
-                        {% else %}
-                        <td class="text-bold-inactive">{{unit.unit_name}}</td>
-                        {% endif %}
-                        <td>
-                            {% if request.user.permissions.update_unit %}
-                            <form action="{% url 'birim_durumunu_degistir' company.code unit.id %}" method="POST">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-success" >Değiştir</button>
-                            </form>
-                            {% else %}
-                            <button type="button" class="btn btn-danger" >Yetki Yok</button>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <form action="{% url 'birim_sil' unit.id company.code %}" method="POST">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger" >Sil</button>
-                            </form>
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-            </div>
+        </div>
     </div>
 </div>
-<style>
-    .text-bold{
-        font-weight: bold;
-    }
-    .text-bold-active{
-        font-weight: bold;
-        color: green !important;
-    }
-    .text-bold-inactive{
-        font-weight: bold;
-        color:red !important;
-    }
+
 </style>
 {% endblock content %}
-
-

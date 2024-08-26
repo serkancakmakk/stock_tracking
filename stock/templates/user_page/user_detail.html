@@ -217,7 +217,7 @@ Kullanıcıyı Düzenle | {{user.username}}
             {% else %}
             <div class="form-floating mb-3 ">
               <select class="form-select" name ="tag"  aria-label="Default select example">
-                <option selected value="{{user.tag}}">{{user.tag}}</option>
+                <option selected value={% if user.company.code != 1 %}"Kullanıcı"{% else %}"{{user.tag}}" {% endif %}>{{user.tag}}</option>
               </select>
             </div>
             {% endif %}

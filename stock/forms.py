@@ -75,4 +75,7 @@ class PermissionForm(forms.ModelForm):
         fields = ['add_company', 'add_user','add_bill','add_inventory','add_parameter',
                   #define
                 'add_product','add_category','add_seller','add_outgoing','add_unit','add_user']
-        
+class SellerForm(forms.ModelForm):
+    class Meta:
+        model = Seller
+        fields = ['name', 'address', 'receivable', 'debt','balance']

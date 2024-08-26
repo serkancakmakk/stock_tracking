@@ -10,15 +10,16 @@ urlpatterns = [
     # path("<int:code>", views.dashboard,name="dashboard"),
     # path("tanimlar/", views.create_page,name="tanimlar"),
     path("cari_tanimla/<int:code>", views.create_seller,name="cari_tanimla"),
+    # path("cari_durum_degistir/<int:code>/<int:seller_id>",views.change_seller_status,name="cari_durum_degistir"),
     path("kategori_tanimla/<int:code>", views.create_category_page,name="kategori_tanimla"),
-    path("kategori_durum_degistir/<int:id>", views.change_category_status,name="kategori_durum_degistir"),
+    path("kategori_durum_degistir/<int:code>/<int:id>/", views.change_category_status,name="kategori_durum_degistir"),
     path("urun_tanimla/<int:code>", views.create_product,name="urun_tanimla"),
     path("cikis_tanimlama_sayfasi/<int:code>", views.create_outgoing_reasons_page,name="cikis_tanimlama_sayfasi"),
     path('cikis_sebebini_degistir/<int:id>/', views.change_active_status, name='cikis_sebebini_degistir'),
     path("birim_olustur/<int:code>",views.create_unit_page,name="birim_olustur"),
     path("birim_tanimla/<int:code>",views.create_unit,name="birim_tanimla"),
     path("birim_sil/<int:unit_id>/<int:code>",views.delete_unit,name="birim_sil"),
-    path("cari_olustur/<int:code>",views.create_seller,name="cari_olustur"),
+    
     path("urun_olustur/<int:code>",views.product_add_page,name="urun_olustur"),
     path("urun_olusturma_sayfasi/",views.product_add_page,name="urun_olusturma_sayfasi"),
     path("kategori_olustur/<int:code>",views.create_category,name="kategori_olustur"),
@@ -67,6 +68,14 @@ urlpatterns = [
     path('oda_detay/<str:room_name>/<int:code>',views.room_detail,name="oda_detay"),
     path('set-notifications/', views.set_notifications, name='set_notifications'),
     path('webrtc', views.webrtc, name='webrtc'),
+    path('cikis_nedenini_sil/<int:code>/<int:reason_id>',views.delete_outgoing_reason,name="cikis_nedenini_sil"),
+    path('cikis_nedenini_güncelle/<int:code>/<int:reason_id>',views.update_outgoing_reason,name="cikis_nedenini_güncelle"),
+    
+    path('kategori-guncelle/<int:company_code>/<int:category_id>/', views.kategori_guncelle, name='kategori_guncelle'),
+    # - # - # - # - # - # - # - # - # - # - # - # - # - #
+    path("cari_olustur/<int:code>",views.create_seller,name="cari_olustur"),
+    path('cari_güncelle/<int:company_code>/<int:seller_id>/', views.update_seller, name='cari_güncelle'),
+    path('cari_sil/<int:company_code>/<int:seller_id>/',views.delete_seller, name='cari_sil')
     # path('check-notifications/', views.check_notification_preference, name='check_notifications'),
     # path('calculate_average_cost/', views.calculate_average_cost_view, name='calculate_average_cost'),
 

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container">
+<div class="container mt-5">
     {% if messages %}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -16,62 +16,184 @@
         });
     </script>
     {% endif %}
+
     <div class="row">
-        <div class="col-lg-4">
-            <div class="mb-3">
-                <h4 class="accordion-button">Kategori Tanımla</h4>
-                <form action="{% url 'kategori_olustur' company.code %}" method="POST">
+        <div class="col-lg-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="mb-3">Kategori Tanımla</h4>
+                    <form action="{% url 'kategori_olustur' company.code %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="category_name" class="form-label">Kategori Adı</label>
+                            <input type="text" name="category_name" class="form-control" id="category_name">
+                            <div id="warning-message-for-category" class="text-danger mt-2"></div>
+                        </div>
+                        {% if not request.user.permissions.add_category %}
+                        <button type="button" class="btn btn-noperm">Yetki Yok</button>
+                        {% else %}
+                        <button type="submit" class="btn btn-success">Kaydet</button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4 class="mb-3 text-center">Kategori Listesi</h4>
+                    <table class="table table-hover">
+                        <thead>
+                          <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Kategori Adı</th>
+                            <th scope="col">Durum</th>
+                            <th scope="col">İşlemler</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                            <tr>
+                                <th scope="row">{{ forloop.counter }}</th>
+                                <td>{{ category.name }}</td>
+                                <td>
+                                    {% if category.is_active %}
+                                    <span class="badge bg-success">Aktif</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Pasif</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-change btn-sm" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editCategoryModal" 
+                                            data-category-id="{{ category.id }}" 
+                                            data-category-name="{{ category.name }}" 
+                                            data-category-status="{{ category.is_active }}">Düzenle</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Düzenleme Modali -->
+    <div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editCategoryForm" action="" method="POST">
                     {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="category_name" class="form-label">Kategori Adı</label>
-                        <input type="text" name="category_name" class="form-control" id="category_name">
-                        <div id="warning-message-for-category" class="text-danger"></div>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editCategoryModalLabel">Kategoriyi Düzenle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <button type="submit" class="btn btn-success">Kaydet</button>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="modalCategoryName" class="form-label">Kategori Adı</label>
+                            <input type="text" name="name" class="form-control" id="modalCategoryName">
+                        </div>
+                        <div class="mb-3">
+                            <label for="modalCategoryStatus" class="form-label">Durum</label>
+                            <select name="is_active" class="form-control" id="modalCategoryStatus">
+                                <option value="true">Aktif</option>
+                                <option value="false">Pasif</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                        <button type="submit" id="saveChangesButton" class="btn btn-primary">Kaydet</button>
+                    </div>
                 </form>
             </div>
         </div>
-            <div class="col-lg-4">
-                <table class="table">
-                    <thead>
-                      <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Kategori Adı</th>
-                        <th scope="col">Durum</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                        {% for category in categories  %}
-                        <tr>
-                            <th scope="row">1</th>
-                            <td>{{category.name}}</td>
-                            <td>
-                            {% if category.is_active == True %}
-                            <form action="{% url 'kategori_durum_degistir' category.id %}"method="POST">
-                                {% csrf_token %}
-                                <button type="submit"class="btn btn-outline-success">Aktif</button>
-                            </form>
-                            {% else %}
-                            <form action="{% url 'kategori_durum_degistir' category.id %}"method="POST">
-                                {% csrf_token %}
-                                <button type="submit"class="btn btn-outline-danger">Pasif</button>
-                            </form>
-                            {% endif %}
-                            
-                                
-                            </td>
-                            <td>
-                                
-                            </td>
-                            
-                          </tr>
-                        {% endfor %}               
-                    </tbody>
-                  </table>
     </div>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const editCategoryModal = document.getElementById('editCategoryModal');
+        const modalCategoryName = document.getElementById('modalCategoryName');
+        const modalCategoryStatus = document.getElementById('modalCategoryStatus');
+        const saveChangesButton = document.getElementById('saveChangesButton');
+    
+        editCategoryModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const categoryId = button.getAttribute('data-category-id');
+            const categoryName = button.getAttribute('data-category-name');
+            const categoryStatus = button.getAttribute('data-category-status');
+    
+            // Modal içeriğini güncelle
+            modalCategoryName.value = categoryName;
+            modalCategoryStatus.value = categoryStatus === 'true' ? 'true' : 'false';
+    
+            // Form eylemini güncelle
+            const form = document.getElementById('editCategoryForm');
+            form.action = `{% url 'kategori_guncelle' company.code 0 %}`.replace('/0/', `/${categoryId}/`);
+    
+            // Save Changes butonuna event listener ekleyelim
+            if (saveChangesButton) {
+                saveChangesButton.onclick = function () {
+                    const formData = new FormData(form);
+    
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Başarılı güncelleme durumunda sayfayı yenileyelim veya tablodaki veriyi güncelleyelim
+                          
+                            Swal.fire({
+                                title: 'Güncelleme başarılı.',
+                                icon: 'success',
+                                timer: 5000, // 5 saniye bekleme
+                                showConfirmButton: false
+                            });
+                        } else {
+                            // Hata durumunda kullanıcıya bir uyarı gösterelim
+                            Swal.fire('Güncelleme başarısız oldu.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch hata:', error);
+                        Swal.fire('Bir hata oluştu. Lütfen tekrar deneyin.');
+                    });
+                };
+            } else {
+                console.error('saveChangesButton bulunamadı.');
+            }
+        });
+    });
+</script>
 
+<style>
+    .btn-outline-change {
+        background-color: #125B9A;
+        color: white;
+        border-radius: 25% 10%;
+        transition: background-color 0.3s ease, border-radius 0.3s ease;
+    }
 
+    .btn-outline-change:hover {
+        background-color: #9DBDFF;
+        color: white;
+        border-radius: 5px;
+    }
 
+    .btn-noperm {
+        background-color: #A02334;
+        color: white;
+    }
+
+    .btn-noperm:hover {
+        background-color: #A02334;
+        color: white;
+    }
+</style>
 {% endblock content %}

@@ -1,42 +1,70 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="mb-3 text-center">
-                <img src="https://www.pngall.com/wp-content/uploads/8/Market-PNG-File.png" alt="Market Image" width="250"height="250">
-            </div>
-            <div class="mb-3">
-                <h4 class="accordion-button text-center">Cari Tanımla</h4>
-                <form action="{% url 'cari_olustur' company.code %}" method="POST">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="seller_name" class="form-label">Cari Adı</label>
-                        <input type="text" name="seller_name" class="form-control" id="seller_name">
-                        <div id="warning-message" class="text-danger"></div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="seller_address" class="form-label">Cari Adres</label>
-                        <input type="text" name="seller_address" class="form-control" id="seller_address">
-                    </div>
-                    <button type="submit" class="btn btn-success">Cariyi Kaydet</button>
-                </form>
-            </div>
+{% block title %}
+{{company.code}} | Cari Oluştur & Güncelle
+{% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'best-seller.png' %}">
+{% endblock icon %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+            <img src="https://www.pngall.com/wp-content/uploads/8/Market-PNG-File.png" alt="Market Image" class="img-fluid mb-4" style="max-width: 200px;">
+            <h1 class="mb-3 font-poppins">Cari Tanımla</h1>
+            <form action="{% url 'cari_olustur' company.code %}" method="POST" class="p-4 rounded shadow-sm" style="background-color: #f9f9f9;">
+                {% csrf_token %}
+                <div class="form-floating mb-3">
+                    <input type="text" name="name" class="form-control" id="seller_name" placeholder="Cari Adı">
+                    <label for="seller_name">Cari Adı</label>
+                    <div id="warning-message" class="text-danger"></div>
+                </div>
+                <div class="form-floating mb-4">
+                    <input type="text" name="address" class="form-control" id="seller_address" placeholder="Cari Adres">
+                    <label for="seller_address">Cari Adres</label>
+                </div>
+                <button type="submit" class="btn btn-save w-100">Cariyi Kaydet</button>
+            </form>
         </div>
-        <div class="col-lg-4">
-            <h4>Tanımlı Cariler</h4>
-            <table class="table">
-                <thead>
+        <div class="col-lg-8 mt-5">
+            <h4 class="mb-3">Tanımlı Cariler</h4>
+            <table class="table shadow-sm rounded overflow-hidden" style="background-color: #fff; border-collapse: separate; border-spacing: 0;">
+                <thead class="bg-primary text-white">
                     <tr>
-                        <th>Cari Adı</th>
-                        <th>Cari Adres</th>
+                        <th class="p-3 text-start">Cari Adı</th>
+                        <th class="p-3 text-start">Cari Adres</th>
+                        <th class="p-3 text-center">Cari Durum</th>
+                        <th class="p-3 text-center">İşlemler</th>
+                        <th class="p-3 text-center">Sil</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for seller in sellers %}
-                    <tr>
-                        <td>{{ seller.name }}</td>
-                        <td>{{ seller.address }}</td>
+                    <tr class="align-middle" style="border-bottom: 1px solid #dee2e6;">
+                        <td class="p-3">{{ seller.name }}</td>
+                        <td class="p-3">{{ seller.address }}</td>
+                        <td class="text-center p-3">
+                            {% if seller.status %}
+                            <span class="badge bg-success">Aktif</span>
+                            {% else %}
+                            <span class="badge bg-danger">Pasif</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center p-3">
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editSellerModal" 
+                                    data-seller-id="{{ seller.id }}" 
+                                    data-seller-name="{{ seller.name }}" 
+                                    data-seller-address="{{ seller.address }}" 
+                                    data-seller-status="{{ seller.status }}">Düzenle</button>
+                        </td>
+                        <td class="p-3">
+                            <form action="{% url 'cari_sil' company.code seller.id %}">
+                                {% csrf_token %}
+                            <button type="submit" class="btn btn-delete">Sil</button>
+                        </form>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -44,4 +72,148 @@
         </div>
     </div>
 </div>
+<style>
+    .table {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    thead {
+        background-color: #478CCF;
+        color: white;
+    }
+    
+    tbody tr:nth-child(odd) {
+        background-color: #f2f2f2; /* Zebra deseni için */
+    }
+    
+    tbody tr:hover {
+        background-color: #d8e2f1; /* Hover efekti */
+    }
+    
+    .badge {
+        font-size: 0.875rem; /* Küçük rozetler */
+    }
+
+    .btn-outline-primary {
+        border-color: #478CCF;
+        color: #478CCF;
+        transition: background-color 0.3s, color 0.3s;
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: #478CCF;
+        color: white;
+    }
+</style>
+<style>
+    .btn-delete{
+        background-color: #A91D3A;
+        color: white;
+        transition: background-color 0.3s ease, color 0.3s ease, border-radius 0.3s ease;
+    }
+    .btn-delete:hover {
+        background-color: #C73659; /* Daha koyu bir renk, isteğe bağlı */
+        color: white;
+        border-radius: 10% 10% 10% 100%;
+    }
+    .btn-save {
+        background-color: #478CCF;
+        color: white;
+        transition: background-color 0.3s ease, color 0.3s ease, border-radius 0.3s ease;
+    }
+    
+    .btn-save:hover {
+        background-color: #357ABD; /* Daha koyu bir renk, isteğe bağlı */
+        color: white;
+        border-radius: 10% 10% 10% 100%;
+    }
+    .btn-change{
+        background-color: #179BAE;
+        color: white;
+    }
+    .btn-change:hover{
+        background-color: #4158A6;
+        color: white;
+    }
+
+</style>
+<!-- Modal -->
+<div class="modal fade" id="editSellerModal" tabindex="-1" aria-labelledby="editSellerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editSellerModalLabel">Cari Bilgilerini Güncelle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="" id="updateSellerForm">
+                    {% csrf_token %}
+                    <div class="form-floating mb-3">
+                        <input type="text" name="name" class="form-control" id="modalSellerName" placeholder="Cari Adı">
+                        <label for="modalSellerName">Cari Adı</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" name="address" class="form-control" id="modalSellerAddress" placeholder="Cari Adres">
+                        <label for="modalSellerAddress">Cari Adres</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <select name="status" class="form-select" id="modalSellerStatus">
+                            <option value="True">Aktif</option>
+                            <option value="False">Pasif</option>
+                        </select>
+                        <label for="modalSellerStatus">Cari Durum</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" id="saveChangesButton" class="btn btn-primary">Değişiklikleri Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const editSellerModal = document.getElementById('editSellerModal');
+        const modalSellerName = document.getElementById('modalSellerName');
+        const modalSellerAddress = document.getElementById('modalSellerAddress');
+        const modalSellerStatus = document.getElementById('modalSellerStatus');
+        const saveChangesButton = document.getElementById('saveChangesButton');
+    
+        editSellerModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const sellerId = button.getAttribute('data-seller-id');
+            const sellerName = button.getAttribute('data-seller-name');
+            const sellerAddress = button.getAttribute('data-seller-address');
+            const sellerStatus = button.getAttribute('data-seller-status') === 'True';
+    
+            // Modal içeriğini güncelle
+            modalSellerName.value = sellerName;
+            modalSellerAddress.value = sellerAddress;
+            modalSellerStatus.value = sellerStatus ? 'True' : 'False';
+    
+            // Değişiklikleri kaydet butonuna event listener ekleyelim
+            saveChangesButton.onclick = function () {
+                const form = document.getElementById('updateSellerForm');
+                const formData = new FormData(form);
+    
+                fetch(`{% url 'cari_güncelle' company.code 0 %}`.replace('/0/', `/${sellerId}/`), {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Başarılı güncelleme durumunda sayfayı yenileyelim veya tablodaki veriyi güncelleyelim
+                        location.reload();
+                    } else {
+                        // Hata durumunda kullanıcıya bir uyarı gösterelim
+                        alert('Güncelleme başarısız oldu.');
+                    }
+                });
+            };
+        });
+    });
+</script>
 {% endblock content %}

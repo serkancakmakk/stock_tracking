@@ -106,8 +106,10 @@
                   <i class="fa-solid fa-chart-pie icons"></i>
                   <span class="text nav-text">Raporlar</span>
               </a>
+              
               <ul class="dropdown-menu" aria-labelledby="raporlarDropdown">
-                  <li><a class="dropdown-item" href="{% url 'stok_giris_cikislari' company.code %}">Stok Giriş Çıkış</a></li>
+                {% if request.user.permissions.access_to_reports %}
+                <li><a class="dropdown-item" href="{% url 'stok_giris_cikislari' company.code %}">Stok Giriş Çıkış</a></li>
                   <li><a class="dropdown-item" href="{% url 'stok_durumu' company.code %}">Stok Durumu</a></li>
                   <li><a class="dropdown-item" href="{% url 'kategoriye_göre_stoklar' company.code %}">Kategoriye Göre Stoklar</a></li>
                   <li><a class="dropdown-item" href="{% url 'stok_hareketleri' company.code %}">Stok Hareketleri</a></li>
@@ -116,7 +118,12 @@
                   <li><a class="dropdown-item" href="{% url 'faturalar' company.code %}">Faturalar</a></li>
                   <li><a class="dropdown-item" href="{% url 'stok_giris_cikislari' company.code %}">Kritik Stok Seviyleri</a></li>
                   <li><a class="dropdown-item" href="{% url 'vade_tarihi_gelen_faturalar' company.code today  %}">Vade Tarihi Gelen Faturalar</a></li>
+                {% else %}
+                  
+                  <li><a class="dropdown-item" >Yetki Yok</a></li>
+                  {% endif %}
               </ul>
+              
           </li>
           <li class="nav-item dropend">
             <a class="nav-link dropdown-toggle" href="#" id="raporlarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
