@@ -1,74 +1,109 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% block title %}Kullanıcı Ekle | {{ company.name }}{% endblock title %}
+{% block title %}Add User | {{ company.name }}{% endblock title %}
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&family=Exo:ital,wght@0,100..900;1,100..900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+    
     .container {
         max-width: 600px;
         margin: auto;
         padding: 2rem;
-        background: #ff9671;
+        background: #f0f0f0;
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        font-family: 'Poppins', sans-serif;
     }
+
     .btn-register {
         border-radius: 10px;
         font-size: 1.1rem;
-        font-weight: bold;
+        font-weight: 500;
         width: 100%;
         padding: 0.75rem;
-        background-color: #00FF00;
+        background-color: #4CAF50;
         color: white;
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
+
     .btn-register:hover {
-        background-color: #00FFFF;
+        background-color: #45a049;
     }
+
     .alert {
         border-radius: 10px;
     }
+
     .form-section {
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
+
+    .form-floating {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-floating input {
+        padding: 1rem;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .form-floating input:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+    }
+
+    .form-floating label {
+        font-size: 1rem;
+        color: #666;
+    }
+
     h2 {
-        font-size: 2rem;
+        font-size: 2.5rem;
         font-weight: bold;
         color: #333;
         text-align: center;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
     }
+
     .user-list {
         margin-top: 2rem;
     }
+
     .user-list table {
         width: 100%;
         border-collapse: collapse;
         margin-bottom: 1rem;
     }
+
     .user-list th, .user-list td {
-        border: 1px solid #dee2e6;
-        padding: 0.75rem;
+        padding: 1rem;
         text-align: left;
     }
+
     .user-list th {
         background-color: #f8f9fa;
         font-weight: bold;
+        font-size: 1rem;
     }
+
+    .btn-gears {
+        background-color: #3498db;
+        color: white;
+        border-radius: 5px;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .btn-gears:hover {
+        background-color: #2980b9;
+        color: white;
+    }
+
     .no-perm {
         color: #999;
         filter: blur(5px);
-        -webkit-filter: blur(5px);
-        -moz-filter: blur(5px);
-        -o-filter: blur(5px);
-        -ms-filter: blur(5px);
-    }
-    .user-list{
-        background-color: #fff;
-    }
-        .font-exo{
-            font-family: "Exo", sans-serif !important;
-        font-weight: 500;
     }
 </style>
 
@@ -91,59 +126,50 @@
                 </div>
                 {% endif %}
 
-                <h2>Kullanıcı Ekle</h2>
+                <h2>Add User</h2>
 
-                <small class="text-muted mb-4">İşlem yapılan şirket {{ company.name }} #{{ company.code }}</small>
-                <form method="POST" action="{% url 'kullanici_ekle' company.code %}" class="needs-validation " novalidate>
+                <small class="text-muted mb-4">Company: {{ company.name }} #{{ company.code }}</small>
+                <form method="POST" action="{% url 'kullanici_ekle' company.code %}" class="needs-validation" novalidate>
                     {% csrf_token %}
-                    <div class="form-section mt-4 ">
+                    <div class="form-section mt-4">
                         <div class="form-floating mb-3">
-                            <input type="text" name="username" id="username" class="form-control" placeholder="Kullanıcı Adı" required>
-                            <label for="username">Kullanıcı Adı</label>
+                            <input type="text" name="username" id="username" class="form-control" placeholder="Username" required>
+                            <label for="username">Username</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="password" name="password1" id="password1" class="form-control" placeholder="Şifre" required>
-                            <label for="password1">Şifre</label>
+                            <input type="password" name="password1" id="password1" class="form-control" placeholder="Password" required>
+                            <label for="password1">Password</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="password" name="password2" id="password2" class="form-control" placeholder="Şifre (Tekrar)" required>
-                            <label for="password2">Şifre (Tekrar)</label>
+                            <input type="password" name="password2" id="password2" class="form-control" placeholder="Confirm Password" required>
+                            <label for="password2">Confirm Password</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="text" name="phone" id="phone" class="form-control" placeholder="Telefon" required>
-                            <label for="phone">Telefon</label>
+                            <input type="text" name="phone" id="phone" class="form-control" placeholder="Phone" required>
+                            <label for="phone">Phone</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="text" name="address" id="address" class="form-control" placeholder="Adres" required>
-                            <label for="address">Adres</label>
+                            <input type="text" name="address" id="address" class="form-control" placeholder="Address" required>
+                            <label for="address">Address</label>
                         </div>
-                        {% if company.code != 1  %}
                         <div class="form-floating mb-3">
-                            <input type="text" name="tag" id="tag" class="form-control" value='Kullanıcı' disabled placeholder="Kullanıcı Etiketi" required>
-                            <label for="address">Kullanıcı Etiketi</label>
+                            <input type="email" name="email" id="email" class="form-control" placeholder="Email" required>
+                            <label for="email">Email</label>
                         </div>
-                        {% else %}
-                        <select class="form-select" aria-label="Default select example">
-                            <option selected>Open this select menu</option>
-                            <option value="1">One</option>
-                            <option value="2">Two</option>
-                            <option value="3">Three</option>
-                          </select>
-                        {% endif %}
                     </div>
-                    <button type="submit" class="btn btn-register">Kayıt Ol</button>
+
+                    <button class="btn btn-register" type="submit">Register</button>
                 </form>
 
-                <div class="user-list mb-4">
-                    <h2 class="text-center font-exo mt-2 mb-2">MEVCUT KULLANICILAR</h2>
-                    <table class="font-exo">
-                        <thead class="font-exo">
+                <div class="user-list">
+                    <h3>Existing Users</h3>
+                    <table>
+                        <thead>
                             <tr>
-                                <th>Kullanıcı Adı</th>
-                                <th>Telefon</th>
-                                <th>Adres</th>
-                                <th>uuid4</th>
-                                <th>Yetkilendirme Sayfası</th>
+                                <th>Username</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -151,13 +177,14 @@
                             <tr>
                                 <td>{{ user.username }}</td>
                                 <td>{{ user.phone }}</td>
-                                <td>{{ user.address }}</td>
-                                {% if request.user.username == 'ssoft' %}
-                                <td>{{ user.unique_id }}</td>
-                                {% else %}
-                                <td class="no-perm">Sorry, you do not have these permissions</td>
-                                {% endif %}
-                                <td><a href="{% url 'kullanici_detayi' company.code user.unique_id %}" class="btn btn-gears fa-solid fa-gears w-100"></a></td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    {% if request.user.permissions.update_user or user.username == request.user.username %}
+                                    <a href="{% url 'kullanici_guncelle' company.code user.unique_id %}" class="btn btn-gears">Düzenle</a>
+                                    {% else %}
+                                    <a href="#" class="btn btn-gears no-perm" title="No permission">Edit</a>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -167,14 +194,5 @@
         </div>
     </div>
 </div>
-<style>
-     .btn-gears{
-        background-color: #0089ba;
-        color:black;
-     }
-     .btn-gears:hover{
-        background-color: #0089ba;
-        color:white;
-     }
-</style>
-{% endblock %}
+
+{% endblock content %}

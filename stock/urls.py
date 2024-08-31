@@ -22,6 +22,7 @@ urlpatterns = [
     
     path("urun_olustur/<int:code>",views.product_add_page,name="urun_olustur"),
     path("urun_olusturma_sayfasi/",views.product_add_page,name="urun_olusturma_sayfasi"),
+    path("urun_sil/<int:company_code>/<int:product_id>",views.delete_product,name="urun_sil"),
     path("kategori_olustur/<int:code>",views.create_category,name="kategori_olustur"),
     path("cikis_nedeni_olustur/<int:code>",views.create_outgoing_reasons,name="cikis_nedeni_olustur"),
     path("fatura_gir/<int:code>",views.add_bill,name="fatura_olustur"),
@@ -75,8 +76,10 @@ urlpatterns = [
     # - # - # - # - # - # - # - # - # - # - # - # - # - #
     path("cari_olustur/<int:code>",views.create_seller,name="cari_olustur"),
     path('cari_güncelle/<int:company_code>/<int:seller_id>/', views.update_seller, name='cari_güncelle'),
-    path('cari_sil/<int:company_code>/<int:seller_id>/',views.delete_seller, name='cari_sil')
+    path('cari_sil/<int:company_code>/<int:seller_id>/',views.delete_seller, name='cari_sil'),
     # path('check-notifications/', views.check_notification_preference, name='check_notifications'),
     # path('calculate_average_cost/', views.calculate_average_cost_view, name='calculate_average_cost'),
+    path('delete-item/', views.delete_item, name='delete_item'),
+    path('update_product/<int:company_code>/<int:product_id>/', views.update_product, name='update_product'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

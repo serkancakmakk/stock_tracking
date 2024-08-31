@@ -74,8 +74,18 @@ class PermissionForm(forms.ModelForm):
         model = Permission
         fields = ['add_company', 'add_user','add_bill','add_inventory','add_parameter',
                   #define
-                'add_product','add_category','add_seller','add_outgoing','add_unit','add_user']
+                'add_product','add_category','add_seller','add_outgoing','add_unit','add_user',
+                'update_user']
 class SellerForm(forms.ModelForm):
     class Meta:
         model = Seller
         fields = ['name', 'address', 'receivable', 'debt','balance']
+class ProductForm (forms.ModelForm):
+    class Meta:
+        model = Product
+        fields =['code','name','unit','category','is_critical','prevent_stock_negative','critical_stock_level','is_inventory']
+    
+class ProductUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields =['code','name','unit','category','is_critical','prevent_stock_negative','critical_stock_level','is_inventory']

@@ -16,7 +16,10 @@
         });
     </script>
     {% endif %}
-    <h2 class="text-center">Stok Çıkış İşlemleri</h2>
+    <div class="card">
+ <div class="card-header">Stok Çıkış İşlemleri</div>
+    <div class="card-body">
+    </div>
     <form action="{% url 'stok_cikisi_yap' company.code %}" method="POST" class="needs-validation" novalidate>
         {% csrf_token %}
         <div class="mb-3">
@@ -88,7 +91,94 @@
         <button type="submit" class="btn btn-danger mt-4" id="submitBtn" disabled>Çıkış Yap <i class="fa-solid fa-shuffle"></i></button>
     </form>
 </div>
-
+<div class="card-footer">
+    Daha fazla bilgi için lütfen iletişime geçin.
+</div>
+</div>
+</div>
+<style>
+    /* Genel Kart Stili */
+    .card {
+        background-color: #ECCEAE; /* Beyaz arka plan */
+        border-radius: 16px; /* Yuvarlatılmış köşeler */
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); /* Hafif gölge efekti */
+        padding: 24px; /* İç boşluk */
+        margin: 20px 0; /* Üst ve alt boşluk */
+        transition: all 0.3s ease; /* Geçiş efekti */
+        position: relative; /* Elemanları konumlandırmak için göreli konum */
+        border: 1px solid #e7e7e7; /* İnce kenarlık */
+    }
+    
+    /* Hover Durumu için Efekt */
+    .card:hover {
+        transform: translateY(-8px); /* Hover'da yukarı doğru hareket */
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); /* Daha belirgin gölge */
+        border-color: #ddd; /* Hover'da kenarlık rengi değişimi */
+    }
+    
+    /* Kart Başlığı */
+    .card-header {
+        text-align: center !important;
+        background-color:  #FBF6E2;/* Başlık rengi */;
+        color: black;/* Başlık rengi */
+        font-size: 1.6rem; /* Büyük başlık yazı boyutu */
+        font-weight: 600; /* Orta kalınlıkta yazı tipi */
+        margin-bottom: 18px; /* Alt boşluk */
+        border-bottom: 1px solid #e7e7e7; /* Alt çizgi */
+        padding-bottom: 12px; /* Başlığın altına boşluk */
+        border-radius: 8px;
+    }
+    
+    /* Kart İçeriği */
+    .card-body {
+        font-size: 1rem; /* Normal içerik yazı boyutu */
+        color: #666; /* İçerik yazı rengi */
+        line-height: 1.7; /* Satır yüksekliği */
+        padding: 12px 0; /* İçerik için boşluk */
+    }
+    
+    /* Kart İçindeki Buton */
+    {% comment %} .card .btn {
+        margin-top: 20px; /* Üst boşluk */
+        border-radius: 8px; /* Buton köşeleri yuvarlatılmış */
+        padding: 10px 20px; /* İç boşluk */
+        font-weight: 500; /* Yazı kalınlığı */
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2); /* Buton gölge efekti */
+        transition: background-color 0.3s ease, transform 0.2s ease; /* Hover geçiş efekti */
+    } {% endcomment %}
+    
+    /* Buton Hover Durumu */
+    .card .btn:hover {
+        background-color: #0056b3; /* Hover'da daha koyu mavi renk */
+        color: #ffffff; /* Hover'da beyaz yazı rengi */
+        transform: translateY(-3px); /* Hover'da yukarı hareket */
+        box-shadow: 0 8px 16px rgba(0, 123, 255, 0.3); /* Daha belirgin gölge efekti */
+    }
+    
+    /* İkincil Butonlar */
+    .card .btn-outline-secondary {
+        color: #666; /* Gri renk */
+        border-color: #ddd; /* Gri kenarlık */
+        background-color: transparent; /* Şeffaf arka plan */
+        transition: color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    .card .btn-outline-secondary:hover {
+        color: #ffffff; /* Beyaz renk */
+        background-color: #666; /* Gri arka plan */
+        border-color: #666; /* Gri kenarlık */
+    }
+    
+    /* Kartın Altındaki Bilgilendirme Mesajları */
+    .card-footer {
+        font-size: 0.9rem; /* Daha küçük yazı boyutu */
+        color: #888; /* Açık gri yazı rengi */
+        padding-top: 15px; /* Üst boşluk */
+        border-top: 1px solid #e7e7e7; /* Üst çizgi */
+        margin-top: 15px; /* Üst boşluk */
+        text-align: center; /* Ortalı yazı */
+    }
+    </style>
 <script>
     $(document).ready(function() {
         // Initialize Select2

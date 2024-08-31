@@ -125,9 +125,11 @@ class Permission(models.Model):
     # update perm
     update_unit = models.BooleanField(default=False),
     update_seller = models.BooleanField(default=False),
+    update_user = models.BooleanField(default=False)
 
     #delete perm
     delete_unit = models.BooleanField(default=False)
+    delete_product = models.BooleanField(default=False)
     # access perm
     access_to_reports = models.BooleanField(default=False)
 
@@ -186,6 +188,7 @@ class Product(models.Model):
     critical_stock_level = models.IntegerField(default=0)
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)
     is_inventory = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     
     def __str__(self):
         return self.name

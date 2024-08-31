@@ -26,7 +26,7 @@ from datetime import datetime, date
 
 from .models import Bill, BillItem, Category, OutgoingBill, OutgoingReasons, Product, Seller, StockTransactions, Unit
 
-from .forms import CategoryForm, CompanyForm, ParameterForm, PermissionForm, SellerForm, UserEditForm
+from .forms import CategoryForm, CompanyForm, ParameterForm, PermissionForm, ProductForm, ProductUpdateForm, SellerForm, UserEditForm
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils.crypto import get_random_string
 
@@ -1027,7 +1027,8 @@ def product_add_page(request, code):
         return redirect('dashboard',request.user.company.code)
     units = Unit.objects.filter(company=company)
     categories = Category.objects.filter(company=company)
-    products = Product.objects.filter(company=company)
+    products = Product.objects.filter(company=company,is_active=True).order_by('name')
+
     
     context = {
         'company': company,
@@ -1038,86 +1039,98 @@ def product_add_page(request, code):
     
     return render(request, 'definitions/define_product.html', context)
 def create_product(request, code):
-    company = get_object_or_404(Company,code=code)
+    company = get_object_or_404(Company, code=code)
+    
+    # Kullanıcı yetki kontrolü
     if not (
-    request.user.username == 'ssoft' or
-    (request.user.tag == 'Destek' and request.user.company.code == 1) or
-    request.user.company.code == company.code
+        request.user.username == 'ssoft' or
+        (request.user.tag == 'Destek' and request.user.company.code == 1) or
+        request.user.company.code == company.code
     ):
-        messages.add_message(request, messages.ERROR, "Yetkiniz Bulunmuyor")
+        messages.error(request, "Yetkiniz Bulunmuyor")
         return redirect(request.META.get('HTTP_REFERER', '/'))
     
-    if request.method != "POST":
-        messages.add_message(request, messages.ERROR, "Ürün Birimi Boş Geçilemez.")
+    if request.method == "POST":
+        form = ProductForm(request.POST)
+        
+        if form.is_valid():
+            product_code = form.cleaned_data['code']
+            
+            # Ürün kodu kontrolü
+            if Product.objects.filter(code=product_code, company=company).exists():
+                messages.error(request, "Bu ürün kodu zaten mevcut.")
+                return redirect(request.META.get('HTTP_REFERER', '/'))
+
+            new_product = form.save(commit=False)
+            new_product.company = company
+            new_product.is_create = request.user
+            new_product.save()
+            
+            messages.success(request, "Ürün Kaydedildi")
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+        else:
+            # Formda hata varsa
+            messages.error(request, "Formda hatalar var. Lütfen kontrol ediniz.")
+            print(form.errors)
+            return redirect(request.META.get('HTTP_REFERER', '/'))    
+    else:
+        form = ProductForm()
+        return render(request, 'product/create_product.html', {'form': form})
+def update_product(request, company_code, product_id):
+    # İlgili ürün ve şirketi kontrol et
+    product = get_object_or_404(Product, id=product_id, company__code=company_code)
+
+    # Kullanıcı yetki kontrolü
+    if not (
+        request.user.username == 'ssoft' or
+        (request.user.tag == 'Destek' and request.user.company.code == 1) or
+        request.user.company.code == company_code
+    ):
+        messages.error(request, "Yetkiniz Bulunmuyor")
         return redirect(request.META.get('HTTP_REFERER', '/'))
-     # Check permissions
-    product_name = request.POST.get("product_name")
-    product_code = request.POST.get("product_code")
-    product_unit = request.POST.get("product_unit")
-    product_category = request.POST.get("product_category")
-    product_is_inventory = request.POST.get("is_inventory") == "on"
-    barcode_1 = request.POST.get("barcode_1")
-    barcode_2 = request.POST.get("barcode_2")
-    barcode_3 = request.POST.get("barcode_3")
-    serial_number = request.POST.get("serial_number")
-    prevent_stock_negative = request.POST.get("prevent_stock_negative") == "on"
-
-    print(f'Product Name: {product_name}')
-    print(f'Product Code: {product_code}')
-    print(f'Product Unit: {product_unit}')
-    print(f'Is Inventory: {product_is_inventory}')
-    print(f'Barcode 1: {barcode_1}')
-    print(f'Barcode 2: {barcode_2}')
-    print(f'Barcode 3: {barcode_3}')
-    print(f'Serial Number: {serial_number}')
-    print(f'Prevent Stock Negative: {prevent_stock_negative}')
-    print(f'Product Category: {product_category}')
-
-    if not product_unit:
-        messages.add_message(request, messages.ERROR, "Ürün Birimi Boş Geçilemez.")
+    
+    if request.method != 'POST':
+        form = ProductUpdateForm(instance=product)
+        return redirect('urun_olustur', company_code)
+    
+    form = ProductUpdateForm(request.POST, instance=product)
+    if not form.is_valid():
+        messages.error(request, 'Ürün güncellenirken bir hata oluştu.')
+        return redirect('urun_olustur', company_code)
+    
+    updated_product_code = form.cleaned_data['code']
+    
+    # Aynı ürün koduna sahip başka bir ürün var mı kontrol et
+    if Product.objects.filter(code=updated_product_code, company__code=company_code).exclude(id=product_id).exists():
+        messages.error(request, "Bu ürün kodu zaten mevcut. Lütfen farklı bir ürün kodu giriniz.")
+        return redirect('urun_olustur', company_code)
+    
+    # Ürün güncelleniyor
+    form.save()
+    messages.success(request, 'Ürün başarıyla güncellendi.')
+    return redirect('urun_olustur', company_code)
+        
+    
+        
+def delete_product(request,company_code,product_id):
+    company = check_company_access(request, company_code)
+    if isinstance(company, HttpResponseRedirect):
+        return company
+    if not request.method == "POST":
+        messages.success(request, "İşlem Gerçekleştirilemedi.") # POST İsteklerini Kontrol Et
         return redirect(request.META.get('HTTP_REFERER', '/'))
-
-    try:
-        unit = get_object_or_404(Unit, id=product_unit)
-    except (ValueError, Unit.DoesNotExist):
-        messages.add_message(request, messages.ERROR, "Geçersiz veya Bulunamayan Ürün Birimi.")
+    if not request.user.permissions.delete_product:
+        messages.info(request, "Yetkiniz Bulunmuyor")
         return redirect(request.META.get('HTTP_REFERER', '/'))
-
-    print('UNIT:', unit)
-
-    try:
-        category = Category.objects.get(id=product_category)
-    except Category.DoesNotExist:
-        messages.add_message(request, messages.ERROR, "Kategori Bulunamadı.")
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-
-    company = get_object_or_404(Company, code=code)
-
-    new_product = Product.objects.create(
-        company=company,
-        name=product_name,
-        code=product_code,
-        unit=unit,
-        category=category,
-        is_inventory=product_is_inventory,
-        prevent_stock_negative=prevent_stock_negative,
-        is_create=request.user
-    )
-
-    if product_is_inventory:
-        if barcode_1:
-            new_product.barcode_1 = barcode_1
-        if barcode_2:
-            new_product.barcode_2 = barcode_2
-        if barcode_3:
-            new_product.barcode_3 = barcode_3
-        if serial_number:
-            new_product.serial_number = serial_number
-
-    new_product.save()
-
-    messages.add_message(request, messages.SUCCESS, "Ürün Kaydedildi")
-    return redirect(request.META.get('HTTP_REFERER', '/'))
+    product = get_object_or_404(Product,id=product_id)
+    print('Ürün Bulundu',product)
+    if product.is_active == True:
+        product.is_active = False
+    else:
+        product.is_active = True
+    product.save()
+    messages.info(request, "Ürün Silindi") 
+    return redirect(request.META.get('HTTP_REFERER', '/')) 
 from decimal import Decimal
 from decimal import Decimal, InvalidOperation
 from decimal import Decimal
@@ -1126,10 +1139,33 @@ from django.contrib import messages
 from django.utils import timezone
 from .models import Seller, Product, Bill, BillItem, StockTransactions
 from decimal import Decimal, ROUND_DOWN
+from django.views.decorators.http import require_POST
+@require_POST  # Bu dekoratör sadece POST isteklerini kabul eder
+def delete_item(request):
+    item_id = request.POST.get('item_id')  # POST isteğinden item_id'yi alın
+    try:
+        # Silinecek öğeyi bulun
+        item = BillItem.objects.get(id=item_id)
+        
+        # İlgili fatura için toplamı güncellemek için gereken fatura objesini alın
+        bill = item.bill
+
+        # Öğeyi silin
+        item.delete()
+
+        # Faturanın yeni toplamını hesaplayın
+        new_total_amount = bill.billitem_set.aggregate(Sum('row_total'))['row_total__sum'] or 0.0
+
+        return JsonResponse({'success': True, 'new_total_amount': new_total_amount})
+
+    except BillItem.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Öğe bulunamadı.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 def add_bill(request, code):
     company = get_object_or_404(Company, code=code)
-    sellers = Seller.objects.all()
-    products = Product.objects.all()
+    sellers = Seller.objects.filter(company=company,status=True) # şirketle alakalı aktif olan satıcıları getir
+    products = Product.objects.filter(company=company,is_active=True)# şirketle alakalı aktif olan ürünleri getir
 
     if request.method != "POST":
         context = {
@@ -1420,18 +1456,18 @@ def add_billitem(request, bill_id):
 
     try:
         with transaction.atomic():
-            # Calculate row total (apply discounts first)
+            # Satır toplamını hesaplayın (ilk olarak indirimleri uygulayın)
             item_total = bill_item_quantity * bill_item_price
             discounted_amount = item_total
 
             for discount in [bill_item_discount_1, bill_item_discount_2, bill_item_discount_3]:
                 discounted_amount -= discounted_amount * (discount / Decimal(100))
             
-            # Calculate VAT
+            # KDV'yi hesaplayın
             vat_amount = discounted_amount * (bill_item_vat / Decimal(100))
             row_total = discounted_amount + vat_amount
 
-            # Create BillItem
+            # BillItem oluştur
             bill_item = BillItem.objects.create(
                 bill=bill,
                 company=bill_company,
@@ -1443,17 +1479,17 @@ def add_billitem(request, bill_id):
                 discount_3=bill_item_discount_3,
                 vat=bill_item_vat,
                 is_create=request.user,
-                row_total=row_total.quantize(Decimal('0.00')),  # Ensure proper decimal format
+                row_total=row_total.quantize(Decimal('0.00')),  # Doğru ondalık biçimi sağla
             )
 
-            # Update Product's current stock
+            # Ürünün güncel stok miktarını güncelle
             Product.objects.filter(id=product.id).update(current_stock=F('current_stock') + bill_item_quantity)
 
-            # Update Bill's total amount
+            # Faturanın toplam miktarını güncelle
             bill.total_amount += row_total
             bill.save()
 
-            # Create Inventory item if serial number is provided
+            # Seri numarası sağlanmışsa envanter öğesi oluştur
             if serial_number:
                 Inventory.objects.create(
                     company=bill_company,
@@ -1469,6 +1505,7 @@ def add_billitem(request, bill_id):
                 )
 
         return JsonResponse({
+            "bill_item_id": bill_item.id,  # Burada ID değerini ekleyin
             "bill_item_product": product.name,
             "bill_item_quantity": f"{bill_item_quantity:.2f}",
             "bill_item_price": f"{bill_item_price:.2f}",

@@ -1,122 +1,353 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
-<div class="container">
+{% block title %}
+{{company.code}} | Ürün Oluştur & Güncelle
+{% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'new-product.png' %}">
+{% endblock icon %}
+<div class="container mt-5">
     {% if messages %}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             {% for message in messages %}
                 Swal.fire({
-                    position: "top-end",
-                    icon: "{% if message.tags == 'success' %}success{% else %}info{% endif %}",
-                    title: "{{ message }}",
-                    showConfirmButton: false,
-                    timer: 1500
+                    position: 'top-end',
+                    icon: '{{ message.tags|default:"info" }}',  // Dynamically set icon based on message tags
+                    title: '{{ message|escapejs }}', // Escape to prevent any JS injection
+                    showConfirmButton: true,
+                    timer: 2500,
+                    toast: true,
+                    customClass: {
+                        container: 'swal-container',
+                        title: 'swal-title',
+                        content: 'swal-content'
+                    }
                 });
             {% endfor %}
         });
     </script>
-    {% endif %}
+{% endif %}
     <div class="row">
-        <h1 class="text-center">Ürün Tanımla</h1>
+        <!-- Ürün Tanımlama Kartı -->
         <div class="col-lg-6">
-            <div class="mb-4">
-                
-                <form action="{% url 'urun_tanimla' company.code %}" method="POST">
-                    {% csrf_token %}
-                    <div class="input-group mb-3">
-                        <input type="text" name="product_code" class="form-control" id="product_code">
-                        <button type="button" class="btn btn-outline-primary" id="generate_product_code">+ Ürün Kodu Oluştur</button>
-                    </div>
-                    <div class="mb-3">
-                        <label for="product_name" class="form-label">Ürün Adı *</label>
-                        <input type="text" name="product_name" class="form-control" id="product_name" required>
-                        <div class="invalid-feedback">Ürün adı boş bırakılamaz.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="product_unit" class="form-label">Ürün Birimi</label>
-                        <select name="product_unit" class="form-select" id="product_unit">
-                            {% for unit in units %}
-                            <option value="{{ unit.id }}">{{ unit.unit_name }}</option>
+            <div class="card mb-4" id="define_product_card">
+                <div class="card-header">
+                    <h4 class="card-title">Ürün Tanımla</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'urun_tanimla' company.code %}" method="POST">
+                        {% csrf_token %}
+                        <div class="input-group mb-3">
+                            <input type="text" name="code" class="form-control rounded-pill shadow-sm" id="product_code" required>
+                            <button type="button" class="btn btn-outline-primary rounded-pill" id="generate_product_code">+ Ürün Kodu Oluştur</button>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product_name" class="form-label">Ürün Adı *</label>
+                            <input type="text" name="name" class="form-control rounded-pill shadow-sm" id="product_name" required>
+                            <div class="invalid-feedback">Ürün adı boş bırakılamaz.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product_unit" class="form-label">Ürün Birimi</label>
+                            <select name="unit" class="form-select rounded-pill shadow-sm" id="product_unit">
+                                {% for unit in units %}
+                                <option value="{{ unit.id }}">{{ unit.unit_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Ürün birimini seçiniz.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product_category" class="form-label">Ürün Kategorisi</label>
+                            <select name="category" class="form-select rounded-pill shadow-sm" id="product_category">
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Ürün kategorisini seçiniz.</div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="prevent_stock_negative" class="form-check-input rounded-pill shadow-sm" id="prevent_stock_negative">
+                            <label class="form-check-label" for="prevent_stock_negative">Ürün Stoğu Eksiye Düşmesin</label>
+                            <div class="form-text">Seçiliyse, ürün stoğu eksiye düşmeyecek.</div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="is_critical" class="form-check-input rounded-pill shadow-sm" id="critical_product">
+                            <label class="form-check-label" for="critical_product">Kritik Ürün</label>
+                            <div class="form-text">Stok kritik seviyenin altına düştüğünde uyarı verecek.</div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="is_inventory" class="form-check-input rounded-pill shadow-sm" id="is_inventory">
+                            <label class="form-check-label" for="is_inventory">Envanter Ürün mü?</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="critical_stock_level" class="form-label">Kritik Ürün Stoğu Seviyesi</label>
+                            <input type="text" value="0" name="critical_stock_level" class="form-control rounded-pill shadow-sm" id="critical_stock_level">
+                            <div class="form-text">Kritik stok seviyesini belirleyin (isteğe bağlı).</div>
+                        </div>
+                        {% if request.user.permissions.add_product %}
+                        <button type="submit" class="btn btn-primary rounded-pill">Ürünü Kaydet</button>
+                        {% else %}
+                        <button type="submit" class="btn btn-noperm" disabled>Ürün Kaydetme Yetkiniz Bulunmuyor</button>
+                        <br>
+                        <small class="text-muted">Bir hata olduğunu düşünüyorsanız yetkili ile iletişime geçin</small>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Ürün Listesi Kartı -->
+        <div class="col-lg-6">
+            <div class="card" id="product_card">
+                <div class="card-header"id="product_list_table">
+                    <h4 class="card-title text-center" >Ürün Listesi</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Ürün Adı</th>
+                                <th>Ürün Kodu</th>
+                                <th>Birimi</th>
+                                <th>Kategori</th>
+                                <th>Kritik Ürün</th>
+                                <th>Kritik Stok Seviyesi</th>
+                                <th>Stok Eksiye Düşmesin</th>
+                                <th>Sil</th>
+                                <th>Düzenle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            <tr>
+                                <td>{{ product.name }}</td>
+                                <td>{{ product.code }}</td>
+                                <td>{{ product.unit.unit_name }}</td>
+                                <td>{{ product.category.name }}</td>
+                                <td>{{ product.is_critical|yesno:"Evet,Hayır" }}</td>
+                                <td>{{ product.critical_stock_level }}</td>
+                                <td>{{ product.prevent_stock_negative|yesno:"Evet,Hayır" }}</td>
+                                <td>
+                                    <form action="{% url 'urun_sil' company.code product.id %}" method="POST">
+                                        {% csrf_token %}
+                                    <button class="btn btn-delete" type="submit">Sil</button>
+                                    </form>
+                                    </td>
+                                <td>
+                                    <button class="btn btn-primary btn-edit rounded-pill" 
+                                            data-id="{{ product.id }}" 
+                                            data-name="{{ product.name }}"
+                                            data-code="{{ product.code }}"
+                                            data-category="{{ product.category.id }}"
+                                            data-unit="{{ product.unit.id }}"
+                                            data-is-critical="{{ product.is_critical|yesno:"true,false" }}"
+                                            data-critical-stock-level="{{ product.critical_stock_level }}"
+                                            data-is-prevent-stock-negative="{{ product.prevent_stock_negative|yesno:"true,false" }}"
+                                            data-company-code="{{product.company.code}}"
+                                            data-toggle="modal" 
+                                            data-target="#editModal">Düzenle</button>
+                                </td>
+                            </tr>
                             {% endfor %}
-                        </select>
-                        <div class="form-text">Ürün birimini seçiniz.</div>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $("table").colResizable({
+            liveDrag: true,
+            gripInnerHtml: "<div class='grip'></div>",
+            draggingClass: "dragging",
+            minWidth: 30
+        });
+    });
+</script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=SUSE:wght@100..800&display=swap');
+    .btn-delete{
+        color: white;
+        background-color: #7695FF;
+    }
+    .btn-delete:hover{
+        color: white;
+        background-color: #007bff;
+    }
+    
+    thead{
+        font-family: "SUSE", sans-serif;
+        font-weight:lighter;
+    }
+    #product_list_table{
+        background: #00F260;  /* fallback for old browsers */
+background: -webkit-linear-gradient(to right, #0575E6, #00F260);  /* Chrome 10-25, Safari 5.1-6 */
+background: linear-gradient(to right, #0575E6, #00F260); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+color:white;
+
+    }
+    .modal-header{
+        background-color: #007bff;
+        color: white;
+        text-align: center;
+    }
+    #saveChanges{
+        background-color: #7695FF;
+    }
+</style>
+<!-- Düzenleme Modalı -->
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content rounded-lg shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title text-center w-100" id="editModalLabel">
+                    <i class="fas fa-edit me-2"></i> Ürün Düzenle
+                </h5>
+                <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editForm" method="POST" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    <!-- Input fields for editing product details -->
+                    <div class="mb-3 position-relative">
+                        <label for="productName" class="form-label">Ürün Adı</label>
+                        <input type="text" class="form-control rounded-pill shadow-sm" id="productName" name="name" placeholder="Ürün adını giriniz" required>
+                        <div class="invalid-feedback">Lütfen bir ürün adı giriniz.</div>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label for="productCode" class="form-label">Ürün Kodu</label>
+                        <input type="text" class="form-control rounded-pill shadow-sm" id="productCode" name="code" placeholder="Ürün kodunu giriniz" required>
+                        <div class="invalid-feedback">Lütfen bir ürün kodu giriniz.</div>
                     </div>
                     <div class="mb-3">
-                        <label for="product_category" class="form-label">Ürün Kategorisi</label>
-                        <select name="product_category" class="form-select" id="product_category">
+                        <label for="productCategory" class="form-label">Kategori</label>
+                        <select class="form-select rounded-pill shadow-sm" id="productCategory" name="category" required>
                             {% for category in categories %}
                             <option value="{{ category.id }}">{{ category.name }}</option>
                             {% endfor %}
                         </select>
-                        <div class="form-text">Ürün kategorisini seçiniz.</div>
                     </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" name="prevent_stock_negative" class="form-check-input" id="prevent_stock_negative">
-                        <label class="form-check-label" for="prevent_stock_negative">Ürün Stoğu Eksiye Düşmesin</label>
-                        <div class="form-text">Seçiliyse, ürün stoğu eksiye düşmeyecek.</div>
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" name="critical_product" class="form-check-input" id="critical_product">
-                        <label class="form-check-label" for="critical_product">Kritik Ürün</label>
-                        <div class="form-text">Stok kritik seviyenin altına düştüğünde uyarı verecek.</div>
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" name="is_inventory" class="form-check-input" id="is_inventory">
-                        <label class="form-check-label" for="is_inventory">Envanter Ürün mü?</label>
-                    </div>
-                    
-                    
-                    
-                 
                     <div class="mb-3">
-                        <label for="critical_stock_level" class="form-label">Kritik Ürün Stoğu Seviyesi</label>
-                        <input type="text" name="critical_stock_level" class="form-control" id="critical_stock_level">
-                        <div class="form-text">Kritik stok seviyesini belirleyin (isteğe bağlı).</div>
+                        <label for="productUnit" class="form-label">Birim</label>
+                        <select class="form-select rounded-pill shadow-sm" id="productUnit" name="unit" required>
+                            {% for unit in units %}
+                            <option value="{{ unit.id }}">{{ unit.unit_name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    {% if request.user.permissions.add_product %}
-                    <button type="submit" class="btn btn-primary">Ürünü Kaydet</button>
-                  {% else %}
-                    <button type="submit" class="btn btn-noperm" disabled>Ürün Kaydetme Yetkiniz Bulunmuyor</button>
-                    <br>
-                    <small class="text-muted">Bir hata olduğunu düşünüyorsanız yetkili ile iletişime geçin</small>
-                  {% endif %}                
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="productIsCritical" name="is_critical">
+                        <label class="form-check-label" for="productIsCritical">Ürün Kritik Mi?</label>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label for="criticalStockLevel" class="form-label">Ürün Kritik Seviyesi</label>
+                        <input type="text" class="form-control rounded-pill shadow-sm" id="criticalStockLevel" name="critical_stock_level" placeholder="Kritik stok seviyesini giriniz">
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="productPreventStockNegative" name="prevent_stock_negative">
+                        <label class="form-check-label" for="productPreventStockNegative">Ürün Stoğu Eksiye Düşmesin</label>
+                    </div>
                 </form>
             </div>
-        </div>
-        <div class="col-lg-4">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Product Name</th>
-                        <th>Product Code</th>
-                        <th>Unit</th>
-                        <th>Category</th>
-                        <th>Critical Product</th>
-                        <th>Critical Stock Level</th>
-                        <th>Prevent Stock Negative</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for product in products %}
-                    <tr>
-                        <td>{{ product.name }}</td>
-                        <td>{{ product.code }}</td>
-                        <td>{{ product.unit.name }}</td>
-                        <td>{{ product.category.name }}</td>
-                        <td>{{ product.is_critical|yesno:"Yes,No" }}</td>
-                        <td>{{ product.critical_stock_level }}</td>
-                        <td>{{ product.prevent_stock_negative|yesno:"Yes,No" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="modal-footer d-flex justify-content-between align-items-center">
+                <button type="button" class="btn btn-secondary rounded-pill" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary rounded-pill" id="saveChanges">
+                    <i class="fas fa-save me-1"></i> Kaydet
+                </button>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    {% comment %} #define_product_card input{
+        border-radius: 50%;
+    } {% endcomment %}
+     .btn-edit{
+        background-color: #0B8494;
+        color:white;
+        border: none;
+     }
+    .modal-content {
+        border-radius: 15px;
+        animation: slide-in 0.5s ease-out;
+    }
+
+    .modal-header {
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+    }
+
+    .modal-footer {
+        border-bottom-left-radius: 15px;
+        border-bottom-right-radius: 15px;
+    }
+    option {
+        border-radius: 50%;
+    }
+    .btn-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    @keyframes slide-in {
+        from {
+            transform: translateY(-20%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Event listener for edit button
+    document.querySelectorAll('.btn-edit').forEach(function(button) {
+        button.addEventListener('click', function() {
+            // Get data attributes from the clicked button
+            const productId = this.getAttribute('data-id');
+            const productName = this.getAttribute('data-name');
+            const productCode = this.getAttribute('data-code');
+            const productCategory = this.getAttribute('data-category');
+            const productUnit = this.getAttribute('data-unit');
+            const productIsCritical = this.getAttribute('data-is-critical') === 'true'; // Convert to boolean
+            const productCriticalStockLevel = this.getAttribute('data-critical-stock-level');
+            const productPreventStockNegative = this.getAttribute('data-is-prevent-stock-negative') === 'true'; // Convert to boolean
+            const companyCode = this.getAttribute('data-company-code'); // Get company code
+
+            // Set the action URL for the form dynamically
+            document.getElementById('editForm').action = `/update_product/${companyCode}/${productId}/`;
+
+            // Set modal input values
+            document.getElementById('productName').value = productName;
+            document.getElementById('productCode').value = productCode;
+            document.getElementById('productCategory').value = productCategory;
+            document.getElementById('productUnit').value = productUnit;
+            document.getElementById('criticalStockLevel').value = productCriticalStockLevel;
+            // Correctly set checkbox state
+            document.getElementById('productIsCritical').checked = productIsCritical;
+            document.getElementById('productPreventStockNegative').checked = productPreventStockNegative;
+        });
+    });
+
+    // Save changes button handler
+    document.getElementById('saveChanges').addEventListener('click', function() {
+        document.getElementById('editForm').submit();
+    });
+});
+</script>
+    
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const productCodeInput = document.querySelector('#product_code');
-        const generateProductCodeButton = document.querySelector('.btn-outline-primary');
+        const generateProductCodeButton = document.querySelector('#generate_product_code');
     
         generateProductCodeButton.addEventListener('click', () => {
             const randomCode = generateRandomProductCode();
@@ -134,10 +365,48 @@
     });
 </script>
 <style>
-    .btn-noperm{
+    .text-bg-edit{
+        background-color: #0D7C66;
+    }
+    .text-bg-delete{
+        background-color: #0056b3;
+    }
+    #product_card{
+        width: 800px;
+    }
+    .btn-noperm {
         background-color: #d43725 !important;
         color: white !important;
     }
-</style>
 
+    .swal-container {
+        margin-top: 1rem;
+    }
+
+    .swal-title {
+        font-weight: bold;
+    }
+
+    .form-control:invalid {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 .2rem rgba(220, 53, 69, .25);
+    }
+
+    .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    
+
+    .btn-outline-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #0056b3;
+        color: white;
+    }
+</style>
 {% endblock content %}

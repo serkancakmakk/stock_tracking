@@ -120,20 +120,41 @@ Admin Alanı | {{company.name}}
         </div>
         <h1>{{bill_count}}</h1>
       </div>
+      {% if request.user.company.code == 1 %}
+      <div class="card {% if low_stock_count < 0 %}green-bg{% endif %}"id="card" >
+        <div class="card-inner" >
+          <h3><a class="support" href="{% url 'destek' company.code %}">DESTEK</a></h3>
+          <span class="material-icons-outlined"><i class="fa-solid fa-handshake-angle"></i></span>
+        </div>
+          <h1>{{waiting_for_support}}</h1>
+        </div>
+        <style>
+          .support{
+            text-decoration: none;
+            font-weight: bold;
+            color: white;
 
+          }
+        </style>
+     
+      
+      {% else %}
       <div class="card"id="card">
         <div class="card-inner">
           <h3>ÇIKIŞLAR</h3>
-          <span class="material-icons-outlined"><i class="fa-solid fa-cart-flatbed"></i></span>
+          <span class="material-icons-outlined"><i class="fa-solid fa-handshake-angle"></i></span>
         </div>
         <h1>{{outgoing_count}}</h1>
       </div>
+     {% endif %}
+     
       <div class="card {% if low_stock_count < 0 %}green-bg{% endif %}"id="card" >
         <div class="card-inner" >
           <h3>ALARM</h3>
           <span class="material-icons-outlined"><i data-bs-toggle="modal" data-bs-target="#lowStockModal" class="fa-solid fa-bell"></i></span>
         </div>
       </div>
+
       {% if request.session.company_code == 1 %}
       <div class="card"id="card-contract">
         <div class="card-inner">
