@@ -292,7 +292,7 @@
                     $('#addItemBtn').on('click', function(event) {
                         event.preventDefault(); // Varsayılan form gönderimini engelle
                         var formData = $('#addItemForm').serialize();
-                
+            
                         $.ajax({
                             type: 'POST',
                             url: $('#addItemForm').attr('action'),
@@ -326,6 +326,9 @@
                                     $('#billTable tbody').append(newRow);
                                     $('#totalAmount').text(response.new_total_amount);
                                     $('#addItemForm')[0].reset(); // Formu temizle
+            
+                                    // Option seçeneğini sıfırla
+                                    $('#bill_item_product').val(null).trigger('change');
                                 }
                             },
                             error: function(xhr, status, error) {
@@ -338,17 +341,17 @@
                             }
                         });
                     });
-                
+            
                     // Ürün silme işlemi
                     $('#billTable').on('click', '.remove-item', function() {
                         var row = $(this).closest('tr'); // Tıklanan satırı bul
                         var itemId = row.data('id'); // Satırdan öğe ID'sini al
-                
+            
                         if (!itemId) {
                             console.log('Silinecek öğe ID\'si alınamadı!');
                             return;
                         }
-                
+            
                         $.ajax({
                             type: 'POST',
                             url: '/delete-item/', // Sunucuya gönderilecek URL
@@ -380,6 +383,5 @@
                         });
                     });
                 });
-                
             </script>
 {% endblock content %}
