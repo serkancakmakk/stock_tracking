@@ -3,6 +3,7 @@ from django.db import models
 from datetime import timedelta
 from django.utils import timezone
 from django.db import models
+from django.core.validators import MaxValueValidator
 from django.contrib.auth.models import AbstractUser, Group, Permission
 import uuid
 class Company(models.Model):
@@ -126,10 +127,12 @@ class Permission(models.Model):
     update_unit = models.BooleanField(default=False),
     update_seller = models.BooleanField(default=False),
     update_user = models.BooleanField(default=False)
+    update_category = models.BooleanField(default=False)
 
     #delete perm
     delete_unit = models.BooleanField(default=False)
     delete_product = models.BooleanField(default=False)
+    delete_outgoing_reason = models.BooleanField(default=False)
     # access perm
     access_to_reports = models.BooleanField(default=False)
 
@@ -194,23 +197,6 @@ class Product(models.Model):
         return self.name
     class Meta:
         db_table = 'Product'
-class Recipe(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)  # Recipe name
-    total_amount = models.DecimalField(max_digits=10, decimal_places=3, default=0)
-    def __str__(self):
-        return self.name
-    class Meta:
-        db_table = 'Recipe'
-class RecipeProduct(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='recipe_products')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.DecimalField(max_digits=10, decimal_places=3)  # Quantity of product in the recipe
-    class Meta:
-        db_table = 'RecipeProduct'
-
-    def __str__(self):
-        return f'{self.product.name} ({self.quantity})'
 class Bill(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     number = models.CharField(max_length=255,null=False,blank=False)
@@ -270,6 +256,7 @@ class OutgoingReasons(models.Model):
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)
+    is_delete = models.BooleanField(default=False)
     class Meta:
         db_table = 'OutgoingReasons'
 class OutgoingBill(models.Model):
@@ -284,6 +271,7 @@ class OutgoingBill(models.Model):
     # envanter için oluşturulan modeller
     is_inventory = models.BooleanField(default = False)
     serial_number = models.CharField(max_length=255,null=True,blank=True)
+    inventory = models.ForeignKey(Inventory, on_delete=models.CASCADE, related_name="outgoing_bills", null=True, blank=True)
     def __str__(self):
         return self.number
     class Meta:
