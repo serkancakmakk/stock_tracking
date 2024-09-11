@@ -14,11 +14,12 @@ class Company(models.Model):
     phone = models.CharField(max_length=20)
     city = models.CharField(max_length=100)
     country = models.CharField(max_length=100)
-    email = models.EmailField(max_length=254, unique=True)
+    email = models.EmailField(max_length=254, unique=False)
     other_info = models.TextField()
     contract_start_date = models.DateTimeField(auto_now_add=True)
     contract_end_date = models.DateTimeField()
     create_user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='created_companies')
+    is_active = models.BooleanField(default=True)
     class Meta:
         db_table = 'Company'
 class Parameter(models.Model):
@@ -135,6 +136,10 @@ class Permission(models.Model):
     delete_outgoing_reason = models.BooleanField(default=False)
     # access perm
     access_to_reports = models.BooleanField(default=False)
+    # paid unpaid
+    paid_unpaid_bill = models.BooleanField(default=False)
+    payment_seller = models.BooleanField(default=False)
+
 
     class Meta:
         db_table = 'Permission'
