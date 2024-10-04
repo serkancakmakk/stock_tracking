@@ -1,0 +1,214 @@
+/* Modal arka plan ve animasyon */
+.modal-background {
+  background: rgba(0, 0, 0, 0.0);
+  animation: fadeIn 0.5s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards;
+}
+
+.modal {
+  transform: translateX(1500px); /* Başlangıçta sağda */
+  animation: roadRunnerIn 0.3s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards;
+}
+
+.modal.out {
+  animation: quickScaleDown 0s 0.5s linear forwards;
+}
+
+.modal-background.out {
+  animation: fadeOut 0.5s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards;
+}
+
+.modal.out .modal {
+  animation: roadRunnerOut 0.5s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards;
+}
+
+/* Animasyon Tanımları */
+@keyframes fadeIn {
+  from {
+      opacity: 0;
+  }
+  to {
+      opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+      opacity: 1;
+  }
+  to {
+      opacity: 0;
+  }
+}
+
+@keyframes roadRunnerIn {
+  from {
+      transform: translateX(1500px); /* Sağdan girme */
+  }
+  to {
+      transform: translateX(0);
+  }
+}
+
+@keyframes roadRunnerOut {
+  from {
+      transform: translateX(0);
+  }
+  to {
+      transform: translateX(-1500px); /* Soldan çıkma */
+  }
+}
+
+@keyframes quickScaleDown {
+  from {
+      transform: scale(1);
+  }
+  to {
+      transform: scale(0.9);
+  }
+}
+
+.modal.fade .modal-dialog {
+  transition: transform 0.5s ease;
+  transform: scale(1.1); /* Başlangıç boyutu biraz büyütülmüş */
+  opacity: 1; /* Başlangıç opaklığı */
+}
+
+.modal.show .modal-dialog {
+  transform: scale(1); /* Görünen boyut */
+}
+
+.modal.fade.hide .modal-dialog {
+  transform: scale(0.9) translateY(-50px); /* Kapanırken küçülme ve yukarı kayma */
+  opacity: 0; /* Kapanırken opaklık */
+}
+
+/* Modal içeriği */
+.modal-content {
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: #FFFFFF;
+  border: 1px solid #FF6F61;
+  /* Kısmi dönüş etkisi */
+  transition: transform 0.5s ease;
+}
+
+/* Modal başlığı */
+.modal-header {
+  border-bottom: 1px solid #FF6F61;
+  background-color: #FF6F61;
+  color: #FFFFFF;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+/* Modal kapama butonu */
+.btn-close {
+  filter: invert(1);
+}
+
+/* Modal gövdesi */
+.modal-body {
+  padding: 1.5rem;
+}
+
+/* Form kontrol elemanları */
+.form-control {
+  border-radius: 0.375rem;
+  border: 1px solid #E0E0E0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Form etiketleri */
+.form-label {
+  color: #2E4053;
+}
+
+/* Modal alt kısmındaki butonlar */
+.modal-footer {
+  border-top: 1px solid #FF6F61;
+  background-color: #F9F9F9;
+}
+
+.btn-secondary {
+  background-color: #6C757D;
+  border: 1px solid #6C757D;
+}
+
+.btn-secondary:hover {
+  background-color: #5A6268;
+  border-color: #5A6268;
+}
+
+.btn-primary {
+  background-color: #2E4053;
+  border-color: #2E4053;
+}
+
+.btn-primary:hover {
+  background-color: #1D2D44;
+  border-color: #1D2D44;
+}
+  .table-light {
+      background-color: #F7F7F7; /* Hafif gri arka plan rengi */
+  }
+  
+  .table-striped tbody tr:nth-of-type(odd) {
+      background-color: #ECF0F1; /* Alternatif satır rengi */
+  }
+  
+  .category-row:hover {
+      background-color: #FF6F61; /* Mercan rengi arka plan rengi */
+      color: #FFFFFF; /* Beyaz metin rengi */
+  }
+  
+  .table thead th {
+      background-color: #2E4053; /* Lacivert arka plan rengi */
+      color: #FFFFFF; /* Beyaz metin rengi */
+  }
+  
+  .badge.bg-success {
+      background-color: #2ECC71; /* Yeşil rengi */
+      color: #FFFFFF; /* Beyaz metin rengi */
+  }
+  
+  .badge.bg-danger {
+      background-color: #E74C3C; /* Kırmızı rengi */
+      color: #FFFFFF; /* Beyaz metin rengi */
+  }
+  
+  .btn-outline-change {
+      color: #FF6F61; /* Mercan rengi metin */
+      border-color: #FF6F61; /* Mercan rengi dış çizgi */
+  }
+  
+  .btn-outline-change:hover {
+      background-color: #FF6F61; /* Mercan rengi arka plan */
+      color: #FFFFFF; /* Beyaz metin rengi */
+      border-color: #FF6F61; /* Mercan rengi dış çizgi */
+  }
+  .btn-save{
+      color: #2E4053;
+      background-color: #FF6F61;
+      font-weight: bold;
+  }
+  .btn-save:hover{
+      background-color: #ffa061;
+      color: #FFFFFF;
+      border-color: #ffa061;
+  }
+  .card-body h4{
+      color:#2E4053;
+  }
+  .btn-outline-change {
+      color: #FF6F61;
+      border-color: #FF6F61;
+  }
+  
+  .btn-outline-change:hover {
+      background-color: #FF6F61;
+      color: #FFFFFF;
+      border-color: #FF6F61;
+  }

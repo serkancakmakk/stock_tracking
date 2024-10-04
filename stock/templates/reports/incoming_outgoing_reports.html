@@ -1,50 +1,129 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}{{ company.name }} | Giren & Çıkan Stokları{% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'report.png' %}">
+{% endblock icon %}
 {% block content %}
-{% load render_table from django_tables2 %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    {% block title %}
-{{company.name}} Giren & Çıkan Stokları
-    {% endblock title %}
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-</head>
-<body>
-    <div class="container ml-8">
-        <div class="row">
-            <div class="col-lg-12">
 
-          
-        <h1 class="text-center">Giren & Çıkan Stoklar</h1>
-        <form method="post" action="{% url 'stok_giris_cikislari' company.code %}">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="start_date">İlk Tarih:</label>
-                <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
-            </div>
-            <div class="form-group">
-                <label for="end_date">Son Tarih:</label>
-                <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
-            </div>
-            <button type="submit" class="btn btn-outline-success mt-2 mb-2">Getir</button>
-        </form>
-        <style>
-            .custom-red-row {
-                background-color: #f8d7da !important;
-            }
-            @media screen and (max-width: 1366px) {
-                .ml-8{
-                    float: right;
-                    width: 80%;
-                }
-            }
-            
-        </style>
-        {% render_table table %}
+<div class="container ml-8">
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="text-center mt-5" id="stock_title">Giren & Çıkan Stoklar</h1>
+            <h6 id="stock_tagline">Kontrol Edilen Şirket | {{company.code}}</h6>
+            <form method="get" action="{% url 'stok_giris_cikislari' company.code %}">
+                <div class="form-group">
+                    <label for="start_date">İlk Tarih:</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="end_date">Son Tarih:</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-outline-success mt-2 mb-2">Getir</button>
+            </form>
+            {% if stock_transactions %}
+    <div class="table-responsive mt-4">
+        <table class="table table-hover table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Ürün</th>
+                    <th class="text-center">Giren Miktar</th>
+                    <th class="text-center">Çıkan Miktar</th>
+                    <th class="text-center">İşlem Zamanı</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in stock_transactions %}
+                    <tr>
+                        <td>
+                            <span class="font-weight-bold">{{ transaction.product.name }}</span>
+                        </td>
+                        <td class="text-center text-success">
+                            <i class="fas fa-arrow-down"></i> {{ transaction.incoming_quantity }}
+                        </td>
+                        <td class="text-center text-danger">
+                            <i class="fas fa-arrow-up"></i> {{ transaction.outgoing_quantity }}
+                        </td>
+                        <td class="text-center">
+                            {{ transaction.processing_time|date:"d M Y H:i" }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="text-center mt-4">Bu tarihler arasında bir işlem bulunamadı.</p>
+{% endif %}
+        </div>
     </div>
 </div>
-</div>
-</body>
-</html>
+
+
+<script>
+    // Veriler
+    const data = [
+        {x: 1, y: 10},
+        {x: 2, y: 20},
+        {x: 3, y: 30},
+        {x: 4, y: 40},
+        {x: 5, y: 50}
+    ];
+
+    // Grafik boyutları
+    const width = 600;
+    const height = 400;
+    const margin = {top: 20, right: 30, bottom: 30, left: 40};
+
+    // Ölçekler
+    const xScale = d3.scaleLinear()
+        .domain(d3.extent(data, d => d.x))
+        .range([margin.left, width - margin.right]);
+
+    const yScale = d3.scaleLinear()
+        .domain(d3.extent(data, d => d.y))
+        .range([height - margin.bottom, margin.top]);
+
+    // Çizgi fonksiyonu
+    const line = d3.line()
+        .x(d => xScale(d.x))
+        .y(d => yScale(d.y));
+
+    // SVG oluşturma
+    const svg = d3.select("#chart")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    // Çizgiyi çizme
+    svg.append("path")
+        .data([data])
+        .attr("class", "line")
+        .attr("d", line);
+
+    // X eksenini çizme
+    svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(xScale));
+
+    // Y eksenini çizme
+    svg.append("g")
+        .attr("class", "y-axis")
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(yScale));
+</script>
+
+<style>
+    .custom-red-row {
+        background-color: #f8d7da !important;
+    }
+    @media screen and (max-width: 1366px) {
+        .ml-8{
+            float: right;
+            width: 80%;
+        }
+    }
+</style>
 {% endblock content %}

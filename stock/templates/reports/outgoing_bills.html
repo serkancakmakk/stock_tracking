@@ -1,45 +1,217 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
+{% block title %}
+Çıkış Faturaları | {{company.code}}
+{% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'filter.png' %}">
+{% endblock icon %}
 <div class="container mt-4">
-    <h2>Fatura Listesi</h2>
+    <h2 class="mb-4">Fatura Listesi</h2>
     
     <form method="GET" class="mb-4">
-        <div class="form-group">
-            <label for="reasons">Çıkış Sebepleri:</label><br>
-            {% for reason in all_reasons %}
-                <div class="form-check form-check-inline">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="reasons" class="form-label">Çıkış Sebepleri:</label>
+                <div class="form-check">
                     <input 
                         class="form-check-input" 
                         type="checkbox" 
-                        id="reason{{ reason.id }}" 
+                        id="allReasons" 
                         name="reasons" 
-                        value="{{ reason.id }}"
-                        {% if reason.id in selected_reasons %}checked{% endif %}
+                        value="all"
+                        {% if not selected_reasons %}checked{% endif %}
                     >
-                    <label class="form-check-label" for="reason{{ reason.id }}">{{ reason.name }}</label>
+                    <label class="form-check-label" for="allReasons">Hepsi</label>
                 </div>
-            {% endfor %}
-        </div>
-        <button type="submit" class="btn btn-primary">Filtrele</button>
-    </form>
-
-    <div class="row">
-        {% for bill in bills %}
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Fatura Numarası: {{ bill.number }}</h5>
-                    <p class="card-text">
-                        İşlem Tarihi: {{ bill.processing_time|date:"d F Y H:i" }}<br>
-                        Çıkış Sebebi: {{ bill.outgoing_reason.name }}<br>
-                        Çıkış Miktarı: {{ bill.quantity }}<br>
-                        Toplam Tutar: {{ bill.total_amount }}
-                    </p>
-                    <a href="{% url 'fatura_detay' bill_number=bill.number %}" class="btn btn-info">Detayları Görüntüle</a>
-                </div>
+                {% for reason in all_reasons %}
+                    <div class="form-check">
+                        <input 
+                            class="form-check-input" 
+                            type="checkbox" 
+                            id="reason{{ reason.id }}" 
+                            name="reasons" 
+                            value="{{ reason.id }}"
+                            {% if reason.id in selected_reasons %}checked{% endif %}
+                        >
+                        <label class="form-check-label" for="reason{{ reason.id }}">{{ reason.name }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                <label for="dateRange" class="form-label">Tarih Aralığı:</label>
+                <input 
+                    type="date" 
+                    class="form-control" 
+                    id="startDate" 
+                    name="start_date"
+                    value="{{ request.GET.start_date }}"
+                >
+                <input 
+                    type="date" 
+                    class="form-control mt-2" 
+                    id="endDate" 
+                    name="end_date"
+                    value="{{ request.GET.end_date }}"
+                >
+                <button type="submit" class="btn btn-primary w-100 mt-5">Filtrele</button>
+            </div>
+            <div class="col-md-4 d-flex align-items-start">
+                <label class="switch">
+                    <input type="checkbox" id="viewSwitch" checked>
+                    <span class="slider"></span>
+                </label>
+                <span id="switchLabel" class="ms-3">Tablo Görünümü</span>
             </div>
         </div>
-        {% endfor %}
+    </form>
+<style>
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+    
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        border-radius: 50%;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+    }
+    
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+    
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+    
+    /* Round slider */
+    .slider.round {
+        border-radius: 34px;
+    }
+    
+    .slider.round:before {
+        border-radius: 50%;
+    }
+</style>
+    <!-- Kart Görünümü -->
+    <div id="cardView" class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">Kart Görünümü</h3>
+        </div>
+        {% if bills %}
+            {% for bill in bills %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Fatura Numarası: {{ bill.number }}</h5>
+                        <p class="card-text">
+                            <strong>İşlem Tarihi:</strong> {{ bill.processing_time|date:"d F Y H:i" }}<br>
+                            <strong>Çıkış Sebebi:</strong> {{ bill.outgoing_reason.name }}<br>
+                            <strong>Çıkış Miktarı:</strong> {{ bill.quantity }}<br>
+                            <strong>Toplam Tutar:</strong> {{ bill.outgoing_total_amount|floatformat:2 }}
+                        </p>
+                        <a href="{% url 'outgoing_bill_details' bill.number company.code %}" class="btn btn-info">Detayları Görüntüle</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info" role="alert">
+                    Üzgünüz, herhangi bir fatura bulunamadı.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Tablo Görünümü -->
+    <div id="tableView" class="row d-none">
+        <div class="col-12">
+            <h3 class="mb-3">Tablo Görünümü</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Fatura Numarası</th>
+                        <th>İşlem Tarihi</th>
+                        <th>Çıkış Sebebi</th>
+                        <th>Çıkış Miktarı</th>
+                        <th>Toplam Tutar</th>
+                        <th>Detaylar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if bills %}
+                        {% for bill in bills %}
+                        <tr>
+                            <td>{{ bill.number }}</td>
+                            <td>{{ bill.processing_time|date:"d F Y H:i" }}</td>
+                            <td>{{ bill.outgoing_reason.name }}</td>
+                            <td>{{ bill.quantity }}</td>
+                            <td>{{ bill.outgoing_total_amount|floatformat:2 }}</td>
+                            <td>
+                                <a href="{% url 'fatura_detay' bill.number company.code %}" class="btn btn-info btn-sm">Detayları Görüntüle</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">Üzgünüz, herhangi bir fatura bulunamadı.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+
+<!-- JavaScript for Toggle View -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const viewSwitch = document.getElementById('viewSwitch');
+    const cardView = document.getElementById('cardView');
+    const tableView = document.getElementById('tableView');
+    const switchLabel = document.getElementById('switchLabel');
+
+    viewSwitch.addEventListener('change', function() {
+        if (viewSwitch.checked) {
+            cardView.classList.add('d-none');
+            tableView.classList.remove('d-none');
+            switchLabel.textContent = 'Kart Görünümü';
+        } else {
+            cardView.classList.remove('d-none');
+            tableView.classList.add('d-none');
+            switchLabel.textContent = 'Tablo Görünümü';
+        }
+    });
+});
+</script>
+
 {% endblock content %}

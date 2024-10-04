@@ -181,7 +181,107 @@
       font-weight: 500;
   }
   </style>
-    <script src="
+  <style>
+    #stock_title{
+      border-radius:50px;
+      color: white;
+      box-shadow: 0.1em 0.1em 0.2em rgba(0, 0, 0, 0);
+      background: #FF6F61;
+  }
+  #stock_tagline {
+    border-radius:50px;
+      display: inline-block;
+      font-size: 1.2em;
+      color: rgba(0, 0, 0, 0.85);
+      font-weight: normal;
+      background: #FF6F61;
+      padding: 0.25em 1.5em;
+      margin-top: 0;
+      box-shadow: 0.1em 0.1em 0.2em rgba(0, 0, 0, 0);
+  }
+  </style> 
+  <style>
+                        
+    /* Tablo için genel stil */
+    #styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 25px 0;
+      font-size: 18px;
+      font-family: 'Poppins', sans-serif;
+      text-align: left;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+  
+    /* Başlık kısmı için stil */
+    #styled-table thead tr {
+      background-color: #009879;
+      color: #ffffff;
+      text-align: left;
+      font-weight: bold;
+    }
+  
+    /* Tablodaki başlık hücreleri */
+    #styled-table th {
+      padding: 12px 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+  
+    /* Tablodaki veri hücreleri */
+    #styled-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #dddddd;
+      color: #333;
+    }
+  
+    /* Alternatif satır renklendirmesi */
+    #styled-table tbody tr:nth-child(even) {
+      background-color: #f3f3f3;
+    }
+  
+    /* Satır üzerine gelindiğinde hover efekti */
+    #styled-table tbody tr:hover {
+      background-color: #f1f1f1;
+      cursor: pointer;
+    }
+  
+    /* Kenarlıkları kaldırmak için */
+    #styled-table #styled-table th,#styled-table td {
+      border: none;
+    }
+  
+    /* Responsive tasarım */
+    @media (max-width: 768px) {
+      #styled-table, #styled-table thead, #styled-table tbody, #styled-table th, #styled-table td, #styled-table tr {
+        display: block;
+      }
+  
+      #styled-table-table thead tr {
+        display: none;
+      }
+  
+      #styled-table-table td {
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+      }
+  
+      #styled-table-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 50%;
+        padding-left: 15px;
+        font-weight: bold;
+        text-transform: uppercase;
+        color: #009879;
+      }
+    }
+  </style>
+  <script src="
     https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js
     "></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

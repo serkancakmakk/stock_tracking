@@ -1,11 +1,39 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
+{% block title %}
+Stok Durum Raporu | {{company.code}}
+{% endblock title %}
+{% block icon %}
+<link rel="shortcut icon" href="{% static 'report.png' %}" type="image/x-icon">
+{% endblock icon %}
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.4.2/decimal.min.js"></script>
+</head>
 <div class="container mt-4" id="container">
-    <h2 class="text-center">Stok Durum Raporu</h2>
+    <h2 class="text-center font-poppins" id="stock_title">Stok Durum Raporu</h2>
+    <h6 class="text-center"id="stock_tagline">Stok Görüntülenen Şirket {{company.code}}</h6>
     <p class="text-right"><strong>Tarih:</strong> {{ today }}</p>
     <style>
+        #stock_title {
+            filter: hue-rotate(90deg) saturate(150%) brightness(1.25);
+            color: rgba(0, 0, 0, 0.85);
+            box-shadow: 0.1em 0.1em 0.2em rgba(0, 0, 0, 0.25);
+            background: #f9b1c7;
+        }
+        #stock_tagline {
+            display: inline-block;
+            font-size: 1.2em;
+            color: rgba(0, 0, 0, 0.85);
+            font-weight: normal;
+            background: #f9b1c7;
+            filter: hue-rotate(90deg) saturate(150%) brightness(1.25);
+            padding: 0.25em 1.5em;
+            margin-top: 0;
+            box-shadow: 0.1em 0.1em 0.2em rgba(0, 0, 0, 0.25);
+        }
         @media (max-width: 1367px) {
-            #container{
+            #container {
                 max-width: 800px !important; /* İstediğiniz genişliği burada belirleyin */
             }
         }
@@ -13,7 +41,7 @@
     <!-- Form Switch for Toggling Between Views -->
     <div class="form-check form-switch text-right mb-3">
         <input class="form-check-input" type="checkbox" id="viewSwitch">
-        <label class="form-check-label" for="viewSwitch">Kart Görünümü</label>
+        <label class="form-check-label" for="viewSwitch">Grafik Görünümü</label>
     </div>
 
     <!-- Table View -->
@@ -57,11 +85,6 @@
         </div>
         {% endfor %}
     </div>
-
-    <!-- Chart View -->
-    <div id="chartView" style="display: none;">
-        <canvas id="stockChart" width="400" height="200"></canvas>
-    </div>
 </div>
 
 <!-- Include required libraries -->
@@ -69,9 +92,8 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Initialize DataTable and Chart.js -->
+<!-- Initialize DataTable -->
 <script>
     $(document).ready(function() {
         $('#stockTable').DataTable({
@@ -86,38 +108,14 @@
             }
         });
 
-        var ctx = document.getElementById('stockChart').getContext('2d');
-        var stockChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [{% for product in products %}'{{ product.name }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-                datasets: [{
-                    label: 'Mevcut Stok',
-                    data: [{% for product in products %}{{ product.current_stock }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                    backgroundColor: [{% for product in products %}'{% if product.current_stock < 0 %}rgba(255, 99, 132, 0.2){% else %}rgba(75, 192, 192, 0.2){% endif %}'{% if not forloop.last %},{% endif %}{% endfor %}],
-                    borderColor: [{% for product in products %}'{% if product.current_stock < 0 %}rgba(255, 99, 132, 1){% else %}rgba(75, 192, 192, 1){% endif %}'{% if not forloop.last %},{% endif %}{% endfor %}],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
         $('#viewSwitch').change(function() {
             if (this.checked) {
                 $('#tableView').hide();
                 $('#cardView').show();
-                $('#chartView').show();
                 $('.form-check-label').text('Tablo Görünümü');
             } else {
                 $('#tableView').show();
                 $('#cardView').hide();
-                $('#chartView').hide();
                 $('.form-check-label').text('Kart Görünümü');
             }
         });

@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
+{% block title %}
+Stok Çıkışı Yap | {{company.code}}
+{% endblock title %}
 <div class="container mt-4">
     {% if messages %}
     <script>
@@ -18,6 +21,7 @@
     {% endif %}
     <div class="card">
  <div class="card-header">Stok Çıkış İşlemleri</div>
+ <h6 id="stock_tagline">İşlem yapılan şirket | <strong>{{company.code}}</strong></h6>
     <div class="card-body">
     </div>
     <form action="{% url 'stok_cikisi_yap' company.code %}" method="POST" class="needs-validation" novalidate>
@@ -57,7 +61,6 @@
             </div>
         </div>
         <style>
-            /* CSS Kodu */
             .select2-container--default .select2-selection--single {
                 width: 100% !important;
             }
@@ -65,7 +68,7 @@
         
         <div class="mb-3" id="inventory_product_group">
             <label for="select2-inventory" class="form-label">Envanter Ürünü</label><br>
-            <select name="inventory_product" id="select2-inventory" class="form-select" aria-label="Select Inventory Product">
+            <select name="serial_number" id="select2-inventory" class="form-select" aria-label="Select Inventory Product">
                 <option selected disabled value="">Ürün Seçiniz</option>
             </select>
             <div class="invalid-feedback">
@@ -73,7 +76,7 @@
             </div>
             <script>
                 $('#select2-inventory').select2({
-                    width: 'resolve' // Bu, select2'nin genişliği ayarlamasına yardımcı olur
+                    width: 'resolve'
                 });
             </script>
         </div>
@@ -99,154 +102,160 @@
 <style>
     /* Genel Kart Stili */
     .card {
-        background-color: #ECCEAE; /* Beyaz arka plan */
-        border-radius: 16px; /* Yuvarlatılmış köşeler */
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); /* Hafif gölge efekti */
-        padding: 24px; /* İç boşluk */
-        margin: 20px 0; /* Üst ve alt boşluk */
-        transition: all 0.3s ease; /* Geçiş efekti */
-        position: relative; /* Elemanları konumlandırmak için göreli konum */
-        border: 1px solid #e7e7e7; /* İnce kenarlık */
+        background-color: #ECCEAE; /
+        border-radius: 16px; 
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); 
+        padding: 24px; 
+        margin: 20px 0; 
+        transition: all 0.3s ease;
+        position: relative; 
+        border: 1px solid #e7e7e7;
     }
     
     /* Hover Durumu için Efekt */
     .card:hover {
-        transform: translateY(-8px); /* Hover'da yukarı doğru hareket */
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); /* Daha belirgin gölge */
-        border-color: #ddd; /* Hover'da kenarlık rengi değişimi */
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); 
+        border-color: #ddd; 
     }
     
     /* Kart Başlığı */
     .card-header {
         text-align: center !important;
-        background-color:  #FBF6E2;/* Başlık rengi */;
-        color: black;/* Başlık rengi */
-        font-size: 1.6rem; /* Büyük başlık yazı boyutu */
-        font-weight: 600; /* Orta kalınlıkta yazı tipi */
-        margin-bottom: 18px; /* Alt boşluk */
-        border-bottom: 1px solid #e7e7e7; /* Alt çizgi */
-        padding-bottom: 12px; /* Başlığın altına boşluk */
+        background-color:  #FBF6E2;
+        color: black;
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-bottom: 18px;
+        border-bottom: 1px solid #e7e7e7;
+        padding-bottom: 12px;
         border-radius: 8px;
     }
     
-    /* Kart İçeriği */
     .card-body {
-        font-size: 1rem; /* Normal içerik yazı boyutu */
-        color: #666; /* İçerik yazı rengi */
-        line-height: 1.7; /* Satır yüksekliği */
-        padding: 12px 0; /* İçerik için boşluk */
+        font-size: 1rem;
+        color: #666;
+        line-height: 1.7;
+        padding: 12px 0;
     }
-    
-    /* Kart İçindeki Buton */
-    {% comment %} .card .btn {
-        margin-top: 20px; /* Üst boşluk */
-        border-radius: 8px; /* Buton köşeleri yuvarlatılmış */
-        padding: 10px 20px; /* İç boşluk */
-        font-weight: 500; /* Yazı kalınlığı */
-        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2); /* Buton gölge efekti */
-        transition: background-color 0.3s ease, transform 0.2s ease; /* Hover geçiş efekti */
-    } {% endcomment %}
-    
-    /* Buton Hover Durumu */
+      
     .card .btn:hover {
-        background-color: #0056b3; /* Hover'da daha koyu mavi renk */
-        color: #ffffff; /* Hover'da beyaz yazı rengi */
-        transform: translateY(-3px); /* Hover'da yukarı hareket */
-        box-shadow: 0 8px 16px rgba(0, 123, 255, 0.3); /* Daha belirgin gölge efekti */
+        background-color: #0056b3;
+        color: #ffffff; 
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0, 123, 255, 0.3);
     }
     
-    /* İkincil Butonlar */
+
     .card .btn-outline-secondary {
-        color: #666; /* Gri renk */
-        border-color: #ddd; /* Gri kenarlık */
-        background-color: transparent; /* Şeffaf arka plan */
+        color: #666;
+        border-color: #ddd;
+        background-color: transparent;
         transition: color 0.3s ease, border-color 0.3s ease;
     }
     
     .card .btn-outline-secondary:hover {
-        color: #ffffff; /* Beyaz renk */
-        background-color: #666; /* Gri arka plan */
-        border-color: #666; /* Gri kenarlık */
+        color: #ffffff;
+        background-color: #666;
+        border-color: #666;
     }
     
-    /* Kartın Altındaki Bilgilendirme Mesajları */
+
     .card-footer {
-        font-size: 0.9rem; /* Daha küçük yazı boyutu */
-        color: #888; /* Açık gri yazı rengi */
-        padding-top: 15px; /* Üst boşluk */
-        border-top: 1px solid #e7e7e7; /* Üst çizgi */
-        margin-top: 15px; /* Üst boşluk */
-        text-align: center; /* Ortalı yazı */
+        font-size: 0.9rem;
+        color: #888; 
+        padding-top: 15px;
+        border-top: 1px solid #e7e7e7;
+        margin-top: 15px;
+        text-align: center;
     }
     </style>
 <script>
     $(document).ready(function() {
-        // Initialize Select2
+
+        // Select2 eklentisini belirli dropdown öğelerine uyguluyoruz ve placeholder olarak "Seçim Yapınız" metnini ekliyoruz.
         $('#select2-product, #select2-reason, #select2-inventory').select2({
             placeholder: "Seçim Yapınız",
             allowClear: true
         });
-
-        // Get elements
+    
         const inventoryProductGroup = $('#inventory_product_group');
         const inventoryProductSelect = $('#select2-inventory');
         const submitBtn = $('#submitBtn');
         const quantityInput = $('#outgoing_quantity');
-
-        // Handle change event for Select2
+    
+        // Ürün seçildiğinde tetiklenen olay.
         $('#select2-product').on('change', function() {
+            // Seçilen ürünün option öğesini alıyoruz.
             const selectedOption = $(this).find('option:selected');
+            // Ürünün stokta olup olmadığını kontrol ediyoruz.
             const isInventory = selectedOption.data('is-inventory') === true;
+            // Seçilen ürünün ID'sini alıyoruz.
             const productId = $(this).val();
-
+    
+            // Konsol çıktısı ile bazı değerleri kontrol ediyoruz.
             console.log("Product Selected: ", selectedOption);
             console.log("Is Inventory: ", isInventory);
             console.log("Product ID: ", productId);
-
+    
+            // Eğer seçilen ürün stokta varsa:
             if (isInventory) {
+                // Miktarı 1 olarak ayarlayıp readonly yapıyoruz.
                 quantityInput.val(1).prop('readonly', true);
+                // Stok ürünü için ilgili bölümü gösteriyoruz.
                 inventoryProductGroup.removeClass('d-none');
+                // Seçilen ürün için stokta bulunan ürünleri çekiyoruz.
                 fetchInventoryProducts(productId);
             } else {
+                // Stokta değilse, miktar alanını boş bırakıyoruz ve readonly durumunu kaldırıyoruz.
                 quantityInput.val('').prop('readonly', false);
+                // Stok ürünü bölgesini gizliyoruz.
                 inventoryProductGroup.addClass('d-none');
             }
-
+    
+            // Form geçerliliğini kontrol ediyoruz.
             checkFormValidity();
         });
-
-        // Enable or disable the submit button based on the inventory product selection
+    
+        // Stok ürünü seçildiğinde form geçerliliğini kontrol eden fonksiyon.
         $('#select2-inventory').on('change', function() {
             checkFormValidity();
         });
-
+    
+        // Formun geçerliliğini kontrol eden fonksiyon.
         function checkFormValidity() {
             const selectedOption = $('#select2-product').find('option:selected');
             const isInventory = selectedOption.data('is-inventory') === true;
             const inventoryProductSelected = $('#select2-inventory').val() !== null;
-
+    
+            // konsolda formu kontrol et.
             console.log("Form Validity Check: ", isInventory, inventoryProductSelected);
-
+    
+            // seçim yoksa butonu pasif hale getir
             if (isInventory && !inventoryProductSelected) {
                 submitBtn.prop('disabled', true);
             } else {
+                // aktif hale getir
                 submitBtn.prop('disabled', false);
             }
         }
-
+    
+        // Belirli bir ürün için stokta bulunan ürünleri AJAX ile çekiyoruz.
         function fetchInventoryProducts(productId) {
             console.log("Fetching inventory products for product ID: ", productId);
             $.ajax({
-                url: '{% url "get_inventory_products" %}',
+                url: '{% url "get_inventory_products" %}', // Django'da tanımlı olan URL'yi çağırıyoruz.
                 data: {
-                    product_id: productId
+                    product_id: productId,
+                    company_id: "{{ company.id }}"  // company_id'yi doğru şekilde geçiriyoruz
                 },
                 success: function(data) {
                     console.log("Fetched inventory products: ", data);
+                    // Stok ürünü dropdown'ını temizleyip, yeni seçenekleri ekliyoruz.
                     inventoryProductSelect.empty();
                     inventoryProductSelect.append('<option selected disabled value="">Ürün Seçiniz</option>');
                     data.forEach(function(item) {
-                        inventoryProductSelect.append('<option value="' + item.id + '">' + item.serial_number + '</option>');
+                        inventoryProductSelect.append('<option value="' + item.serial_number + '">' + item.serial_number + '</option>');
                     });
                 },
                 error: function(xhr, status, error) {
@@ -254,36 +263,40 @@
                 }
             });
         }
-
-        // Generate random bill number
+    
+        // Fatura numarasını rastgele oluştur.
         $('#generateBillNumber').on('click', function() {
             const billInput = $('#bill');
+            //fatura alanına yaz
             const randomBillNumber = 'OFN-' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
             billInput.val(randomBillNumber);
         });
-
-        // Check stock warning
+    
         const productSelect = document.getElementById('select2-product');
         const warningMessage = document.getElementById('stock-warning');
-
+    
+        // Stok miktarını kontrol eden fonksiyon.
         function checkStock() {
             const selectedOption = productSelect.options[productSelect.selectedIndex];
             const currentStock = parseFloat(selectedOption.getAttribute('data-stock'));
             const outgoingQuantity = parseFloat(quantityInput.val());
-
+    
             console.log("Checking stock: ", currentStock, outgoingQuantity);
-
+    
+            //çıkış miktarı stok miktarından fazla ise, uyarı mesajını gösteriyoruz.
             if (outgoingQuantity > currentStock) {
                 warningMessage.style.display = 'block';
             } else {
+                // Aksi halde uyarı mesajını gizliyoruz.
                 warningMessage.style.display = 'none';
             }
         }
-
+    
+        // Ürün seçildiğinde veya miktar giriş alanı değiştirildiğinde stok kontrolünü yap stok eksikse uyarı ver.
         productSelect.addEventListener('change', checkStock);
         quantityInput.on('input', checkStock);
-
-        // Form validation
+    
+        // Form doğrulama işlemleri.
         const forms = document.querySelectorAll('.needs-validation');
         Array.prototype.slice.call(forms).forEach(function (form) {
             form.addEventListener('submit', function (event) {

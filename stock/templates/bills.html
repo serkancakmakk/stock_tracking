@@ -1,109 +1,127 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
+{% block title %}
+Faturalar | {{company.code}}
+{% endblock title %}
+{% block icon %}
+<link rel="shortcut icon" href="{% static 'report.png' %}" type="image/x-icon">
+{% endblock icon %}
 <!-- Include Google Font -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
 
 <style>
     body {
-        font-family: 'Roboto', sans-serif;
+        font-family: 'Poppins', sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
     }
-    .center-content {
-        display: flex;
-        justify-content: center;
-        flex-direction: column;
-        align-items: center;
-    }
-    .seller-card {
-        margin-bottom: 20px;
-        width: 100%;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    .seller-card .card-header {
-        background-color: #f8f9fa;
-        padding: 15px;
-        cursor: pointer;
-        border-bottom: 1px solid #ddd;
-        border-radius: 8px 8px 0 0;
-    }
-    .seller-card .card-header h3 {
-        margin: 0;
-        font-weight: 500;
-    }
-    .seller-card .card-body {
-        padding: 15px;
-    }
-    .table {
-        margin: 0;
-    }
-    .table th, .table td {
-        vertical-align: middle;
-    }
-    .btn-primary {
-        background-color: #007bff;
-        border-color: #007bff;
-        transition: background-color 0.3s, border-color 0.3s;
-    }
-    .btn-primary:hover {
-        background-color: #0056b3;
-        border-color: #004085;
+    .container {
+        max-width: 1200px;
+        margin: 40px auto;
     }
     .search-bar {
-        margin-bottom: 20px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
     }
-   
-    @media screen and (max-width: 1366px) {
-        #bills_div{
-            width: 80%;
-            float: right;
-            margin-left: 200px;
+    .search-bar input[type="text"] {
+        width: 100%;
+        max-width: 500px;
+        padding: 10px;
+        border: 2px solid #007bff;
+        border-radius: 30px 0 0 30px;
+        outline: none;
+    }
+    .search-bar button {
+        padding: 10px 20px;
+        border: 2px solid #007bff;
+        border-radius: 0 30px 30px 0;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .search-bar button:hover {
+        background-color: #0056b3;
+    }
+    .seller-card {
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+        padding: 20px;
+    }
+    .seller-card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        font-weight: 600;
+        color: #007bff;
+    }
+    .bills-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .bill-card {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        width: calc(33.333% - 10px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .bill-card h4 {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        color: #333;
+    }
+    .bill-card a {
+        margin-top: auto;
+        text-align: center;
+        padding: 8px 0;
+        background-color: #007bff;
+        color: #fff;
+        border-radius: 5px;
+        font-weight: 500;
+        transition: background-color 0.3s;
+    }
+    .bill-card a:hover {
+        background-color: #0056b3;
+    }
+    @media screen and (max-width: 768px) {
+        .bill-card {
+            width: calc(50% - 10px);
         }
-      }
+    }
+    @media screen and (max-width: 576px) {
+        .bill-card {
+            width: 100%;
+        }
+    }
 </style>
 
 <div class="container">
-    <div class="row justify-content-center">
-        <div class="col-lg-12" id="bills_div">
-            <div class="search-bar">
-                <div class="input-group">
-                    <input type="text" id="searchInput" class="form-control" placeholder="Satıcı veya fatura numarası arayın...">
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" onclick="searchSellersAndBills()">Ara</button>
-                    </div>
-                </div>
-            </div>
-            {% for seller, bills in bills_by_seller.items %}
-                <div class="card seller-card" data-seller-name="{{ seller }}">
-                    <div class="card-header" data-toggle="collapse" href="#collapse{{ forloop.counter }}" role="button" aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
-                        <h3>Satıcı: {{ seller }}</h3>
-                    </div>
-                    <div class="collapse" id="collapse{{ forloop.counter }}">
-                        <div class="card-body">
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Fatura Numarası</th>
-                                        <th>Detaylar</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for bill in bills %}
-                                        <tr data-bill-number="{{ bill.number }}">
-                                            <td>{{ bill.number }}</td>
-                                            <td>
-                                                <a href="{% url 'fatura_detay' code=company.code bill_number=bill.number %}" class="btn btn-primary btn-sm">Detayları Gör</a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Satıcı veya fatura numarası arayın...">
+        <button onclick="searchSellersAndBills()">Ara</button>
     </div>
+    {% for seller, bills in bills_by_seller.items %}
+        <div class="seller-card" data-seller-name="{{ seller }}">
+            <h3>{{ seller }}</h3>
+            <div class="bills-list">
+                {% for bill in bills %}
+                    <div class="bill-card" data-bill-number="{{ bill.number }}">
+                        <h4>Fatura: {{ bill.number }}</h4>
+                        <a href="{% url 'fatura_detay' bill.number company.code %}">Detayları Gör</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
 </div>
 
 <script>
@@ -115,16 +133,16 @@
             const sellerName = card.getAttribute('data-seller-name').toLowerCase();
             let sellerMatch = sellerName.includes(searchInput);
 
-            const billRows = card.querySelectorAll('tr[data-bill-number]');
+            const billCards = card.querySelectorAll('.bill-card');
             let billMatch = false;
 
-            billRows.forEach(row => {
-                const billNumber = row.getAttribute('data-bill-number').toLowerCase();
+            billCards.forEach(billCard => {
+                const billNumber = billCard.getAttribute('data-bill-number').toLowerCase();
                 if (billNumber.includes(searchInput)) {
-                    row.style.display = '';
+                    billCard.style.display = '';
                     billMatch = true;
                 } else {
-                    row.style.display = 'none';
+                    billCard.style.display = 'none';
                 }
             });
 

@@ -63,7 +63,7 @@
                         </li>
                         <li class="list-group-item d-flex align-items-center">
                             <strong>Ödeme Yap : </strong>
-                            <form action="{% url 'ödeme_yap' seller.id %}" method="POST" class="d-flex">
+                            <form action="{% url 'ödeme_yap' seller.id company.code %}" method="POST" class="d-flex">
                                 {% csrf_token %}
                                 <input name="payment_amount" class="form-control" type="number" style="width: 30%; margin-left: 10px;">
                                 <button type="submit" class="btn btn-success">Kaydet</button>

@@ -11,10 +11,8 @@
             <img src="https://t4.ftcdn.net/jpg/04/06/91/91/240_F_406919147_D3WsGjwXj1qmFNrei2ZFvBWwiueRcFmg.jpg" alt="logo" />
           </span>
           <div class="text header-text">
-            <span class="main">Slight</span><br>
-            <span class="sub">SOFT</span>
-            {{request.user.company.code}}
-            {{request.user.id}}
+            <span class="main">SSOFT</span><br>
+            <span class="sub">Şirket Kodu : {{request.user.company.code}} </span>
           </div>
         </div>
         <i id="sidebarToggle" class="bx bx-chevron-right toggle"></i>
@@ -28,9 +26,9 @@
               <input type="search" placeholder="Search..." />
             </li>
             <li class="nav-link">
-              <a href="{% url 'dashboard' company.code %}">
+              <a href="{% url 'dashboard' request.user.company.code %}">
                 <i class="fa-solid fa-house-user icons"></i>
-                <span class="text nav-text username"><strong>{{request.user.username}}({{request.user.tag}})</strong></span>
+                <span class="text nav-text username"><strong>{{request.user.username}} ({{request.user.tag}})</strong></span>
               </a>
             </li>
             <style>
@@ -89,18 +87,19 @@
               </a>
             </li>
             <li class="nav-link">
-              <a href="#">
+              <a href="{% url 'envanter' company.code %}">
                 <i class="fa-solid fa-boxes-stacked icons"></i>
                 <span class="text nav-text">Envanter</span>
               </a>
             </li>
-            
+            {% if request.user.company.code == 1 and request.user.permissions.access_to_bugs %}
             <li class="nav-link">
-              <a href="#">
-                <i class="fa-solid fa-mortar-pestle icons"></i>
-                <span class="text nav-text">Reçete Oluştur</span>
+              <a href="{% url 'hata_bildirimleri' company.code %}">
+                <i class="fa-solid fa-bug icons"></i>
+                <span class="text nav-text">Hata Bildirimleri</span>
               </a>
             </li>
+            {% endif %}
             <li class="nav-item dropend">
               <a class="nav-link dropdown-toggle" href="#" id="raporlarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                   <i class="fa-solid fa-chart-pie icons"></i>
@@ -116,8 +115,18 @@
                   <li><a class="dropdown-item" href="{% url 'ürün_bilgileri' company.code %}">Ürün Bilgileri</a></li>
                   <li><a class="dropdown-item" href="{% url 'stok_farki' company.code%}">Stok Farkı</a></li>
                   <li><a class="dropdown-item" href="{% url 'faturalar' company.code %}">Faturalar</a></li>
-                  <li><a class="dropdown-item" href="{% url 'stok_giris_cikislari' company.code %}">Kritik Stok Seviyleri</a></li>
+                  <li><a class="dropdown-item" href="{% url 'cikis_faturalari' company.code %}">Çıkış Faturaları</a></li>
+                  <li><a class="dropdown-item" href="{% url 'kritik_stok_raporu' company.code %}">Kritik Stok Seviyleri</a></li>
                   <li><a class="dropdown-item" href="{% url 'vade_tarihi_gelen_faturalar' company.code today  %}">Vade Tarihi Gelen Faturalar</a></li>
+                  <hr class="report_layout"> <!-- envanter raporları -->
+                  <style>
+                    .report_layout {
+                      height: 10px;
+                      background-color: red; /* Çizgi rengi */
+                      border: none; /* Kenarlığı kaldır */
+                    }
+                  </style>
+                  <li><a class="dropdown-item" href="{% url 'kullanilan_envanterler' company.code  %}">Çıkış Yapılan Envanterler</a></li>
                 {% else %}
                   
                   <li><a class="dropdown-item" >Yetki Yok</a></li>
@@ -148,6 +157,9 @@
               {% endif %}
               {% if request.user.permissions.add_user %}
                 <li><a class="dropdown-item" href="{% url 'kullanici_ekle' company.code %}">Kullanıcı</a></li>
+              {% endif %}
+              {% if request.user.permissions.add_user %}
+                <li><a class="dropdown-item" href="{% url 'silinen_ögeler' company.code %}">Silinenler</a></li>
               {% endif %}
             </ul>
         </li>

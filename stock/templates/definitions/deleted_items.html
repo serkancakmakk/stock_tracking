@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+Silinen Öğeler | {{company.code}}
+{% endblock title %}
+
+{% block icon %}
+<link rel="shortcut icon" href="{% static 'recycle.png' %}" type="image/x-icon">
+{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h4 class="mb-4">Silinen Öğeler</h4>
+
+    <div class="row">
+        <!-- Silinen Ürünler -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Silinen Ürünler</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Ürün Adı</th>
+                                <th>Geri Al</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in deleted_products %}
+                            <tr>
+                                <td>{{ product.name }}</td>
+                                <td>
+                                    <form action="{% url 'urun_sil' company.code product.id %}" method="POST">
+                                        {% csrf_token %}
+                                    <button class="btn btn-primary">
+                                        <i class="fa-solid fa-rotate-left"></i> Geri Al
+                                    </button>
+                                </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2">Hiç veri yok</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Silinen Birimler -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Silinen Birimler</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Birim Adı</th>
+                                <th>Geri Al</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for unit in deleted_units %}
+                            <tr>
+                                <td>{{ unit.unit_name }}</td>
+                                <td>
+                                    <form action="{% url 'birim_sil' unit.id  company.code %} "method="POST">
+                                        {% csrf_token %}
+                                    <button class="btn btn-primary">
+                                        <i class="fa-solid fa-rotate-left"></i> Geri Al
+                                    </button>
+                                </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2">Hiç veri yok</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Silinen Cariler -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Silinen Cariler</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Cariler Adı</th>
+                                <th>Geri Al</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in deleted_customers %}
+                            <tr>
+                                <td>{{ customer.name }}</td>
+                                <td>
+                                    <a href="{% url 'cari_sil' company.code customer.id %}" class="btn btn-success">
+                                        <i class="fa-solid fa-rotate-left"></i> Geri Al
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2">Hiç veri yok</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Silinen Kategoriler -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Silinen Kategoriler</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Kategori Adı</th>
+                                <th>Geri Al</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in deleted_categories %}
+                            <tr>
+                                <td>{{ category.name }}</td>
+                                <td>
+                                    {% comment %} <a href="{% url 'kategori_geri_al' company.code category.id %}" class="btn btn-primary">
+                                        <i class="fa-solid fa-rotate-left"></i> Geri Al
+                                    </a> {% endcomment %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2">Hiç veri yok</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Silinen Faturalar -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Silinen Faturalar</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Fatura Numarası</th>
+                                <th>Geri Al</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bill in deleted_bills %}
+                            <tr>
+                                <td>{{ bill.number }}</td>
+                                <td>
+                                    {% comment %} <a href="{% url 'fatura_geri_al' company.code bill.id %}" class="btn btn-primary">
+                                        <i class="fa-solid fa-rotate-left"></i> Geri Al
+                                    </a> {% endcomment %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2">Hiç veri yok</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

@@ -1,50 +1,153 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
+{% block title %}
+Stok Farkı Raporu | {{ company.code }}
+{% endblock title %}
+{% block icon %}
+<link rel="shortcut icon" href="{% static 'report.png' %}" type="image/x-icon">
+{% endblock icon %}
 
 <div class="container mt-4">
-    <h2 class="text-center">Stok Farkı Raporu</h2>
-    <p class="text-right"><strong>Tarih:</strong> {{ today }}</p>
+    <h2 class="text-center mb-4" id="stock_title">Stok Farkı Raporu</h2>
+    <h3 class="text-right mb-4 font-poppins"><strong>Tarih:</strong> {{ today|date:"d F Y" }}</h3>
+
     <div class="alert alert-info alert-dismissible fade show" role="alert">
-        <strong>Gerçek Stok (Giren Miktar) - (Çıkan Miktardır) </strong>
+        <strong>Gerçek Stok (Giren Miktar) - (Çıkan Miktar)</strong>
         <hr>
-        <strong>Görünür Stok Ürün Tablosunda Görünen Mevcut Stoktur</strong>
+        <strong>Görünür Stok: Ürün Tablosunda Görünen Mevcut Stok</strong>
         <hr>
-        <strong><strong><p class="text-success">Stoklar Uyuşuyor</p></strong> <strong><p class="text-danger">Stoklar Uyuşmuyor</p></strong>
+        <strong>
+            <span class="text-success">Stoklar Uyuşuyor</span>
+            <span class="text-danger ms-3">Stoklar Uyuşmuyor</span>
+        </strong>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    <div class="row">
-        <div class="col-md-12">
-            <table class="table table-striped table-hover text-center">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>Ürün Adı</th>
-                        <th>Giren Miktar</th>
-                        <th>Çıkan Miktar</th>
-                        <th>Gerçek Stok</th>
-                        <th>Görünür Stok</th>
-                        <th>Durum</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for product in products %}
-                    <tr {% if product.real_stock == product.visible_stock %} class="table-success" {% else %} class="table-danger"{% endif %}>
-                        <td>{{ product.name }}</td>
-                        <td>{{ product.total_incoming }}</td>
-                        <td>{{ product.total_outgoing }}</td>
-                        <td>{{ product.real_stock }}</td>
-                        <td>{{ product.visible_stock }}</td>
-                        <td>
-                            {% if product.real_stock == product.visible_stock %}
-                                <i class="fa-solid fa-circle-check text-success" title="Stoklar Uyuşuyor"></i>
-                            {% else %}
-                                <i class="fa-solid fa-circle-exclamation text-danger" title="Stoklar Uyuşmuyor"></i>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="table table-striped" id="difference-table">
+            <thead>
+                <tr>
+                    <style>
+                        #styled-table th{
+                            cursor: none !important;
+                        }
+                    </style>
+                    <th>Ürün Adı</th>
+                    <th>Giren Miktar</th>
+                    <th>Çıkan Miktar</th>
+                    <th>Gerçek Stok</th>
+                    <th>Görünür Stok</th>
+                    <th>Durum</th>
+                </tr>
+            </thead>
+            <tbody>
+                <style>
+                    /* Tablo genel stili */
+                    #difference-table {
+                        border-collapse: collapse;
+                        width: 100%;
+                        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+                        
+                    }
+                
+                    /* Başlık hücreleri */
+                    #difference-table th {
+                        padding: 15px;
+                        background-color: #FF6F61;
+                        color: black;
+                        text-align: left;
+                    }
+                
+                    /* Veri hücreleri */
+                    #difference-table td {
+                        padding: 15px;
+                        background-color: rgba(255, 255, 255, 0.2);
+                        color: black;
+                        position: relative;
+                    }
+                
+                    /* Satır arka plan rengi */
+                    #difference-table tbody tr {
+                        transition: background-color 0.3s;
+                    }
+                
+                    /* Satır hover efekti */
+                    #difference-table tbody tr:hover {
+                        background-color: rgba(255, 255, 255, 0.3);
+                    }
+                
+                    /* Hover üzerindeki hücre efekti */
+                    #difference-table tbody td:hover::before {
+                        content: "";
+                        position: absolute;
+                        left: 0;
+                        right: 0;
+                        top: 0;
+                        bottom: 0;
+                        background-color: rgba(255, 255, 255, 0.2);
+                        z-index: -1;
+                    }
+                </style>
+                
+                {% for product in products %}
+                <tr class="{% if product.real_stock == product.visible_stock %}success{% else %}danger{% endif %}">
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.total_incoming }}</td>
+                    <td>{{ product.total_outgoing }}</td>
+                    <td>{{ product.real_stock }}</td>
+                    <td>{{ product.visible_stock }}</td>
+                    <td>
+                        {% if product.real_stock == product.visible_stock %}
+                            <i class="fa-solid fa-check-circle" id="check"></i>
+                        {% else %}
+                            <i class="fa-solid fa-exclamation-circle"></i>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
+<style>
+    #stock_title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .alert-info {
+        border-color: #cce5ff;
+        background-color: #e7f0ff;
+        color: #004085;
+    }
+
+   
+     #check {
+        color: green !important;
+    }
+
+    .fa-exclamation-circle {
+        color: red  !important;
+    }
+    #difference-table tbody tr.success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    #difference-table tbody tr.danger {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    #difference-table tbody tr.invalid {
+        background-color: #f5c6cb; /* Daha açık kırmızı ton */
+        color: #721c24;
+    }
+</style>
+
 {% endblock content %}
+
+
+

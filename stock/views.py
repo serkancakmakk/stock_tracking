@@ -1,43 +1,43 @@
-from datetime import timedelta, timezone
+from datetime import timedelta, datetime
+from decimal import Decimal, InvalidOperation
 import random
+import timeit
 import uuid
-from django.db import IntegrityError
-from django.http import Http404, HttpResponseRedirect, JsonResponse
+from django.db import IntegrityError, transaction
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from datetime import date
-
-from django.shortcuts import render
-from .models import ChatRoom, Company, Inventory, Parameter, Product, StockTransactions, User,Message
-from .tables import StockTransactionsTable
-from datetime import datetime, date
-
-from django.shortcuts import render
-from .models import Product, StockTransactions
-from .tables import StockTransactionsTable
-from datetime import datetime, date
-
-# views.py
-
-from django.shortcuts import render
-from .models import Product, StockTransactions
-from .tables import StockTransactionsTable
-from datetime import datetime, date
-
-from .models import Bill, BillItem, Category, OutgoingBill, OutgoingReasons, Product, Seller, StockTransactions, Unit
-
-from .forms import CategoryForm, CompanyForm, ParameterForm, PermissionForm, ProductForm, ProductUpdateForm, SellerForm, UserEditForm
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.urls import path, reverse
+from django.contrib.auth import authenticate, login, update_session_auth_hash, logout as auth_logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db.models import Sum, F, Q, Count
 from django.utils.crypto import get_random_string
-
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from collections import defaultdict
+from .models import (
+    Bill, BillItem, Category, ErrorMessage, OutgoingBill, OutgoingReasons, 
+    Product, Seller, StockTransactions, Unit, ChatRoom, Company, Inventory, 
+    Parameter, User, Message, Permission
+)
+from .forms import (
+    CategoryForm, ChangePasswordForm, CompanyForm, ParameterForm, PermissionForm, 
+    ProductForm, ProductUpdateForm, ReportBugForm, SellerForm, UpdateUnitForm, 
+    UserEditForm, CustomUserCreationForm
+)
+from django.db import models
+import json
 
 def companies(request, company_code):
     company = get_object_or_404(Company, code=company_code)
     
     # `ssoft` değil ve `list_company` izni yoksa
-    if request.user.username != 'ssoft' and not request.user.permissions.list_company:
-        messages.error(request, 'Bu Sayfaya Ulaşamazsınız.')
-        return redirect('dashboard', company.code)
+    # if request.user.username != 'ssoft' and not request.user.permissions.list_company:
+    #     messages.error(request, 'Bu Sayfaya Ulaşamazsınız.')
+    #     return redirect('dashboard', company.code)
     
     companies = Company.objects.all()
     
@@ -105,6 +105,13 @@ def master_create_company(request):
             contract_end_date=contract_end_date,
             create_user=user
         )
+        User.objects.create(
+            company=Company.objects.first(),
+            username="ssoft",
+            unique_id = "b8836c81-c16b-47e2-ba43-9e3c317b8850",
+            password="Antalya9!"
+            
+        )
         return redirect('success_url')  # Başarı URL'si kendi URL'nize göre ayarlayın
 
 
@@ -112,72 +119,78 @@ def create_company(request, code):
     # Şirketi al
     company = get_object_or_404(Company, code=code)
     print('Bu kontrole geliyor.')
+    
     # Kullanıcının şirkete erişim izni olup olmadığını kontrol et
-   
+    if not request.method == 'POST':
+        form = CompanyForm()
+        context = {
+            'form': form,
+            'company': company,
+        }
+        return render(request, 'definitions/define_company.html', context)
 
-    if request.method == 'POST':
-        if not (request.user.company.code == 1 and request.user.permissions.add_company):
-            print('Bu kontrole geliyor.')
-            # print(request.user.user_permissions.add_company)
-            messages.error(request, 'Bu işlemi yapma yetkiniz yok.')
-            return redirect('dashboard', code=request.user.company.code)
+    if not (request.user.company.code == 1 and request.user.permissions.add_company):
+        messages.error(request, 'Bu işlemi yapma yetkiniz yok.')
+        return redirect('dashboard', code=request.user.company.code)
+
     # Formu al ve doğrula
     form = CompanyForm(request.POST)
-    if form.is_valid():
-        # Yeni şirket oluştur
-        new_company = form.save(commit=False)
-        new_company.code = generate_unique_code()  # Şirket kodunu oluştur
-        new_company.create_user = request.user  # Şirketi oluşturan kullanıcıyı ayarla
-        new_company.save()  # Veritabanına kaydet
-        
-        messages.success(request, 'Yeni şirket başarıyla oluşturuldu.')
-        return redirect('firmalar', request.user.company.code)  # Başarılı bir şekilde kaydedildikten sonra yönlendirin
-    else:
-        # GET isteği için formu oluştur
-        form = CompanyForm()
+    if not form.is_valid():
+        context = {
+            'form': form,
+            'company': company,
+        }
+        # Hata mesajlarını bir dizeye dönüştür ve göster
+        error_messages = " ".join([str(error) for error in form.errors.values()])
+        messages.error(request, f'Form hataları: {error_messages}')
+        return render(request, 'definitions/define_company.html', context)
+    # Yeni şirket oluştur
+    new_company = form.save(commit=False)
+    new_company.code = generate_unique_code()  # Şirket kodunu oluştur
+    new_company.create_user = request.user  # Şirketi oluşturan kullanıcıyı ayarla
+    new_company.save()  # Veritabanına kaydet
     
-    # Şablona verileri gönder
-    context = {
-        'form': form,
-        'company': company,
-    }
-    return render(request, 'definitions/define_company.html', context)
-     
+    messages.success(request, 'Yeni şirket başarıyla oluşturuldu.')
+    return redirect('firmalar', request.user.company.code)  # Başarılı bir şekilde kaydedildikten sonra yönlendirin
 
+       
+# Rastgele Şirket Kodunu oluşturan fonksiyon
 def generate_unique_code():
-    # 9 haneli benzersiz bir kod oluştur
     return get_random_string(length=9, allowed_chars='1234567890')
-def payment_bill(request,id):
-    pass
-def payment(request, id):
-    seller = get_object_or_404(Seller, id=id)
+
+def payment(request, id,company_code):
     
+    company = get_object_or_404(Company, code=company_code)
+    seller = get_object_or_404(Seller, id=id, company=company)
     if request.method == 'POST':
         payment_amount = request.POST.get("payment_amount")
+        
+        if not payment_amount:
+            messages.error(request, 'Payment amount cannot be empty.')
+            return redirect('satici_sayfasi', id=id)
+
         try:
-            if payment_amount:
-                payment_amount_decimal = Decimal(payment_amount)
-                if payment_amount_decimal > 0:  # Check if payment is positive
+            payment_amount_decimal = Decimal(payment_amount)
+            if payment_amount_decimal > 0:
+                with transaction.atomic():
                     seller.receivable += payment_amount_decimal
                     seller.balance = seller.debt - seller.receivable
                     seller.save()
-                    messages.success(request, 'Payment successfully added.')
-                else:
-                    messages.error(request, 'Payment amount must be a positive number.')
+                messages.success(request, 'Payment successfully added.')
             else:
-                messages.error(request, 'Payment amount cannot be empty.')
+                messages.error(request, 'Payment amount must be a positive number.')
         except InvalidOperation:
             messages.error(request, 'Invalid payment amount format.')
 
         # Redirect to seller detail page in all cases after processing
-        return redirect('satici_sayfasi', id=id)
+        return redirect('satici_sayfasi', id,company.code)
 
     # Render the payment form for GET requests
     return render(request, 'payment_form.html', {'seller': seller})
 def seller_detail(request, id ,code):
     company = get_object_or_404(Company,code=code)
     seller = get_object_or_404(Seller, id=id,company=company)
-    seller_bills = Bill.objects.filter(seller=seller,company=company).order_by('-date')
+    seller_bills = Bill.objects.filter(seller=seller,company=company,is_delete=False).order_by('-date')
 
     # Sayfalama için Paginator objesi oluştur
     paginator = Paginator(seller_bills, 10)  # Sayfa başına 10 öğe
@@ -199,9 +212,7 @@ def seller_detail(request, id ,code):
     }
 
     return render(request, 'seller_page.html', context)
-from django.contrib.auth import authenticate, login
-from django.shortcuts import render, redirect
-from django.contrib.auth.forms import AuthenticationForm
+
 def user_edit(request, code, uuid4):
     if not request.user.is_authenticated:
         messages.error(request, 'Giriş yapmalısınız.')
@@ -214,23 +225,22 @@ def user_edit(request, code, uuid4):
     if not has_permission:
         return redirect_response
 
+    # Düzenlenecek kullanıcıyı al
     user = get_object_or_404(User, unique_id=uuid4)
     
     if request.method == 'POST':
         form = UserEditForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
+            # Formu kaydetmeden önce user nesnesini al
             user = form.save(commit=False)
             
-            # is_active değeri güncelleniyor
+            # is_active değerini güncelle
             user.is_active = 'is_active' in request.POST
             
-            # Formdan gelen tag değeri kontrol ediliyor
+            # Tag değerini güncelle
             new_tag = request.POST.get('tag')
-            if new_tag:  # Eğer tag değeri varsa, güncelle
+            if new_tag:
                 user.tag = new_tag
-            
-            # Diğer işlemler
-            print(user.profile_image)
             
             # Kullanıcıyı kaydet
             user.save()
@@ -244,7 +254,7 @@ def user_edit(request, code, uuid4):
     else:
         form = UserEditForm(instance=user)
     
-    return render(request, 'user_page/user_detail.html', {'form': form, 'company': company})
+    return render(request, 'user_page/user_detail.html', {'form': form, 'company': company, 'user': user})
 def edit_permissions(request, code, uuid4):
     if not (request.user.username == 'ssoft' or request.user.company.code == code):
         messages.error(request, 'Sadece kendi firmanız için işlem yapabilirsiniz.')
@@ -271,32 +281,59 @@ def edit_permissions(request, code, uuid4):
         'company': company,
         'user': user
     })
-from django.db import models
 
+def change_password(request,uuid):
+    if request.method == 'POST':
+        form = ChangePasswordForm(request.POST)
+        if form.is_valid():
+            old_password = form.cleaned_data.get('old_password')
+            new_password = form.cleaned_data.get('new_password1')
+            
+            # Mevcut kullanıcı
+            user = get_object_or_404(User,unique_id=uuid)
+            user.password = make_password(old_password)
+            user.save()
+            print('User Bulundur',user.username)
+            if user.check_password(old_password):
+                user.set_password(new_password)
+                user.save()
+
+                # Parola değiştirildiğinde session yenileme
+                update_session_auth_hash(request, user)
+                messages.success(request, "Parolanız başarıyla değiştirildi.")
+                return redirect('password_change_done')
+            else:
+                form.add_error('old_password', 'Eski şifre yanlış.')
+                print(form.errors)
+    else:
+        form = ChangePasswordForm()
+
+    return render(request, 'change_password.html', {'form': form})
 def user_login(request):
     if request.method == "POST":
         username = request.POST.get('username')
         password = request.POST.get('password')
         company_code = request.POST.get('company_code')
-
+        remember_me = request.POST.get('remember_me')  # Beni hatırla checkbox'ının değeri
+        # print(remember_me)
         # Şirketi al veya 404 döndür
         company = get_object_or_404(Company, code=company_code)
 
         try:
             # Kullanıcıyı al
             user = User.objects.get(username=username, company=company)
-            
+            print(user.password)
             # Kullanıcının aktif olup olmadığını kontrol et
             if not user.is_active:
                 messages.error(request, "Kullanıcı aktif değil.")
                 return render(request, 'login.html')
 
-            # Şifreyi kontrol et
+            # # Şifreyi kontrol et
             if not user.check_password(password):
                 messages.error(request, "Geçersiz şifre.")
                 return render(request, 'login.html')
 
-            # Kullanıcının doğru şirketle ilişkilendirilmiş olup olmadığını kontrol et
+            # # Kullanıcının doğru şirketle ilişkilendirilmiş olup olmadığını kontrol et
             if user.company != company:
                 messages.error(request, "Bu kullanıcı bu firmaya ait değil.")
                 return render(request, 'login.html')
@@ -315,6 +352,12 @@ def user_login(request):
             login(request, user)
             request.session['company_code'] = company.code
 
+            # Beni hatırla seçeneği aktifse oturum süresini ayarla
+            if remember_me:
+                request.session.set_expiry(1209600)  # 2 hafta
+            else:
+                request.session.set_expiry(0)  # Tarayıcı kapanana kadar oturum açık kalsın
+
             # Başarıyla giriş yaptıktan sonra yönlendirme
             return redirect('dashboard', code=company.code)
 
@@ -322,11 +365,16 @@ def user_login(request):
             messages.error(request, "Geçersiz kullanıcı adı veya şifre.")
             return render(request, 'login.html')
 
-    return render(request, 'login.html')
+    return render(request, 'login.html') 
 
+@login_required
+def lockout(request):
+    return render(request, 'lockout.html')  # Kilitlenme sayfası şablonu
 def user_detail(request, code, uuid4):
     company = get_object_or_404(Company, code=code)
+    print(uuid4)
     user = get_object_or_404(User, unique_id=uuid4)
+    print(user.username)
     
     # Check if the authenticated user is 'sssoft', belongs to the company, or has the required permission
     if not (request.user.username == 'ssoft' or request.user.company == company):
@@ -338,60 +386,108 @@ def user_detail(request, code, uuid4):
         'user': user,
     }
     return render(request, 'user_page/user_detail.html', context)
-from django.contrib.auth.decorators import login_required
+
 
 # @login_required
+
 def dashboard(request, code):
     company = get_object_or_404(Company, code=code)
 
-    # Kullanıcı kimliği doğrulanmamışsa giriş sayfasına yönlendir
+    # Kullanıcı giriş kontrolü
     if not request.user.is_authenticated:
         messages.error(request, 'Önce giriş yapmalısınız.')
         return redirect('login')
 
-    # Kullanıcı kendi şirketinde değilse ve şirket kodu 1 değilse kendi şirketine yönlendir
+    # Kullanıcı yetkilendirme kontrolü
     if request.user.company.code != company.code and request.user.company.code != 1:
         messages.error(request, 'Kendi Şirketinize Yönlendirildiniz.')
         return redirect('dashboard', request.user.company.code)
 
-    # Şirket verilerini al
-    products = Product.objects.filter(company=company)
+    # Şirket ürünleri ve satıcıları
+    products = Product.objects.filter(company=company,is_inventory=False)
+    inventories = Inventory.objects.filter(company=company,is_released=False)
     sellers = Seller.objects.filter(company=company)
-    last_bill = Bill.objects.filter(company=company).last()
+    
+    # Son fatura ve borcu en yüksek satıcı
+    last_bill = Bill.objects.filter(company=company, is_delete=False).last()
+    max_debt_seller = sellers.order_by('-debt').first()
 
+    # 1 ay önceki tarih ve son bir aydaki fatura sayıları
+    one_month_ago = timezone.now() - timedelta(days=30)
+    monthly_bills_count = Bill.objects.filter(
+        company=company,
+        created_date__gte=one_month_ago,
+        is_delete=False
+    ).values('created_date').annotate(count=Count('id')).order_by('created_date')
+
+    # Tüm ürünlerin stok verileri
+    all_product_names = [product.name for product in products]
+    all_current_stocks = [float(product.current_stock) for product in products]  # Decimal verileri float'a dönüştür
+    
+    # En az stoğa sahip ilk 5 ürünü al
+    products_with_min_stock = products.order_by('current_stock')[:5]
+    min_stock_product_names = [product.name for product in products_with_min_stock]
+    min_stock_product_stocks = [float(product.current_stock) for product in products_with_min_stock]
+
+    # Kategoriler ve kategori başına ürün sayısı
+    categories = Category.objects.filter(company=company)
+    category_names = [category.name for category in categories]
+    category_counts = [category.product_set.count() for category in categories]
+    min_stock = Product.objects.filter(company=company).order_by('current_stock').first()
+
+    # Tüm ürünlerin fiyat verileri
+    price_data = {}
+    if products.exists():
+        for product in products:
+            bill_items = BillItem.objects.filter(
+                product=product,
+                company=company,
+                is_delete=False
+            ).order_by('processing_time')
+            if bill_items.exists():
+                price_data[product.name] = [
+                    {
+                        'date': item.processing_time.strftime('%Y-%m-%d'),
+                        'price': float(item.price)
+                    }
+                    for item in bill_items
+                ]
+    contract_warning = False
+    if company.contract_end_date:
+        remaining_days = (company.contract_end_date - timezone.now()).days
+        if remaining_days <= 3:
+            contract_warning = True
+    # Şablona gönderilecek context verileri
     context = {
+        'min_stock':min_stock,
         'company': company,
         'sellers': sellers,
         'last_bill': last_bill,
+        'max_debt_seller': max_debt_seller,
         'outgoing_count': OutgoingBill.objects.filter(company=company).count(),
         'bill_count': Bill.objects.filter(company=company).count(),
         'products_count': products.count(),
-        'products': products,
-        'product_names': [],
-        'product_stocks': [],
-        'category_names': [],
-        'category_counts': [],
+        'all_product_names': json.dumps(all_product_names),  # JSON formatında ürün isimleri
+        'all_current_stocks': json.dumps(all_current_stocks),  # JSON formatında ürün stokları
+        'min_stock_product_names': min_stock_product_names,  # Minimum stoklu ürün isimleri
+        'min_stock_product_stocks': min_stock_product_stocks,  # Minimum stoklu ürün stokları
+        'category_names': category_names,
+        'category_counts': category_counts,
+        'price_data': price_data,
+        'monthly_bills_count': [bill['count'] for bill in monthly_bills_count],
+        'monthly_dates': [bill['created_date'].strftime('%Y-%m-%d') for bill in monthly_bills_count],
+        'contract_warning': contract_warning,
+        'remaining_days': remaining_days if company.contract_end_date else None,
     }
 
-    # Stokları en düşük olan 5 ürünü al
-    products_with_min_stock = products.order_by('current_stock')[:5]
-    context['product_names'] = [product.name for product in products_with_min_stock]
-    context['product_stocks'] = [product.current_stock for product in products_with_min_stock]
-
-    # Her kategoride kaç ürün var
-    categories = Category.objects.filter(company=company)
-    context['category_names'] = [category.name for category in categories]
-    context['category_counts'] = [category.product_set.count() for category in categories]
-
-    # Eğer şirket kodu 1 ise tüm şirketleri dahil et
+    # Şirket kodu 1 ise diğer şirketleri de ekleyin
     if company.code == 1:
         context['companies'] = Company.objects.all()
+        context['error_messages'] = ErrorMessage.objects.filter(error_status=False)
 
     return render(request, 'dashboard.html', context)
-from django.shortcuts import render, redirect
-from django.contrib.auth import login
-from .forms import CustomUserCreationForm
-from .models import Permission
+
+
 
 def check_user_permissions(request, company):
     user_is_ssoft = request.user.username == 'ssoft'
@@ -442,7 +538,7 @@ def register(request, code):
             form.save_m2m()  # Many-to-many ilişkilerini kaydet
             
             # login(request, user)
-            return redirect('home')  # Ana sayfaya yönlendir
+            return redirect('dashboard',company.code)  # Ana sayfaya yönlendir
 
     else:
         form = CustomUserCreationForm(company=company)
@@ -475,30 +571,21 @@ def stock_by_category(request, code):
     
     return render(request, 'reports/stock_by_category.html', context)
 
-def change_unit_status(request, code, unit_id):
-    if request.method != "POST":
-        messages.add_message(request, messages.INFO, "İşlem Gerçekleşmedi")
-        return redirect(request.META.get('HTTP_REFERER', '/'))
+def update_unit(request, company_code ,unit_id):
+    company = get_object_or_404(Company,code=company_code)
+    print('Şirket Bulundu',company)
+    unit = get_object_or_404(Unit, id=unit_id)
 
-    company = get_object_or_404(Company, code=code)
-    unit = get_object_or_404(Unit, id=unit_id, company=company)
+    if request.method == 'POST':
+        form = UpdateUnitForm(request.POST, instance=unit)
+        if form.is_valid():
+            form.save()
+            messages.success(request,'Birim Güncellendi.')
+            return redirect('birim_olustur',company_code)  # Güncelleme sonrası yönlendirmek istediğiniz sayfa
+    else:
+        form = UpdateUnitForm(instance=unit)
 
-    # Kullanıcı yetkileri ve şirket kodu kontrolü
-    has_permission = (
-        (request.user.company == company and request.user.permissions.update_unit) or
-        request.user.company.code == 1
-    )
-
-    if not has_permission:
-        messages.add_message(request, messages.ERROR, "Yetkiniz Yok")
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-
-    # Unit'in aktiflik durumunu değiştir
-    unit.is_active = not unit.is_active
-    unit.save()
-    
-    messages.add_message(request, messages.SUCCESS, "İşlem başarıyla gerçekleştirildi.")
-    return redirect(request.META.get('HTTP_REFERER', '/'))
+    return redirect('birim_olustur',company_code)
 def delete_unit(request, unit_id, code):
     company = get_object_or_404(Company, code=code)
     user_company_code = request.user.company.code
@@ -529,52 +616,15 @@ def delete_unit(request, unit_id, code):
     if Product.objects.filter(unit=unit, company=company).exists():
         messages.add_message(request, messages.WARNING, "Bu birim bir ürüne bağlı olduğu için silinemez.")
     else:
-        unit.delete()
-        messages.add_message(request, messages.SUCCESS, "Birim başarıyla silindi.")
+        if unit.is_active == True:
+            unit.is_active = False
+        else:
+            unit.is_active=True
+        unit.save()
+
+        messages.add_message(request, messages.SUCCESS, "Birim başarıyla silindi / geri alındı.")
     
     return redirect(request.META.get('HTTP_REFERER', '/'))
-import openpyxl
-from django.http import HttpResponse
-from django.urls import path, reverse
-def download_excel(request):
-    # Bellekte bir çalışma kitabı oluşturun
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Ürün Verileri"
-
-    # Tüm kategorileri alın
-    categories = Category.objects.all()
-
-    # Kategori ID'leri ve isimlerini üst satırlara ekleyin
-    ws.append(["Kategori ID'leri ve İsimleri"])
-    for category in categories:
-        ws.append([f"ID: {category.id} - İsim: {category.name}"])
-    ws.append([])  # Boş bir satır ekleyin
-
-    # Üstte 6 satır boşluk bırakın
-    for _ in range(4):  # 4 satır, çünkü 2 satır zaten kategori için kullanıldı
-        ws.append([])
-
-    # Başlıkları 7. satırdan itibaren ekleyin
-    headers = ["Ürün Adı", "Ürün Kodu", "Birim", "Kategori ID", "Kritik Stok Seviyesi", "Mevcut Stok", "Negatif Stoku Önle"]
-    ws.append(headers)
-
-    # Yanıt başlıklarını ayarlayın
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename=urun_sablonu.xlsx'
-
-    # Çalışma kitabını yanıt olarak kaydedin
-    wb.save(response)
-
-    return response
-
-def import_excel(request):
-    categories = Category.objects.all()
-    context = {
-        'categories': categories
-    }
-    return render(request, 'import_excel.html', context)
-from django.contrib import messages
 def check_company_access(request, company_code):
     # Şirketi al veya 404 döndür
     company = get_object_or_404(Company, code=company_code)
@@ -646,28 +696,29 @@ def create_outgoing_reasons_page(request,code):
 
     if isinstance(company, HttpResponseRedirect):
         return company
-    reasons = OutgoingReasons.objects.filter(company=company)
+    reasons = OutgoingReasons.objects.filter(company=company,is_delete=False)
     context = {
         'company':company,
         'reasons':reasons,
     }
     return render(request,'definitions/define_outgoing.html',context)
-from django.core.exceptions import ObjectDoesNotExist
+
 def create_outgoing_reasons(request, code):
     # Yalnızca POST istekleri kabul edilir
+    # Şirketin var olup olmadığını kontrol et
+    company = get_object_or_404(Company, code=code)
     if request.method != "POST":
         messages.info(request, "İşlem Gerçekleşmedi")
         return redirect('cikis_tanimlama_sayfasi', request.user.company.code)
     
     # Yetkilendirme kontrolü
-    if not request.user.permissions.add_unit or request.user.company.code == 1:
-        messages.info(request, "Birim ekleme yetkisine sahip değilsiniz.")
+    if not request.user.permissions.add_outgoing or (request.user.company.code != 1 and request.user.company.code != company.code):
+        messages.info(request, "Çıkış oluşturma yetkisine sahip değilsiniz.")
         return redirect(request.META.get('HTTP_REFERER', '/'))
     
     outgoing_reasons_name = request.POST.get("outgoing_reason")
     
-    # Şirketin var olup olmadığını kontrol et
-    company = get_object_or_404(Company, code=code)
+    
     
     # Çıkış nedeninin mevcut olup olmadığını kontrol et
     if OutgoingReasons.objects.filter(name=outgoing_reasons_name, company=company).exists():
@@ -692,9 +743,9 @@ def delete_outgoing_reason(request, code, reason_id):
         return company
 
     # Kullanıcının bu işlemi yapma yetkisini kontrol et
-    # if not request.user.permissions.delete_outgoing_reason or request.user.company.code == 1:
-    #     messages.error(request, 'Bu işleme yetkiniz bulunmuyor.')
-    #     return redirect('cikis_tanimlama_sayfasi', company.code)
+    if not request.user.permissions.delete_outgoing_reason or request.user.company.code != 1:
+        messages.error(request, 'Bu işleme yetkiniz bulunmuyor.')
+        return redirect('cikis_tanimlama_sayfasi', company.code)
 
     # Çıkış nedenini al veya 404 döndür
     reason = get_object_or_404(OutgoingReasons, id=reason_id, company=company)
@@ -705,7 +756,8 @@ def delete_outgoing_reason(request, code, reason_id):
         return redirect('cikis_tanimlama_sayfasi', company.code)
 
     # Çıkış nedenini sil
-    reason.delete()
+    reason.is_delete = True
+    reason.save()
     messages.success(request, f'{reason.name} adlı çıkış nedeni başarıyla silindi.')
     return redirect('cikis_tanimlama_sayfasi', company.code)
 def update_outgoing_reason(request, code, reason_id):
@@ -716,15 +768,18 @@ def update_outgoing_reason(request, code, reason_id):
     outgoing_reason = get_object_or_404(OutgoingReasons, id=reason_id, company=company)
     
     if request.method == "POST":
+        # Çıkış nedenini güncelleme talebi varsa
         updated_name = request.POST.get("outgoing_reason")
-        
-        # Eğer aynı isimde başka bir çıkış nedeni varsa, güncellemeyi engelle
+        is_active = request.POST.get("is_active") == 'on'  # Checkbox işaretliyse True, değilse False
+
+        # Aynı isimde başka bir çıkış nedeni olup olmadığını kontrol et
         if OutgoingReasons.objects.filter(name=updated_name, company=company).exclude(id=reason_id).exists():
             messages.info(request, "Aynı isimde bir çıkış nedeni zaten var.")
             return redirect('cikis_tanimlama_sayfasi', company.code)
         
-        # Çıkış nedenini güncelle
+        # Çıkış nedenini ve aktiflik durumunu güncelle
         outgoing_reason.name = updated_name
+        outgoing_reason.is_active = is_active
         outgoing_reason.save()
         
         messages.success(request, f"{outgoing_reason.name} adlı çıkış nedeni güncellendi.")
@@ -737,13 +792,6 @@ def update_outgoing_reason(request, code, reason_id):
     }
     
     return render(request, 'definitions/update_outgoing_reason.html', context)
-def change_active_status(request, id):
-    selected_reason = get_object_or_404(OutgoingReasons, id=id)
-    selected_reason.is_active = not selected_reason.is_active
-    selected_reason.save()
-    
-    messages.add_message(request, messages.SUCCESS, f"'{selected_reason.name}' çıkış nedeni {'Aktif' if selected_reason.is_active else 'Pasif'}")
-    return redirect(request.META.get('HTTP_REFERER', '/'))
 def change_seller_status(request,code,seller_id):
     company = check_company_access(request, code)
 
@@ -755,6 +803,7 @@ def change_seller_status(request,code,seller_id):
     seller = get_object_or_404(Seller,id=seller_id)
     if seller.status == True:
         seller.status = False
+        seller.save()
     else:
         seller.status = True
     seller.save()
@@ -767,36 +816,34 @@ def create_seller(request, code):
         return company
 
     # Kullanıcının izinlerini kontrol et
-    if not request.user.permissions.add_seller:
+    if not (request.user.permissions.add_seller or request.user.company.code == 1):
         messages.error(request, "Cari Oluşturma Yetkisine Sahip Değilsiniz.")
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
-    if request.method == "POST":
-        seller_form = SellerForm(request.POST)
-        if seller_form.is_valid():
-            # Formdan gelen verilerle yeni bir Seller oluştur
-            seller = seller_form.save(commit=False)
-            seller.company = company
-            seller.is_create = request.user
-            seller.save()
-            messages.success(request, "Cari Oluşturuldu")
-            return redirect(request.META.get('HTTP_REFERER', '/'))
-        else:
-            # Form geçerli değilse, hataları kullanıcıya göster
-            for field, errors in seller_form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
-    else:
-        seller_form = SellerForm()
-
-    # GET isteği veya form geçerli değilse formu ve diğer bilgileri render et
-    sellers = Seller.objects.filter(company=company)
-    context = {
-        'form': seller_form,
-        'sellers': sellers,
-        'company': company
-    }
-    return render(request, 'definitions/define_seller.html', context)
+    if not request.method == "POST":
+        seller_form = SellerForm() if request.method != "POST" else seller_form
+        sellers = Seller.objects.filter(company=company)
+        
+        context = {
+            'form': seller_form,
+            'sellers': sellers,
+            'company': company
+        }
+        
+        return render(request, 'definitions/define_seller.html', context)
+    seller_form = SellerForm(request.POST)
+    if not seller_form.is_valid():
+        # Form geçerli değilse, hataları kullanıcıya göster
+        for field, errors in seller_form.errors.items():
+            for error in errors:
+                messages.error(request, f"{field}: {error}")
+    seller = seller_form.save(commit=False)
+    seller.company = company
+    seller.is_create = request.user
+    seller.save()
+    messages.success(request, "Cari Oluşturuldu")
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+    
 def update_seller(request, company_code, seller_id):
     company = check_company_access(request, company_code)
 
@@ -819,30 +866,45 @@ def delete_seller(request, company_code, seller_id):
     # Şirket erişimi kontrolü
     if isinstance(company, HttpResponseRedirect):
         return company
-
     # Satıcıyı bul
     seller = get_object_or_404(Seller, id=seller_id, company=company)
-
     # Satıcıya ait fatura var mı kontrol et
     if Bill.objects.filter(company=company, seller=seller).exists():
         messages.error(request, "Bu satıcıya ait fatura var, bu yüzden silinemez.")
         return redirect('cari_tanimla',request.user.company.code)
-
-    # Satıcıyı sil
-    seller.delete()
+    # Satıcıyı durumunu güncelle
+    if seller.status == True:
+        
+        seller.status = False
+    else:
+        seller.status = True
+    seller.save()
     messages.success(request, "Satıcı başarıyla silindi.")
     return redirect('cari_tanimla',request.user.company.code)
 def kategori_guncelle(request, company_code, category_id):
     # İlgili kategoriyi ve şirketi alın
+    company = check_company_access(request, company_code)
+
+    # Şirket erişimi kontrolü
+    if isinstance(company, HttpResponseRedirect):
+        return company
+    if not request.user.permissions.update_category and request.user.company.code != 1:
+        messages.error(request, "Kategori Güncelleme Yetkisine Sahip Değilsiniz.")
+        return redirect(request.META.get('HTTP_REFERER', '/'))
     category = get_object_or_404(Category, id=category_id, company__code=company_code)
     
-    # Gelen verileri form ile doğrulayın ve işleyin
+    if not request.method == 'POST':
+        messages.error(request, "Güncelleme Başarısız")
+        return redirect('kategori_tanimla',request.user.company.code)
     form = CategoryForm(request.POST, instance=category)
-    if form.is_valid():
-        form.save()  # Kategoriyi güncelle
-        return JsonResponse({'success': True})
-    else:
-        return JsonResponse({'success': False, 'errors': form.errors})
+    if not form.is_valid():
+        messages.success(request, "Güncelleme Başarılı")
+        return redirect('kategori_tanimla',request.user.company.code)
+    form.save()  # Kategoriyi güncelle
+    messages.success(request, "Güncelleme Başarılı")
+    return redirect('kategori_tanimla',request.user.company.code)
+
+
 def create_category_page(request,code):
     company = check_company_access(request, code)
 
@@ -902,7 +964,7 @@ def end_chat(request, room_name):
     # Diğer durumlarda hata mesajı gönder
     messages.error(request, 'Sadece kendi desteğinizi sonlandırabilirsiniz.')
     return redirect(request.META.get('HTTP_REFERER', '/'))
-from django.views.decorators.csrf import csrf_exempt
+
 @csrf_exempt
 def set_notifications(request):
     if request.method == 'POST':
@@ -922,7 +984,7 @@ def room_detail(request,room_name,code):
 def check_chat_room(request,code):
     company = get_object_or_404(Company,code=code)
 
-    if company.code != 1:
+    if request.user.company.code != 1:
         messages.error(request,'Bu alana erişemezsiniz')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     rooms = ChatRoom.objects.all()
@@ -1096,6 +1158,7 @@ def update_product(request, company_code, product_id):
     form = ProductUpdateForm(request.POST, instance=product)
     if not form.is_valid():
         messages.error(request, 'Ürün güncellenirken bir hata oluştu.')
+        print(form.errors)
         return redirect('urun_olustur', company_code)
     
     updated_product_code = form.cleaned_data['code']
@@ -1105,7 +1168,7 @@ def update_product(request, company_code, product_id):
         messages.error(request, "Bu ürün kodu zaten mevcut. Lütfen farklı bir ürün kodu giriniz.")
         return redirect('urun_olustur', company_code)
     
-    # Ürün güncelleniyor
+
     form.save()
     messages.success(request, 'Ürün başarıyla güncellendi.')
     return redirect('urun_olustur', company_code)
@@ -1131,15 +1194,23 @@ def delete_product(request,company_code,product_id):
     product.save()
     messages.info(request, "Ürün Silindi") 
     return redirect(request.META.get('HTTP_REFERER', '/')) 
-from decimal import Decimal
-from decimal import Decimal, InvalidOperation
-from decimal import Decimal
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.utils import timezone
-from .models import Seller, Product, Bill, BillItem, StockTransactions
-from decimal import Decimal, ROUND_DOWN
-from django.views.decorators.http import require_POST
+
+def check_product_name(request):
+    name = request.GET.get('name', '')
+    company_code = request.GET.get('company_code', '')
+
+    if name and company_code:
+        # Şirketi bulun
+        try:
+            company = Company.objects.get(code=company_code)
+            # Aynı şirkette ürün adı var mı kontrol edin
+            exists = Product.objects.filter(name__iexact=name, company=company,is_active=True).exists()
+        except Company.DoesNotExist:
+            exists = False
+    else:
+        exists = False
+    
+    return JsonResponse({'exists': exists})
 @require_POST  # Bu dekoratör sadece POST isteklerini kabul eder
 def delete_item(request):
     item_id = request.POST.get('item_id')  # POST isteğinden item_id'yi alın
@@ -1155,6 +1226,10 @@ def delete_item(request):
 
         # Faturanın yeni toplamını hesaplayın
         new_total_amount = bill.billitem_set.aggregate(Sum('row_total'))['row_total__sum'] or 0.0
+
+        # Faturanın toplam tutarını güncelleyin ve kaydedin
+        bill.total_amount = new_total_amount
+        bill.save()
 
         return JsonResponse({'success': True, 'new_total_amount': new_total_amount})
 
@@ -1287,13 +1362,14 @@ def add_bill(request, code):
             stock.save()
 
         # Satıcının alacaklısını güncelle
-        if bill_seller.receivable is None:
-            bill_seller.receivable = Decimal('0.00')
-        bill_seller.receivable += bill.total_amount
+        if bill_seller.debt is None:
+            bill_seller.debt = Decimal('0.00')
+        bill_seller.debt += bill.total_amount
+        print(bill_seller.receivable)
         bill_seller.save()
 
         messages.success(request, "Fatura ve Kalemler Başarıyla Oluşturuldu")
-        return redirect('fatura_detay', code=company.code, bill_number=bill.number)
+        return redirect('fatura_detay',  bill.number, company.code)
 
     except (Seller.DoesNotExist, Product.DoesNotExist):
         messages.error(request, "Fatura Oluşturulamadı. Satıcı veya Ürün bulunamadı.")
@@ -1312,25 +1388,46 @@ def add_bill(request, code):
     }
     return render(request, 'add_bill.html', context)
         
-from itertools import groupby
-from operator import itemgetter
-from django.shortcuts import render
-from .models import OutgoingBill
-def outgoing_bills(request):
+
+def outgoing_bills(request, company_code):
+    company = get_object_or_404(Company, code=company_code)
     selected_reasons = request.GET.getlist('reasons')
-    all_reasons = OutgoingReasons.objects.all()
-    
-    if selected_reasons:
-        bills = OutgoingBill.objects.filter(outgoing_reasons__id__in=selected_reasons)
+    all_reasons = OutgoingReasons.objects.filter(company=company)
+
+    # "all" seçeneğini kontrol et
+    if 'all' in selected_reasons:
+        selected_reasons = [reason.id for reason in all_reasons]
     else:
-        bills = OutgoingBill.objects.all()
-    
+        selected_reasons = [int(reason) for reason in selected_reasons if reason.isdigit()]
+
+    # Tarih aralığını al
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Filtrelenecek sorguyu oluştur
+    if selected_reasons:
+        bills = OutgoingBill.objects.filter(
+            Q(company=company,outgoing_reason__id__in=selected_reasons)
+        )
+    else:
+        bills = OutgoingBill.objects.filter(company=company)
+
+    # Tarih aralığını uygula
+    if start_date:
+        bills = bills.filter(processing_time__gte=start_date)
+    if end_date:
+        bills = bills.filter(processing_time__lte=end_date)
+
     context = {
+        'company': company,
         'bills': bills,
         'all_reasons': all_reasons,
-        'selected_reasons': [int(reason) for reason in selected_reasons],
+        'selected_reasons': selected_reasons,
+        'start_date': start_date,
+        'end_date': end_date,
     }
     return render(request, 'reports/outgoing_bills.html', context)
+
 def product_info(request,code):
     company = get_object_or_404(Company,code=code)
     products = Product.objects.filter(company=company)
@@ -1339,33 +1436,36 @@ def product_info(request,code):
         'products':products,
     }
     return render(request,'reports/product_info.html',context)
-def bill_details(request,code, bill_number):
-    company = get_object_or_404(Company,code=code)
+def bill_details(request, bill_number, company_code):
+    company = get_object_or_404(Company, code=company_code)
     products = Product.objects.filter(company=company)
-    
-    try:
-        bill = get_object_or_404(Bill,company=company, number=bill_number)
-        bill_items = BillItem.objects.filter(company=company,bill=bill)
-    except Http404:
-        stock_transaction = get_object_or_404(OutgoingBill,company=company, number=bill_number)
-        bill_items = None  
-        
-        context = {
-            'company':company,
-            'products': products,
-            'stock_transaction': stock_transaction,
-            'bill_items': bill_items,
-        }
-        return render(request, 'bill_details.html', context)
+
+    bill = get_object_or_404(Bill, company=company, number=bill_number)
+    bill_items = BillItem.objects.filter(company=company, bill=bill)
 
     context = {
-        'company':company,
+        'company': company,
         'products': products,
         'bill': bill,
         'bill_items': bill_items,
     }
     return render(request, 'bill_details.html', context)
-from collections import defaultdict
+def outgoing_bill_details(request, bill_number, company_code):
+    company = get_object_or_404(Company, code=company_code)
+    products = Product.objects.filter(company=company)
+    print('Buraya Geldi')
+    stock_transaction = get_object_or_404(OutgoingBill, company=company, number=bill_number)
+    print(stock_transaction)
+    bill_items = None
+
+    context = {
+        'company': company,
+        'products': products,
+        'stock_transaction': stock_transaction,
+        'bill_items': bill_items,
+    }
+    return render(request, 'outgoing_bill_details.html', context)
+
 
 def bills(request,code):
     company = get_object_or_404(Company,code=code)
@@ -1376,47 +1476,112 @@ def bills(request,code):
         bills_by_seller[bill.seller].append(bill)
     
     context = {
+        'bills':bills,
         'company':company,
         'bills_by_seller': dict(bills_by_seller),
     }
     return render(request, 'bills.html', context)
-from django.db import transaction, IntegrityError
-from django.db import transaction
-from django.db.models import Sum, F
-from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
-from decimal import Decimal
-from .models import BillItem, Product, Bill
-def delete_bill(request, bill_id):
+
+
+def delete_bill(request, bill_number, company_code):
+    company = get_object_or_404(Company, code=company_code)
+
     if request.method != "POST":
         messages.error(request, 'Bu istekler kabul edilmez.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    
-    bill = get_object_or_404(Bill, id=bill_id)
-    
-    # Bill'i silinmiş olarak işaretle
-    bill.is_delete = True
-    bill.save()
-    
-    # İlgili BillItem'leri al ve stok miktarlarını güncelle
-    bill_items = BillItem.objects.filter(bill=bill)
-    for bill_item in bill_items:
-        stock_transactions = StockTransactions.objects.filter(product=bill_item.product, incoming_bill=bill)
-        for transaction in stock_transactions:
-            if transaction.incoming_quantity:
-                transaction.product.current_stock -= bill_item.quantity
-                transaction.incoming_quantity -= bill_item.quantity
-            transaction.save()
-        
-        # BillItem'i silinmiş olarak işaretle
-        bill_item.is_delete = True
-        bill_item.save()
 
-    # Başarı mesajı göster
-    messages.success(request, 'Fatura başarıyla silindi olarak işaretlendi.')
-    
-    # Kullanıcıyı belirli bir sayfaya yönlendir
-    return redirect('your-desired-view-name')  # yönlendirilmek istenen view'in adını kullanın
+    bill = get_object_or_404(Bill, number=bill_number, company=company)
+
+    if bill.is_delete:
+        # Eğer fatura zaten silinmişse, tam tersini yap
+        bill.is_delete = False
+        bill.save()
+
+        total_amount = Decimal('0.00')  # Toplam tutarı hesaplamak için
+
+        bill_items = BillItem.objects.filter(bill=bill)
+        for bill_item in bill_items:
+            bill_item.is_delete = False
+            bill_item.save()
+
+            stock_transactions = StockTransactions.objects.filter(product=bill_item.product, incoming_bill=bill)
+            for transaction in stock_transactions:
+                transaction.is_delete = False
+                transaction.save()
+
+            # Stok güncellemelerini geri al
+            product = get_object_or_404(Product, id=bill_item.product.id)
+            product.current_stock += transaction.incoming_quantity  # Stok geri eklenir
+            product.save()
+
+            # İndirimleri ve KDV'yi hesaba katarak toplam tutarı hesapla
+            discount_amount = bill_item.price * (bill_item.discount_1 + bill_item.discount_2 + bill_item.discount_3) / 100
+            discounted_price = bill_item.price - discount_amount
+            vat_amount = discounted_price * bill_item.vat / 100
+            total_price_with_vat = discounted_price + vat_amount
+
+            total_amount += bill_item.quantity * total_price_with_vat
+
+        # Satıcının borcunu/alacağını güncelle
+        seller = bill.seller
+        if seller.debt is None:
+            seller.debt = Decimal('0.00')
+
+        if seller.receivable is None:
+            seller.receivable = Decimal('0.00')
+
+        seller.debt += total_amount  # Borç artırılır
+        seller.receivable -= total_amount  # Alacak azaltılır
+        seller.save()
+
+        messages.success(request, 'Fatura silinme durumu geri alındı ve satıcının borç/alacak durumu güncellendi.')
+    else:
+        # Faturayı silinmiş olarak işaretle
+        bill.is_delete = True
+        bill.save()
+
+        total_amount = Decimal('0.00')  # Toplam tutarı hesaplamak için
+
+        bill_items = BillItem.objects.filter(bill=bill)
+        for bill_item in bill_items:
+            bill_item.is_delete = True
+            bill_item.save()
+
+            stock_transactions = StockTransactions.objects.filter(product=bill_item.product, incoming_bill=bill)
+            for transaction in stock_transactions:
+                transaction.is_delete = True
+                transaction.save()
+
+            # İndirimleri ve KDV'yi hesaba katarak toplam tutarı hesapla
+            discount_amount = bill_item.price * (bill_item.discount_1 + bill_item.discount_2 + bill_item.discount_3) / 100
+            discounted_price = bill_item.price - discount_amount
+            vat_amount = discounted_price * bill_item.vat / 100
+            total_price_with_vat = discounted_price + vat_amount
+
+            product = get_object_or_404(Product, id=bill_item.product.id)
+            product.current_stock -= transaction.incoming_quantity
+            product.save()
+
+            total_amount += bill_item.quantity * total_price_with_vat
+
+        # Satıcının borcunu/alacağını güncelle
+        seller = bill.seller
+        if seller.debt is None:
+            seller.debt = Decimal('0.00')
+
+        if seller.receivable is None:
+            seller.receivable = Decimal('0.00')
+
+        seller.debt -= total_amount  # Borç azaltılır
+        seller.receivable += total_amount  # Alacak artırılır
+        seller.save()
+
+        messages.success(request, 'Fatura başarıyla silindi olarak işaretlendi ve satıcının borç/alacak durumu güncellendi.')
+
+    return redirect('fatura_detay', bill.number, company.code)
+
+
+
     
 def deleted_bills(request):
     deleted_bills = Bill.objects.filter(is_delete=True)
@@ -1426,15 +1591,22 @@ def deleted_bills(request):
         'bill_items': bill_items,
     }
     return render(request, 'deleted_bills.html', context)
+
+
+@login_required
 def add_billitem(request, bill_id):
     if request.method != "POST":
         return JsonResponse({'error': 'POST method expected.'}, status=400)
 
     bill = get_object_or_404(Bill, id=bill_id)
     bill_company = bill.company
+    
+    if bill.is_delete:
+        return JsonResponse({'error': 'Silinen faturaya işlem yapılamaz!'}, status=400)
+    
     if bill.is_paid:
         return JsonResponse({'error': 'Bu fatura ödenmiş ve yeni kalem eklenemez!'}, status=400)
-    
+
     bill_item_product_id = request.POST.get("bill_item_product")
     product = get_object_or_404(Product, id=bill_item_product_id)
 
@@ -1451,23 +1623,21 @@ def add_billitem(request, bill_id):
         barcode_2 = request.POST.get("barcode_2", None)
         barcode_3 = request.POST.get("barcode_3", None)
 
-    except InvalidOperation:
-        return JsonResponse({'error': 'Invalid number format.'}, status=400)
+    except InvalidOperation as e:
+        return JsonResponse({'error': f'Invalid number format: {str(e)}'}, status=400)
 
     try:
         with transaction.atomic():
-            # Satır toplamını hesaplayın (ilk olarak indirimleri uygulayın)
             item_total = bill_item_quantity * bill_item_price
             discounted_amount = item_total
 
             for discount in [bill_item_discount_1, bill_item_discount_2, bill_item_discount_3]:
                 discounted_amount -= discounted_amount * (discount / Decimal(100))
             
-            # KDV'yi hesaplayın
             vat_amount = discounted_amount * (bill_item_vat / Decimal(100))
             row_total = discounted_amount + vat_amount
-
-            # BillItem oluştur
+            if serial_number:
+                bill_item_quantity = 1 # seri numarası varsa adet htmlden kaç alınırsa alınsın 1 olucak
             bill_item = BillItem.objects.create(
                 bill=bill,
                 company=bill_company,
@@ -1479,17 +1649,31 @@ def add_billitem(request, bill_id):
                 discount_3=bill_item_discount_3,
                 vat=bill_item_vat,
                 is_create=request.user,
-                row_total=row_total.quantize(Decimal('0.00')),  # Doğru ondalık biçimi sağla
+                row_total=row_total.quantize(Decimal('0.00')), 
             )
 
-            # Ürünün güncel stok miktarını güncelle
+            product.current_stock += bill_item_quantity
+            product.save()
             Product.objects.filter(id=product.id).update(current_stock=F('current_stock') + bill_item_quantity)
 
-            # Faturanın toplam miktarını güncelle
+            StockTransactions.objects.create(
+                company=bill_company,
+                product=product,
+                incoming_quantity=bill_item_quantity,
+                outgoing_quantity=Decimal('0'),
+                current_stock=product.current_stock,
+                processing_time=bill.date,
+                incoming_bill=bill,
+                is_create=request.user,
+            )
+
             bill.total_amount += row_total
             bill.save()
+            
+            seller = bill.seller
+            seller.debt += row_total
+            seller.save()
 
-            # Seri numarası sağlanmışsa envanter öğesi oluştur
             if serial_number:
                 Inventory.objects.create(
                     company=bill_company,
@@ -1505,7 +1689,7 @@ def add_billitem(request, bill_id):
                 )
 
         return JsonResponse({
-            "bill_item_id": bill_item.id,  # Burada ID değerini ekleyin
+            "bill_item_id": bill_item.id,
             "bill_item_product": product.name,
             "bill_item_quantity": f"{bill_item_quantity:.2f}",
             "bill_item_price": f"{bill_item_price:.2f}",
@@ -1522,21 +1706,35 @@ def add_billitem(request, bill_id):
         return JsonResponse({'error': str(e)}, status=500)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-from datetime import datetime
-def inventory(request,code):
-    company = get_object_or_404(Company,code=code)
+
+
+
+
+def inventory(request, code):
+    company = get_object_or_404(Company, code=code)
     outgoing_reasons = OutgoingReasons.objects.filter(company=company)
-    inventories = Inventory.objects.filter(company=company)
+    inventories = Inventory.objects.filter(company=company,is_released=False)
+
+    # Paginator ile sayfalama işlemini başlat
+    paginator = Paginator(inventories, 5)  # Sayfa başına 10 öğe
+    page = request.GET.get('page')  # URL'deki sayfa numarasını al
+
+    try:
+        inventories_paginated = paginator.page(page)
+    except PageNotAnInteger:
+        # Eğer sayfa numarası bir tam sayı değilse, ilk sayfayı göster
+        inventories_paginated = paginator.page(1)
+    except EmptyPage:
+        # Eğer sayfa numarası geçerliyse, son sayfayı göster
+        inventories_paginated = paginator.page(paginator.num_pages)
+
     context = {
-        'outgoing_reasons':outgoing_reasons,
-        'company':company,
-        'inventories':inventories,
+        'outgoing_reasons': outgoing_reasons,
+        'company': company,
+        'inventories': inventories_paginated,  # Sayfalara bölünmüş inventaries gönder
     }
-    return render(request,'inventory.html',context)
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from django.utils import timezone
-from .models import Company, OutgoingReasons, Inventory, OutgoingBill, StockTransactions
+
+    return render(request, 'inventory.html', context)
 
 def outgoing_inventory(request, code):
     company = get_object_or_404(Company, code=code)
@@ -1569,7 +1767,10 @@ def outgoing_inventory(request, code):
             quantity=1,
             processing_time=timezone.now(),
             outgoing_reason=outgoing_reason,
-            is_create = request.user
+            is_create = request.user,
+            is_inventory = True,
+            serial_number = inventory_item.serial_number,
+            inventory = inventory_item,
         )
 
         # Stok işlemi oluştur
@@ -1591,7 +1792,14 @@ def outgoing_inventory(request, code):
         messages.error(request, f'Bir hata oluştu: {str(e)}')
         print(e)
         return redirect(request.META.get('HTTP_REFERER', '/'))
-
+def issued_inventories(request,company_code):
+    company = get_object_or_404(Company,code=company_code)
+    issued_inventories = Inventory.objects.filter(company=company_code,is_released=True)
+    context = {
+        'company':company,
+        'issued_inventories':issued_inventories,
+    }
+    return render(request,'reports/issued_inventories_reports.html',context)
 def stock_difference_report(request,code):
     # Tüm ürünleri al
     company = get_object_or_404(Company,code=code)
@@ -1621,16 +1829,25 @@ def stock_difference_report(request,code):
         'products': product_reports,
     }
     return render(request, 'reports/stock_difference_report.html', context)
-from django.shortcuts import render, get_object_or_404
-from django.utils import timezone
-from django.db.models import Sum
-from .models import Company, Product, StockTransactions
 
+# # # # # # # # # # # # # # # # 
+#     Raporlar views bölümü   #
+# # # # # # # # # # # # # # # # 
+
+# Stok Durum Raporları
 def stock_status(request, code):
     company = get_object_or_404(Company, code=code)
+    access_check = check_company_access(request, code)
+
+    if isinstance(access_check, HttpResponseRedirect):
+        return access_check
+
+    if not request.user.permissions.access_to_reports:
+        messages.error(request, 'Yetkiniz Yok')
+        return redirect('dashboard', company.code)
     
     # Sadece geçerli şirketin stok hareketlerini al
-    stock_transactions = StockTransactions.objects.filter(product__company=company).select_related('product', 'incoming_bill', 'outgoing_reasons')
+    stock_transactions = StockTransactions.objects.filter(is_delete=False, product__company=company).select_related('product', 'incoming_bill', 'outgoing_reasons')
 
     # Stok hareketlerini ürün bazında gruplayarak miktarları topla
     incoming_quantities = stock_transactions.values('product_id').annotate(total_incoming=Sum('incoming_quantity')).order_by()
@@ -1655,36 +1872,59 @@ def stock_status(request, code):
     today = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
 
     context = {
-        'company':company,
+        'company': company,
         'products': product_data,
         'today': today,
     }
 
     return render(request, 'stock_status_report.html', context)
 
+# Kritik Stok Raporları
+def critical_stock_level(request,company_code):
+    company = get_object_or_404(Company,code=company_code)
+    company = check_company_access(request, company_code)
 
+    if isinstance(company, HttpResponseRedirect):
+        return company
+    if not request.user.permissions.access_to_reports:
+        messages.error(request,'Yetkiniz Yok')
+        return redirect('dashboard',company.code)
+    critical_products = Product.objects.filter(company=company,current_stock__lt=F('critical_stock_level'), is_active=True)
+
+    # Template'e gönderilecek context
+    context = {
+        'company':company,
+        'critical_products': critical_products
+    }
+    return render(request,'reports/critical_stock_reports.html',context)
+
+# Gelen Giden Stok Raporları
 def incoming_outgoing_reports(request, code):
     company = get_object_or_404(Company, code=code)
+    company = check_company_access(request, code)
+
+    if isinstance(company, HttpResponseRedirect):
+        return company
+    if not request.user.permissions.access_to_reports:
+        messages.error(request, 'Yetkiniz Yok')
+        return redirect('dashboard', company.code)
+    
     products = Product.objects.filter(company=company)
 
     today = date.today()
     start_date_str = request.GET.get("start_date")
     end_date_str = request.GET.get("end_date")
-
     start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else today
     end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else today
-
-    # Make sure end_date is at the end of the day
     end_date = datetime.combine(end_date, datetime.max.time())
 
     stock_transactions = StockTransactions.objects.filter(
         processing_time__range=(start_date, end_date), company=company
     )
-    table = StockTransactionsTable(stock_transactions)
 
     context = {
         'company': company,
-        'table': table,
+        'stock_transactions': stock_transactions,
         'products': products,
         'start_date': start_date,
         'end_date': end_date,
@@ -1692,22 +1932,37 @@ def incoming_outgoing_reports(request, code):
 
     return render(request, 'reports/incoming_outgoing_reports.html', context)
 
+
 def get_stock_transactions(product_id):
     return StockTransactions.objects.filter(product=product_id).order_by('-processing_time')
-
+# Vade Tarihi Gelen Faturalar
 def due_date_reports(request, code, expiry_date=None):
-    company = get_object_or_404(Company, code=code)
-    today = datetime.now()
+    company = get_object_or_404(Company,code=code)
+    company = check_company_access(request, code)
+
+    if isinstance(company, HttpResponseRedirect):
+        return company
+    if not request.user.permissions.access_to_reports:
+        messages.error(request,'Yetkiniz Yok')
+        return redirect('dashboard',company.code)
+    today = datetime.now().strftime('%Y-%m-%d')  # Bugünün tarihini YYYY-MM-DD formatında al
 
     if request.method == 'POST':
         expiry_date = request.POST.get('expiry_date')
         return redirect('vade_tarihi_gelen_faturalar', code=code, expiry_date=expiry_date)
     
-    # Filter Bill objects based on the expiry date
+    # Eğer expiry_date URL'den alındıysa, önce onun zaten YYYY-MM-DD formatında olup olmadığını kontrol edin
+    try:
+        # Bu kontrol URL'den gelen tarih formatını kontrol eder ve doğruysa bir şey yapmaz
+        datetime.strptime(expiry_date, '%Y-%m-%d')
+    except ValueError:
+        raise ValidationError("Geçersiz tarih formatı. Tarih YYYY-MM-DD formatında olmalıdır.")
+
+    # Filtreleme işlemi
     reports_bill = Bill.objects.filter(expiry_date=expiry_date, is_paid=False, company=company)
     paid_bills = Bill.objects.filter(expiry_date=expiry_date, is_paid=True, company=company)
     
-    # Pass the filtered Bill objects to the context
+    # Context verileri
     context = {
         'company': company,
         'today': today,
@@ -1716,28 +1971,54 @@ def due_date_reports(request, code, expiry_date=None):
         'reports_bill': reports_bill,
     }
     return render(request, 'reports/expiry_date_reports.html', context)
+# Düşük Stok Uyarı Raporı
+def low_stock_reports(request, code):
+    company = get_object_or_404(Company,code=code)
+    company = check_company_access(request, code)
 
-def paid_bill(request, id):
-    if not request.method == "POST":
-        messages.error(request, 'Ürün Seçilmedi')
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-    bill = get_object_or_404(Bill, id=id)
-    expiry_date = bill.expiry_date  # Get the expiry date before saving
-    bill.is_paid = True
-    bill.save()
-    messages.success(request, 'Fatura Ödendi')
-    return redirect(f'{reverse("vade_tarihi_gelen_faturalar")}?expiry_date={expiry_date}')
+    if isinstance(company, HttpResponseRedirect):
+        return company
+    if not request.user.permissions.access_to_reports or request.user.company.code != 1:
+        messages.error(request,'Yetkiniz Yok')
+        return redirect('dashboard',company.code)
+    company = get_object_or_404(Company, code=code)
+    low_stock_products = Product.objects.filter(company=company, current_stock__lt=F('critical_stock_level'))
+    context = {
+        'company': company,
+        'low_stock_products': low_stock_products,
+    }
+    return render(request, 'reports/low_stock_products.html', context)
 
-def unpaid_bill(request, id):
-    if not request.method == "POST":
-        messages.error(request, 'Ürün Seçilmedi')
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-    bill = get_object_or_404(Bill, id=id)
-    expiry_date = bill.expiry_date  # Get the expiry date before saving
-    bill.is_paid = False
-    bill.save()
-    messages.success(request, 'Fatura Ödemesi Geri Alındı')
-    return redirect(f'{reverse("vade_tarihi_gelen_faturalar")}?expiry_date={expiry_date}')
+# Silinen Öğeler Raporu
+def deleted_items(request, company_code):
+    company = get_object_or_404(Company, code=company_code)
+    company = check_company_access(request, company_code)
+
+    if isinstance(company, HttpResponseRedirect):
+        return company
+    if not request.user.permissions.access_to_reports:
+        messages.error(request, 'Yetkiniz Yok')
+        return redirect('dashboard', company.code)
+
+    # Silinen öğeleri filtreliyoruz
+    deleted_products = Product.objects.filter(company=company, is_active=False)
+    deleted_units = Unit.objects.filter(company=company, is_active=False)
+    deleted_customers = Seller.objects.filter(company=company, status=False)
+    deleted_categories = Category.objects.filter(company=company, is_active=False)
+    deleted_bills = Bill.objects.filter(company=company, is_delete=True)
+
+    context = {
+        'company': company,
+        'deleted_products': deleted_products,
+        'deleted_units': deleted_units,
+        'deleted_customers': deleted_customers,
+        'deleted_categories': deleted_categories,
+        'deleted_bills': deleted_bills,
+    }
+
+    return render(request, 'definitions/deleted_items.html', context)
+
+
 def stock_transactions(request, code):
     company = get_object_or_404(Company, code=code)
     products = Product.objects.filter(company=company)
@@ -1766,19 +2047,57 @@ def stock_transactions(request, code):
         }
     
     return render(request, 'reports/product_transactions.html', context)
+def toggle_bill_payment_status(request, bill_id, company_code):
+    company = get_object_or_404(Company, code=company_code)
+    company = check_company_access(request, company_code)
+
+    if isinstance(company, HttpResponseRedirect):
+        return company
+    
+    if request.method != "POST":
+        messages.error(request, 'Geçersiz istek yöntemi')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    if not request.user.permissions.paid_unpaid_bill or request.user.company.code != 1:
+        messages.error(request, 'Yetkiniz Yok')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    bill = get_object_or_404(Bill, id=bill_id)
+    
+    # Fatura ödenmişse ödemeyi geri al, ödenmemişse öde
+    if bill.is_paid:
+        bill.is_paid = False
+        messages.success(request, 'Fatura Ödemesi Geri Alındı')
+    else:
+        bill.is_paid = True
+        messages.success(request, 'Fatura Ödendi')
+    
+    bill.save()
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 def get_inventory_products(request):
     product_id = request.GET.get('product_id')
-    inventory_products = Inventory.objects.filter(product_id=product_id)
+    company_id = request.GET.get('company_id')  # company_id'yi alıyoruz
+    print(company_id)
+    
+    # İlgili company nesnesini alıyoruz
+    company = Company.objects.get(id=company_id)
+    
+    # Belirtilen company ve product_id'ye göre filtreleme yapıyoruz
+    inventory_products = Inventory.objects.filter(company=company, product_id=product_id, is_released=False)
+    
+    # Geri dönecek veriyi hazırlıyoruz
     data = list(inventory_products.values('id', 'serial_number'))
+    
     return JsonResponse(data, safe=False)
 def process_stock_outgoing(request, code):
     company = get_object_or_404(Company, code=code)
     products = Product.objects.filter(company=company)
     outgoing_reasons = OutgoingReasons.objects.filter(company=company)
     inventories = Inventory.objects.filter(company=company)
+
     if request.method != "POST":
         context = {
-            'inventories':inventories,
+            'inventories': inventories,
             'company': company,
             'products': products,
             'outgoing_reasons': outgoing_reasons,
@@ -1789,15 +2108,16 @@ def process_stock_outgoing(request, code):
     outgoing_quantity = request.POST.get('outgoing_quantity')
     outgoing_reason_id = request.POST.get('outgoing_reason')
     outgoing_bill_number = request.POST.get('outgoing_bill_number')
+    serial_number = request.POST.get('serial_number')
 
     if not (outgoing_product_id and outgoing_quantity and outgoing_reason_id and outgoing_bill_number):
-        messages.add_message(request, messages.ERROR, "All fields are required.")
+        messages.add_message(request, messages.ERROR, "Tüm alanlar gereklidir.")
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
     try:
         with transaction.atomic():
-            if StockTransactions.objects.filter(outgoing_bill__number=outgoing_bill_number).exists():
-                messages.error(request, 'Bill number already exists.')
+            if StockTransactions.objects.filter(outgoing_bill__number=outgoing_bill_number, company=company).exists():
+                messages.error(request, 'Fatura numarası zaten mevcut.')
                 return redirect(request.META.get('HTTP_REFERER', '/'))
 
             outgoing_product = Product.objects.get(id=outgoing_product_id)
@@ -1811,20 +2131,15 @@ def process_stock_outgoing(request, code):
                 messages.error(request, 'Bu üründe stok eksiye (-) düşemez.')
                 return redirect(request.META.get('HTTP_REFERER', '/'))
 
-            # Retrieve the company's cost calculation method
+            # Cost calculation
             parameter = Parameter.objects.get(company=company)
             cost_calculation_method = parameter.cost_calculation
 
-            # Calculate total amount based on the cost calculation method
+            bill_items = BillItem.objects.filter(product=outgoing_product, is_delete=False)
             if cost_calculation_method == 'fifo':
-                # FIFO calculation
-                bill_items = BillItem.objects.filter(product=outgoing_product, is_delete=False).order_by('bill__date')
+                bill_items = bill_items.order_by('bill__date')
             elif cost_calculation_method == 'lifo':
-                # LIFO calculation
-                bill_items = BillItem.objects.filter(product=outgoing_product, is_delete=False).order_by('-bill__date')
-            else:
-                # Default to average cost calculation
-                bill_items = BillItem.objects.filter(product=outgoing_product, is_delete=False)
+                bill_items = bill_items.order_by('-bill__date')
 
             total_cost = Decimal('0.00')
             total_quantity = Decimal('0.00')
@@ -1841,6 +2156,19 @@ def process_stock_outgoing(request, code):
             outgoing_product.current_stock -= outgoing_quantity
             outgoing_product.save()
 
+            # Initialize inventory related variables
+            is_inventory = False
+            inventory_item = None
+
+            # Check if the product is an inventory item
+            if serial_number:
+                inventory_exists = Inventory.objects.filter(product=outgoing_product, company=company, serial_number=serial_number).exists()
+                if inventory_exists:
+                    is_inventory = True
+                    inventory_item = Inventory.objects.get(product=outgoing_product, company=company, serial_number=serial_number)
+                    inventory_item.is_released = True
+                    inventory_item.save()
+
             outgoing_bill = OutgoingBill.objects.create(
                 is_create=request.user,
                 company=company,
@@ -1850,6 +2178,9 @@ def process_stock_outgoing(request, code):
                 outgoing_reason=outgoing_reason,
                 processing_time=timezone.now(),
                 outgoing_total_amount=outgoing_total_amount,
+                is_inventory=is_inventory,
+                serial_number=serial_number if is_inventory else None,
+                inventory=inventory_item if is_inventory else None,
             )
             
             stock_outgoing = StockTransactions.objects.create(
@@ -1860,33 +2191,103 @@ def process_stock_outgoing(request, code):
                 outgoing_bill=outgoing_bill,
                 processing_time=timezone.now(),
                 current_stock=outgoing_product.current_stock,
-                total_amount = outgoing_total_amount,
+                total_amount=outgoing_total_amount,
                 is_create=request.user
             )
-        
-        messages.success(request, 'Stok Çıkışı Yapıldı')
+
+        messages.success(request, 'Stok çıkışı başarıyla gerçekleştirildi.')
     except Product.DoesNotExist:
-        messages.error(request, 'Ürün Bulunamadı')
+        messages.error(request, 'Ürün bulunamadı.')
     except OutgoingReasons.DoesNotExist:
-        messages.error(request, 'Çıkış Sebebi Bulunamadı')
+        messages.error(request, 'Çıkış nedeni bulunamadı.')
     except InvalidOperation as e:
-        messages.error(request, f"Bilinmeyen miktar: {str(e)}")
+        messages.error(request, f'Geçersiz miktar: {str(e)}')
     except Exception as e:
-        messages.error(request, f'Bir Hata Oluştu: {str(e)}')
+        messages.error(request, f'Bir hata oluştu: {str(e)}')
         print(e)
 
     return redirect(request.META.get('HTTP_REFERER', '/'))
-def low_stock_reports(request, code):
-    company = get_object_or_404(Company, code=code)
-    low_stock_products = Product.objects.filter(company=company, current_stock__lt=F('critical_stock_level'))
-    context = {
-        'company': company,
-        'low_stock_products': low_stock_products,
-    }
-    return render(request, 'reports/low_stock_products.html', context)
-from django.contrib.auth import logout as auth_logout
+
+
+
 def logout(request):
     auth_logout(request)
     return redirect('login')
-def webrtc(request):
-    return render(request, 'webrtc.html')
+
+def set_company_status(request,company_code):
+    if not request.method == "POST":
+        messages.info(request,'Bu istekler geçersizdir.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    company = get_object_or_404(Company,code=company_code)
+    if not request.user.company.code == 1 and request.user.permissions.set_company_status:
+        messages.info(request,'Yetkiniz Yok')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    if company.is_active == True:
+        company.is_active = False
+    else:
+        company.is_active = True
+    company.save()
+    messages.success(request,'Şirket Durumu Değiştirildi')
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+# # # # # # # # # # # # # # # # #
+# Hata Bildir - Hata İşlemleri  #
+#           Ekle                #
+#           Listele             #
+#           Düzenle             #
+#           Sil                 #
+# # # # # # # # # # # # # # # # #
+# Hata Bildir
+def report_bug(request):
+    if not request.method == 'POST':
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    form = ReportBugForm(request.POST, request.FILES)
+    if not form.is_valid():
+        messages.error(request, 'Formda bazı hatalar var. Lütfen kontrol edin.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+        # Formu kaydetmeden bildiren kullanıcı ve şirketi ayarla
+    error_message = form.save(commit=False)
+    error_message.reporting_company = request.user.company
+    error_message.reporting_user = request.user
+    error_message.save()
+
+    return redirect(request.META.get('HTTP_REFERER', '/'))   
+# Tüm hataların listelendiği sayfa
+def report_bugs_page(request,company_code):
+    company = check_company_access(request, company_code)
+
+    if isinstance(company, HttpResponseRedirect):
+        return company
+    if not request.user.permissions.access_to_bugs:
+        messages.error(request, 'Bu Alana Erişemezsiniz.')
+        return redirect('dashboard', request.user.company.code)
+    all_bugs = ErrorMessage.objects.all()
+    context = {
+        'company':company,
+        'all_bugs':all_bugs,
+    }
+    return render(request,'reports/report_bugs_page.html',context)
+# Hataların Durumunu değiştir
+from django.views.decorators.http import require_http_methods
+@require_http_methods(["PATCH"])
+def read_unread_bug(request, id):
+    try:
+        bug = get_object_or_404(ErrorMessage, id=id)
+        
+        # Durumu ters çevir
+        bug.error_status = not bug.error_status
+        
+        bug.save()
+        return JsonResponse({'status': 'Durum başarıyla güncellendi.'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)  # 500 Internal Server Error
+# Hataları Sil
+def delete_bug(request, id):
+    if request.method != "POST":
+        messages.error(request, 'Bu istekler kabul edilmez.')
+        return redirect('dashboard', request.user.company.code)
+
+    bug = get_object_or_404(ErrorMessage, id=id)
+    bug.delete()
+
+    messages.success(request, 'Hata raporu başarıyla silindi.')
+    return redirect('hata_bildirimleri',request.user.company.code)

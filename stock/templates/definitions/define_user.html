@@ -1,8 +1,10 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block content %}
-{% block title %}Add User | {{ company.name }}{% endblock title %}
-
+{% block title %}Kullanıcı Tanımla | {{ company.name }}{% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'team.png' %}">
+{% endblock icon %}
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
     
@@ -22,13 +24,13 @@
         font-weight: 500;
         width: 100%;
         padding: 0.75rem;
-        background-color: #4CAF50;
+        background-color: #FF6F61;
         color: white;
         transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     .btn-register:hover {
-        background-color: #45a049;
+        background-color: #ffa061;
     }
 
     .alert {
@@ -90,7 +92,7 @@
     }
 
     .btn-gears {
-        background-color: #3498db;
+        background-color: #2E4053;
         color: white;
         border-radius: 5px;
         transition: background-color 0.3s ease, color 0.3s ease;
@@ -126,31 +128,31 @@
                 </div>
                 {% endif %}
 
-                <h2>Add User</h2>
+                <h2 class="font-poppins">Kullanıcı Ekle</h2>
 
-                <small class="text-muted mb-4">Company: {{ company.name }} #{{ company.code }}</small>
+                <small class="text-muted mb-4">İşlem yapılan şirket: {{ company.name }} #{{ company.code }}</small>
                 <form method="POST" action="{% url 'kullanici_ekle' company.code %}" class="needs-validation" novalidate>
                     {% csrf_token %}
                     <div class="form-section mt-4">
                         <div class="form-floating mb-3">
-                            <input type="text" name="username" id="username" class="form-control" placeholder="Username" required>
-                            <label for="username">Username</label>
+                            <input type="text" name="username" id="username" class="form-control" placeholder="Kullanıcı Adı" required>
+                            <label for="username">Kullanıcı Adı</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="password" name="password1" id="password1" class="form-control" placeholder="Password" required>
-                            <label for="password1">Password</label>
+                            <input type="password" name="password1" id="password1" class="form-control" placeholder="Şifre" required>
+                            <label for="password1">Şifre</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="password" name="password2" id="password2" class="form-control" placeholder="Confirm Password" required>
-                            <label for="password2">Confirm Password</label>
+                            <input type="password" name="password2" id="password2" class="form-control" placeholder="Şifreyi Onayla" required>
+                            <label for="password2">Şifreyi Onayla</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="text" name="phone" id="phone" class="form-control" placeholder="Phone" required>
-                            <label for="phone">Phone</label>
+                            <input type="text" name="phone" id="phone" class="form-control" placeholder="Telefon" required>
+                            <label for="phone">Telefon</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="text" name="address" id="address" class="form-control" placeholder="Address" required>
-                            <label for="address">Address</label>
+                            <input type="text" name="address" id="address" class="form-control" placeholder="Adres" required>
+                            <label for="address">Adres</label>
                         </div>
                         <div class="form-floating mb-3">
                             <input type="email" name="email" id="email" class="form-control" placeholder="Email" required>
@@ -158,18 +160,18 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-register" type="submit">Register</button>
+                    <button class="btn btn-register" type="submit">Kaydet</button>
                 </form>
 
                 <div class="user-list">
-                    <h3>Existing Users</h3>
-                    <table>
+                    <h3 class="text-center font-poppins bg-grey">Tanımlı Kullanıcılar</h3>
+                    <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Username</th>
-                                <th>Phone</th>
+                                <th>Kullanıcı Adı</th>
+                                <th>Telefon</th>
                                 <th>Email</th>
-                                <th>Actions</th>
+                                <th>Aksiyonlar</th>
                             </tr>
                         </thead>
                         <tbody>

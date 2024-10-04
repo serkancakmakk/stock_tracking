@@ -15,9 +15,34 @@ Yeni Firma Tanımla
                 
                
         <div class="col-12 col-md-8" id="define_company_div">
-            <h1 class="text-center">Şirket Oluştur</h1>
+            <h1 class="custom-title text-center">Şirket Oluştur</h1>
+<style>
+    .custom-title {
+        font-family: 'Poppins', sans-serif; /* Şık bir font kullanıyoruz */
+        font-size: 3rem; /* Başlığı daha büyük yaparak dikkat çekici hale getiriyoruz */
+        color: #FF6F61; /* Ana renk olarak Mercan rengi kullanıyoruz */
+        text-transform: uppercase; /* Başlık harflerini büyük yaparak daha güçlü bir vurgu yaratıyoruz */
+        letter-spacing: 2px; /* Harfler arasındaki boşluğu artırarak daha modern bir görünüm elde ediyoruz */
+        margin-top: 20px; /* Üstten boşluk bırakıyoruz */
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); /* Hafif bir gölge ekleyerek derinlik kazandırıyoruz */
+        background: linear-gradient(90deg, rgba(255,111,97,1) 0%, rgba(255,195,113,1) 100%); /* Degrade bir arka plan ekliyoruz */
+        -webkit-background-clip: text; /* Sadece yazıya degrade uygulanmasını sağlıyoruz */
+        color: transparent; /* Arka planı yazıya yansıttığımız için yazı rengini şeffaf yapıyoruz */
+    }
+    
+    .custom-title::after {
+        content: '';
+        display: block;
+        width: auto;
+        
+        height: 4px;
+        background-color: #FF6F61; /* Ana renkle uyumlu bir alt çizgi ekliyoruz */
+        margin: 10px auto 0; /* Ortalıyoruz ve üstten biraz boşluk bırakıyoruz */
+        border-radius: 2px; /* Çizginin köşelerini yuvarlayarak daha yumuşak bir görünüm sağlıyoruz */
+    }
+</style>
             <small>İşlemi yapan kullanıcı : <strong>{{request.user.username}}</strong></small>
-            <form method="post" action="{% url 'yeni_firma_tanimla' company.code %}">
+            <form method="POST" action="{% url 'yeni_firma_tanimla' company.code %}">
                 {% csrf_token %}
                 
                 <div class="form-floating mb-3">
@@ -76,7 +101,7 @@ Yeni Firma Tanımla
 .animate-btn {
     width: 100%;
     position: relative;
-    background-color: #28a745; /* Başlangıç rengi */
+    background-color: #FF6F61; /* Başlangıç rengi */
     color: white;
     font-size: 16px;
     font-weight: bold;
@@ -119,7 +144,7 @@ Yeni Firma Tanımla
 
 /* Hover durumunda (üzerine gelince) */
 .animate-btn:hover {
-    background-color: #218838; /* Renk değişimi */
+    background-color: #ffa061; /* Renk değişimi */
     transform: scale(1.05); /* Butonu hafifçe büyütme */
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3); /* Gölge ekleme */
 }
@@ -139,7 +164,8 @@ Yeni Firma Tanımla
 {% endif %}
 <style>
     body{
-        background-color: #C4FAA7;
+        background-color: #ECF0F1;
+        font-family: 'Poppins', sans-serif;
     }
     .form-floating > label {
         color: #6c757d; /* Normal durumda gri renk */

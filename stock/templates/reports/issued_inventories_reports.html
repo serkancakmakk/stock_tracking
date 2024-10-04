@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block content %}
+{% load static %}
+{% block title %}
+Çıkış Yapılan Envanterler | {{company.code}}
+{% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'report.png' %}">
+{% endblock icon %}
+<div class="container">
+    <div class="mb-3 text-center">
+        <button id="listView" class="btn btn-view me-2">Liste Görünümü</button>
+        <button id="tableView" class="btn btn-view">Tablo Görünümü</button>
+    </div>
+
+    <div id="viewContainer">
+        <div id="listViewContainer" class="row">
+            {% for inventory in issued_inventories %}
+            <div class="col-md-4 list-item">
+                <div class="card mb-4 shadow-sm" style="background-color: #FFFFFF;">
+                    <div class="card-header">
+                        <h5 class="card-title text-center mb-0">
+                            {{ inventory.serial_number }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-2"><strong>Ürün Adı:</strong> {{ inventory.product.name }}</p>
+                        <p class="text-muted mb-2"><strong>Şirket:</strong> {{ inventory.company.name }}</p>
+                        <hr>
+                        <p class="mb-2"><strong>Fatura Detayları:</strong></p>
+                        <button class="btn btn-toggle-details" data-bs-toggle="collapse" href="#billDetails{{ forloop.counter }}" role="button" aria-expanded="false" aria-controls="billDetails{{ forloop.counter }}">
+                            Detayları Göster/Gizle
+                        </button>
+                        <div class="collapse" id="billDetails{{ forloop.counter }}">
+                            <ul class="list-unstyled mt-2">
+                                {% for bill in inventory.outgoing_bills.all %}
+                                <li class="mb-3 p-2 border rounded">
+                                    <p class="mb-1"><i class="fas fa-file-invoice-dollar mr-1 icon-bill"></i><strong> Fatura Numarası:</strong> {{ bill.number }}</p>
+                                    <p class="mb-1"><i class="fas fa-boxes mr-1 icon-quantity"></i><strong> Miktar:</strong> {{ bill.quantity }}</p>
+                                    <p class="mb-1"><i class="fas fa-clock mr-1 icon-processing"></i><strong> İşlem Zamanı:</strong> {{ bill.processing_time }}</p>
+                                    <p class="mb-1"><i class="fas fa-user mr-1 icon-user"></i><strong> Çıkış Yapan:</strong> {{ bill.is_create.username }}</p>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="tableViewContainer" class="d-none">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Fatura Numarası</th>
+                        <th>Ürün Adı</th>
+                        <th>Şirket</th>
+                        <th>Miktar</th>
+                        <th>İşlem Zamanı</th>
+                        <th>Çıkış Yapan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inventory in issued_inventories %}
+                        {% for bill in inventory.outgoing_bills.all %}
+                        <tr>
+                            <td>{{ bill.number }}</td>
+                            <td>{{ inventory.product.name }}</td>
+                            <td>{{ inventory.company.name }}</td>
+                            <td>{{ bill.quantity }}</td>
+                            <td>{{ bill.processing_time }}</td>
+                            <td>{{ bill.is_create.username }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-view {
+        position: relative;
+        overflow: hidden;
+        background-color: #2E4053;
+        color: #FFFFFF;
+        border: 1px solid transparent;
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-view:focus {
+        outline: none;
+    }
+
+    .btn-view:hover {
+        background-color: #F7DC6F;
+        color: #2E4053;
+        border-color: #F7DC6F;
+    }
+
+    .btn-view.active {
+        background-color: #FF6F61;
+        color: #FFFFFF;
+        border-color: #FF6F61;
+    }
+
+    .btn-view::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        background-color: rgba(255, 255, 255, 0.3);
+        transform: scaleX(0);
+        transform-origin: bottom right;
+        transition: transform 0.4s ease;
+        z-index: 1;
+    }
+
+    .btn-view:hover::before {
+        transform: scaleX(1);
+        transform-origin: bottom left;
+    }
+
+    #viewContainer {
+        margin-top: 20px;
+    }
+
+    #listViewContainer, #tableViewContainer {
+        transition: opacity 0.3s ease;
+    }
+
+    .d-none {
+        display: none;
+    }
+</style>
+
+<script>
+    document.getElementById('listView').addEventListener('click', function() {
+        document.getElementById('listViewContainer').classList.remove('d-none');
+        document.getElementById('tableViewContainer').classList.add('d-none');
+        this.classList.add('active');
+        document.getElementById('tableView').classList.remove('active');
+    });
+
+    document.getElementById('tableView').addEventListener('click', function() {
+        document.getElementById('listViewContainer').classList.add('d-none');
+        document.getElementById('tableViewContainer').classList.remove('d-none');
+        this.classList.add('active');
+        document.getElementById('listView').classList.remove('active');
+    });
+</script>
+
+
+<style>
+    .icon-bill {
+        color: #FF6F61;
+    }
+
+    .icon-quantity {
+        color: #F7DC6F;
+    }
+
+    .icon-processing {
+        color: #2E4053;
+    }
+
+    .icon-user {
+        color: #F39C12;
+    }
+
+    .card-header {
+        background-color: #2E4053;
+    }
+
+    .card-title {
+        color: #F7DC6F;
+    }
+
+    .btn-toggle-details {
+        background-color: #FF6F61;
+        color: #FFFFFF;
+        border-color: #FF6F61;
+        border: 1px solid #FF6F61;
+    }
+
+    .btn-toggle-details:hover {
+        background-color: #FFA061;
+        border-color: #FFA061;
+    }
+
+    hr {
+        border-top: 1px solid #FF6F61;
+    }
+
+    .text-muted {
+        color: #2E4053;
+    }
+
+    .collapse {
+        background-color: #ECF0F1;
+        border-color: #FF6F61;
+    }
+
+    .list-unstyled li {
+        background-color: #ECF0F1;
+        border-color: #FF6F61;
+        color: #2E4053;
+    }
+
+    #viewContainer {
+        margin-top: 20px;
+    }
+
+    #listViewContainer, #tableViewContainer {
+        transition: opacity 0.3s ease;
+    }
+
+    .d-none {
+        display: none;
+    }
+</style>
+{% endblock content %}

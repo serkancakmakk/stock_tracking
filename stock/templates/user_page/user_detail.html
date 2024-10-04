@@ -1,10 +1,15 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
 {% block title %}
 Kullanıcıyı Düzenle | {{user.username}}
 {% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'edit.png' %}">
+{% endblock icon %}
 <div class="container mt-5">
   <div class="row">
+    <div class="col-6 col-md-6">
     <div class="profile-wrapper page-content">
       <div class="profile-content">
         <div class="profile-card">
@@ -15,6 +20,11 @@ Kullanıcıyı Düzenle | {{user.username}}
               margin-right: 4px;
               transition: transform .2s;
               cursor: pointer;
+              color:#2E4053;
+            }
+            .form-check-input:checked {
+              background-color: #F7DC6F;
+              border: #F7DC6F;
             }
             .icons:hover {
               transform: scale(1.5);
@@ -87,90 +97,130 @@ Kullanıcıyı Düzenle | {{user.username}}
             <button class="btn btn-primary w-100 mt-2" data-bs-toggle="modal" data-bs-target="#editModal">
               <i class="fa-solid fa-user-pen"></i> Düzenle
             </button>
-          </div>
-          <!--
-          for master user
-          -->
-          <div class="permissions-wrapper">
-            <form method="POST" action="{% url 'kullanici_yetkilendir' company.code user.unique_id %}">
-              {% csrf_token %}
-              <div class="permissions-container d-flex justify-content-between">
-                <div class="permissions-area">
-                  {% if company.code == 1  %}
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_company" type="checkbox" role="switch" id="switchAddCompany" {% if user.permissions.add_company %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddCompany">Şirket Ekleme</label>
-                  </div>
-                 
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="list_company" type="checkbox" role="switch" id="switchAddUser" {% if user.permissions.list_company %}checked{% endif %}>
-                    <label class="form-check-label" for="switchListCompany">Şirketleri Listele</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="list_company" type="checkbox" role="switch" id="switchAddUser" {% if user.permissions.list_company %}checked{% endif %}>
-                    <label class="form-check-label" for="switchListCompany">Anlaşma Tarihi Ayarlasın</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="list_company" type="checkbox" role="switch" id="switchAddUser" {% if user.permissions.list_company %}checked{% endif %}>
-                    <label class="form-check-label" for="switchListCompany">Şirket Durumunu Değiştirebilsin</label>
-                  </div>
-                  {% endif %}
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="update_user" type="checkbox" role="switch" id="switchAddOutgoing" {% if user.permissions.update_user %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddOutgoing">Kullanıcı Güncellesin</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_outgoing" type="checkbox" role="switch" id="switchAddOutgoing" {% if user.permissions.add_outgoing %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddOutgoing">Çıkış Yapabilsin</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_bill" type="checkbox" role="switch" id="switchAddBill" {% if user.permissions.add_bill %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddBill">Fatura Girebilsin</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_inventory" type="checkbox" role="switch" id="switchAddInventory" {% if user.permissions.add_inventory %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddInventory">Envanter Girebilsin</label>
-                  </div>
-                  <div class="btn-area">
-                    <button type="submit" class="btn btn-primary w-100">
-                      <i class="fa-solid fa-user-gear"></i> Yetkilendir
-                    </button>
-                  </div>
-                </div>
-                <div class="permissions_area_2">
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_parameter" type="checkbox" role="switch" id="switchAddParameter" {% if user.permissions.add_parameter %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddParameter">Parametreleri Görebilsin</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_product" type="checkbox" role="switch" id="switchAddProduct" {% if user.permissions.add_product %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddProduct">Ürün Eklesin</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_category" type="checkbox" role="switch" id="switchAddCategory" {% if user.permissions.add_category %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddCategory">Kategori Eklesin</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_seller" type="checkbox" role="switch" id="switchAddSeller" {% if user.permissions.add_seller %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddSeller">Cari Eklesin</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_outgoing" type="checkbox" role="switch" id="switchAddOutgoing2" {% if user.permissions.add_outgoing %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddOutgoing2">Çıkış Eklesin</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_unit" type="checkbox" role="switch" id="switchAddUnit" {% if user.permissions.add_unit %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddUnit">Birim Eklesin</label>
-                  </div>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" name="add_user" type="checkbox" role="switch" id="switchAddUser2" {% if user.permissions.add_user %}checked{% endif %}>
-                    <label class="form-check-label" for="switchAddUser2">Kullanıcı Eklesin</label>
-                  </div>
-                </div>
-              </div>
-            </form>
+            <button class="btn btn-primary w-100 mt-2" data-bs-toggle="modal" data-bs-target="#passwordModal">
+              <i class="fa-solid fa-user-pen"></i> Şifre Değiştir
+            </button>
           </div>
         </div>
+        
+        </div>
+        
+      </div>
+      
+    </div>
+    <div class="col-6 col-md-6" id="permissions-wrapper-col">
+      <!--
+      for master user
+      -->
+      <style>
+        #permissions-wrapper-col{
+          background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+          padding-top: 20px;
+          border-radius:10px;
+        }
+        .perm-title{
+          background-color:#c3cfe2;
+          border-radius: 10px;
+          text-align: center;
+          margin-left:20px ;
+          color:black;
+        }
+      </style>
+      <div class="permissions-wrapper">
+        <form method="POST" action="{% url 'kullanici_yetkilendir' company.code user.unique_id %}">
+          {% csrf_token %}
+          <div class="permissions-container d-flex justify-content-between">
+            <div class="permissions-area">
+              <h6 class="font-poppins perm-title">Tanımlar Yetkisi</h6>    
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_product" type="checkbox" role="switch" id="switchAddProduct" {% if user.permissions.add_product %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddProduct">Ürün Eklesin</label>
+              </div>
+              
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_category" type="checkbox" role="switch" id="switchAddCategory" {% if user.permissions.add_category %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddCategory">Kategori Eklesin</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_seller" type="checkbox" role="switch" id="switchAddSeller" {% if user.permissions.add_seller %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddSeller">Cari Eklesin</label>
+              </div>
+              
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_outgoing" type="checkbox" role="switch" id="switchAddOutgoing2" {% if user.permissions.add_outgoing %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddOutgoing2">Çıkış Eklesin</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_unit" type="checkbox" role="switch" id="switchAddUnit" {% if user.permissions.add_unit %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddUnit">Birim Eklesin</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="delete_unit" type="checkbox" role="switch" id="switchAddUnit" {% if user.permissions.delete_unit %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddUnit">Birim Silebilsin</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_user" type="checkbox" role="switch" id="switchAddUser2" {% if user.permissions.add_user %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddUser2">Kullanıcı Eklesin</label>
+              </div>
+              
+              
+            </div>
+            <div class="permissions_area_2">
+              <h6 class="font-poppins perm-title">Diğer yetkiler</h6>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="update_user" type="checkbox" role="switch" id="switchAddOutgoing" {% if user.permissions.update_user %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddOutgoing">Kullanıcı Güncellesin</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_outgoing" type="checkbox" role="switch" id="switchAddOutgoing" {% if user.permissions.add_outgoing %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddOutgoing">Çıkış Yapabilsin</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_bill" type="checkbox" role="switch" id="switchAddBill" {% if user.permissions.add_bill %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddBill">Fatura Girebilsin</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_inventory" type="checkbox" role="switch" id="switchAddInventory" {% if user.permissions.add_inventory %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddInventory">Envanter Girebilsin</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="access_to_reports" type="checkbox" role="switch" id="switchAddInventory" {% if user.permissions.access_to_reports %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddInventory">Raporlara Erişsin</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_parameter" type="checkbox" role="switch" id="switchAddParameter" {% if user.permissions.add_parameter %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddParameter">Parametreleri Görebilsin</label>
+              </div>
+            </div>
+            {% if company.code == 1  %}
+            <div class="permissions_area_3">
+              <h6 class="font-poppins perm-title">Destek Ekibi Yetkileri</h6>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="add_company" type="checkbox" role="switch" id="switchAddCompany" {% if user.permissions.add_company %}checked{% endif %}>
+                <label class="form-check-label" for="switchAddCompany">Şirket Ekleme</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="list_company" type="checkbox" role="switch" id="switchAddUser" {% if user.permissions.list_company %}checked{% endif %}>
+                <label class="form-check-label" for="switchListCompany">Şirketleri Listele</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="set_agreement_date" type="checkbox" role="switch" id="switchAddUser" {% if user.permissions.set_agreement_date %}checked{% endif %}>
+                <label class="form-check-label" for="switchListCompany">Anlaşma Tarihi Ayarlasın</label>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" name="set_company_status" type="checkbox" role="switch" id="switchAddUser" {% if user.permissions.set_company_status %}checked{% endif %}>
+                <label class="form-check-label" for="switchListCompany">Şirket Durumunu Değiştirebilsin</label>
+              </div>
+            </div>
+            {% endif %}
+            
+          </div>
+          <div class="btn-area">
+            <button type="submit" class="btn btn-perm w-100">
+              <i class="fa-solid fa-user-gear"></i> Yetkilendir
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -252,7 +302,16 @@ Kullanıcıyı Düzenle | {{user.username}}
     </div>
 </div>
 <style>
-
+.btn-perm{
+  background-color: #2E4053;
+  color: white;
+  font-weight: bold;
+}
+.btn-perm:hover{
+  background-color: #425364;
+  color: white;
+  font-weight: bold;
+}
 .profile-card {
     border-radius: 10px;
     overflow: hidden;
@@ -260,7 +319,8 @@ Kullanıcıyı Düzenle | {{user.username}}
     display: flex;
     align-items: flex-start;
     padding: 20px;
-    background-color: #00c9a7;
+    background-color: #DCD9D4;
+    background-image: linear-gradient(to top, #e6e9f0 0%, #eef1f5 100%);
 }
 
 .profile-card .profile-img {
@@ -341,4 +401,36 @@ Kullanıcıyı Düzenle | {{user.username}}
     filter: drop-shadow(1px 1px 20px red);
 }
 </style>
+<div class="modal fade" id="passwordModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Parola Değiştir</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="passwordChangeForm" method="POST" action="{% url 'sifre_degistir' user.unique_id %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="old_password" class="form-label">Eski Şifre</label>
+            <input type="password" class="form-control" id="old_password" name="old_password">
+          </div>
+          <div class="mb-3">
+            <label for="new_password1" class="form-label">Yeni Şifre</label>
+            <input type="password" class="form-control" id="new_password1" name="new_password1">
+          </div>
+          <div class="mb-3">
+            <label for="new_password2" class="form-label">Yeni Şifreyi Onayla</label>
+            <input type="password" class="form-control" id="new_password2" name="new_password2">
+          </div>
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+        <button type="submit" class="btn btn-primary" id="submitPasswordForm">Şifreyi Değiştir</button>
+      </div>
+    </form>
+    </div>
+  </div>
+</div>
 {% endblock content %}

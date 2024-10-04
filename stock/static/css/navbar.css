@@ -13,8 +13,8 @@ box-sizing: border-box;
 --sidebar-color: #fff;
 --primary-color: #f4f2f2;
 --primary-color-light: #f4f2f2;
---toggle-color: #ddd;
---text-color: #707070;
+--toggle-color: #ffa061;
+--text-color: #2E4053;
 --dark-color: #000;
 
 --trans-02: all 0.2s ease;

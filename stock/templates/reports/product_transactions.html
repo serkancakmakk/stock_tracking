@@ -1,76 +1,89 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}
+Stok Hareketleri | {{company.code}}
+{% endblock title %}
+{% block icon %}
+<link rel="shortcut icon" href="{% static 'report.png' %}" type="image/x-icon">
+{% endblock icon %}
 {% block content %}
-<div class="container">
+<div class="container mt-4">
     <div class="row">
-        <form action="{% url 'stok_hareketleri' company.code %}" method="POST">
-            {% csrf_token %}
-        <select class="form-select" id="select2-product" name="selected_product" aria-label="Default select example">
-            <option selected>Bir Ürün Seçiniz</option>
-            {% for product in products  %}
-            <option value="{{product.id}}">{{product.name}}</option>
-            {% endfor %}
-          </select>
-          <button type="submit" class="btn btn-outline-success">Getir</button>
         <div class="col-lg-12">
-            <table class="table text-center table-hover">
-                <thead>
-                  <tr>
-                    <th scope="col">İşlem Tarihi</th>
-                    <th scope="col">Çıkan Miktar (-)</th>
-                    <th scope="col">Giren Miktar (+)</th>
-                    <th scope="col">Çıkış Faturası</th>
-                    <th scope="col">Çıkış Sebebi</th>
-                    <th scope="col">Giriş Faturası</th>
-                    <th scope="col">Fatura Tutarı</th>
-                    <th scope="col">Fatura Detay</th>
-                  </tr>
-                </thead>
-                <tbody>
-                    {% for stock_transaction in stock_transactions %}
-                      <tr class="{% if stock_transaction.outgoing_bill %}table-danger{% endif %}">
-                        <td>{{ stock_transaction.processing_time|date:"d M Y H:i" }}</td>
-                        
-                      
-                        <td>{% if stock_transaction.outgoing_quantity == None %}
-                           
-                              -
-                            {% else %}
-                            {{ stock_transaction.outgoing_quantity }}
-                            {% endif %}
-                        </td>
-                       
-                       
-                        <td>{% if stock_transaction.incoming_quantity == None %}
-                           
-                            -
-                          {% else %}
-                          {{ stock_transaction.incoming_quantity }}
-                          {% endif %}
-                      </td>
-                        <td>{{ stock_transaction.outgoing_bill }}</td>
-                        <td>{{ stock_transaction.outgoing_reasons.name }}</td>
-                        <td>{{ stock_transaction.incoming_bill.number }}</td>
-                        <td>{{ stock_transaction.total_amount }}</td>
-                        <td>
-                            {% if stock_transaction.outgoing_bill %}
-                                <a href="{% url 'fatura_detay' company.code stock_transaction.outgoing_bill %}">Fatura Detay</a>
-                            {% elif stock_transaction.incoming_bill %}
-                                <a href="{% url 'fatura_detay' company.code stock_transaction.incoming_bill.number %}">Fatura Detay</a>
-                            {% else %}
-                                Yok
-                            {% endif %}
-                        </td>
-                      </tr>
-                    {% endfor %}
-                </tbody>
-              </table>
+          <h1 class="text-center" id="stock_title">Stok Hareketleri</h1>
+            <form action="{% url 'stok_hareketleri' company.code %}" method="POST" class="mb-4">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="select2-product" class="form-label">Ürün Seçiniz:</label>
+                    <select class="form-select" id="select2-product" name="selected_product" aria-label="Default select example">
+                        <option selected value="">Bir Ürün Seçiniz</option>
+                        {% for product in products %}
+                            <option value="{{ product.id }}">{{ product.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">Getir</button>
+            </form>
+            
+            <div class="table-responsive">
+                <table class="table table-hover text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">İşlem Tarihi</th>
+                            <th scope="col">Çıkan Miktar</th>
+                            <th scope="col">Giren Miktar</th>
+                            <th scope="col">Çıkış Faturası</th>
+                            <th scope="col">Çıkış Sebebi</th>
+                            <th scope="col">Giriş Faturası</th>
+                            <th scope="col">Fatura Tutarı</th>
+                            <th scope="col">Fatura Detay</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock_transaction in stock_transactions %}
+                            <tr class="{% if stock_transaction.outgoing_bill %}table-danger{% endif %}">
+                                <td>{{ stock_transaction.processing_time|date:"d M Y H:i" }}</td>
+                                <td>{% if stock_transaction.outgoing_quantity %}{{ stock_transaction.outgoing_quantity }}{% else %}-{% endif %}</td>
+                                <td>{% if stock_transaction.incoming_quantity %}{{ stock_transaction.incoming_quantity }}{% else %}-{% endif %}</td>
+                                <td>{% if stock_transaction.outgoing_bill %}{{ stock_transaction.outgoing_bill }}{% else %}-{% endif %}</td>
+                                <td>{{ stock_transaction.outgoing_reasons.name }}</td>
+                                <td>{{ stock_transaction.incoming_bill.number }}</td>
+                                <td>{{ stock_transaction.total_amount }}</td>
+                                <td>
+                                    {% if stock_transaction.outgoing_bill %}
+                                        <a href="{% url 'outgoing_bill_details' stock_transaction.outgoing_bill company.code %}" class="btn btn-info btn-sm">Detay</a>
+                                    {% elif stock_transaction.incoming_bill %}
+                                        <a href="{% url 'fatura_detay' stock_transaction.incoming_bill.number company.code %}" class="btn btn-info btn-sm">Detay</a>
+                                    {% else %}
+                                        Yok
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
 <style>
     .table-danger {
-        background-color: red;
-        color: white;
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+    .btn-info {
+        color: #fff;
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+    }
+    .btn-info:hover {
+        color: #fff;
+        background-color: #138496;
+        border-color: #117a8b;
     }
 </style>
 {% endblock content %}

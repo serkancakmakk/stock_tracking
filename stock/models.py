@@ -1,11 +1,9 @@
 from django.conf import settings
 from django.db import models
-from datetime import timedelta
-from django.utils import timezone
 from django.db import models
-from django.core.validators import MaxValueValidator
 from django.contrib.auth.models import AbstractUser, Group, Permission
 import uuid
+import os
 class Company(models.Model):
     code = models.IntegerField(null=False, blank=False)
     name = models.CharField(max_length=255)
@@ -45,7 +43,7 @@ class Parameter(models.Model):
         return f'{self.company} - {self.get_cost_calculation_display()}'
     class Meta:
         db_table = 'Parameter'
-import os
+
 
 def get_upload_to(instance, filename):
     company_code = instance.company.code  # veya instance.user.company.code
@@ -110,7 +108,7 @@ class Permission(models.Model):
     list_company = models.BooleanField(default=False)
     set_agreement_date = models.BooleanField(default=False)
     set_company_status = models.BooleanField(default=False)
-
+    access_to_bugs = models.BooleanField(default=False)
 
     add_user = models.BooleanField(default=False)
     add_bill = models.BooleanField(default=False)
@@ -156,6 +154,8 @@ class Seller(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
+    phone = models.CharField(max_length=255,null=True,blank=True) 
+    email = models.EmailField(max_length=255,null=True,blank=True)
     receivable = models.DecimalField(max_digits=10, decimal_places=5,null=True,blank=True,default=0)
     debt = models.DecimalField(max_digits=10, decimal_places=5,null=True,blank=True,default=0)
     status = models.BooleanField(default=True)
@@ -252,6 +252,7 @@ class BillItem(models.Model):
     barcode_3 = models.CharField(max_length=255, null=True, blank=True)
 
     row_total = models.DecimalField(max_digits=255, decimal_places=3, null=True, blank=True, default=0.00)
+    processing_time = models.DateTimeField(auto_now_add=True, verbose_name='İşlem Zamanı')  # Bu satırı ekleyin
     def __str__(self):
         return f"{self.product.name} - {self.quantity} {self.product.unit}"
     class Meta:
@@ -293,6 +294,7 @@ class StockTransactions(models.Model):
     current_stock = models.IntegerField()
     total_amount = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True,verbose_name='Toplam Tutar')
     is_create = models.ForeignKey(User,on_delete=models.CASCADE)
+    is_delete = models.BooleanField(default=False)
     def __str__(self):
         return self.product
     class Meta:
@@ -314,3 +316,16 @@ class Message(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     class Meta:
         db_table = 'Message'
+class ErrorMessage(models.Model):
+    reporting_company = models.ForeignKey(Company, on_delete=models.DO_NOTHING,)
+    reporting_user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    error_title = models.CharField(max_length=200)
+    error_description = models.TextField()
+    error_screenshot = models.ImageField(upload_to='error_screenshots/',null=True,blank=True)
+    error_status = models.BooleanField(default=False) # false okunmadı true okundu
+    created_at = models.DateTimeField(auto_now_add=True)
+    def save(self, *args, **kwargs):
+        # Override save method to set upload_to path dynamically
+        if self.error_screenshot:
+            self.error_screenshot.name = f"{self.reporting_company.code}/{self.reporting_user.unique_id}/{self.error_screenshot.name}"
+        super().save(*args, **kwargs)

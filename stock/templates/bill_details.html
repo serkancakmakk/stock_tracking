@@ -1,46 +1,372 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}
+Fatura Detay | {{bill.number}} | {{company.code}}
+{% endblock title %}
+{% block icon %}
+<link rel="shortcut icon" href="{% static 'bill-details.png' %}" type="image/x-icon">
+{% endblock icon %}
 {% block content %}
 <div class="container">
     <div class="row">
         <div class="col-lg-12">
             <div class="card mt-4 shadow animated-card">
                 <div class="card-header bg-bill d-flex justify-content-between align-items-center">
-                    <h2 class="font-poppins mb-0 text-white">Fatura Detay</h2>
+                    <h2 class="font-poppins mb-0 text-white">Fatura Detay | {{company.code}}</h2>
                     {% if not bill.is_paid %}
-                    <form method="post" action="{% url 'delete_bill' bill.id %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm fun-btn">Evet, Sil!</button>
-                    </form>
+                        {% if bill.is_delete == True %}
+                        <form method="post" action="{% url 'delete_bill' bill.number company.code %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="" class="btn btn-danger btn-sm fun-btn">Geri Al</button>
+                        {% else %}
+                            
+                                <button type="submit" class="btn btn-danger btn-sm fun-btn">Evet, Sil!</button>
+                            </form>
+                        {% endif %}
                     {% endif %}
                 </div>
                 <div class="card-body">
                     {% if bill %}
-                    <div class="mb-3">
-                        <h4 class="font-poppins text-primary">Fatura Detayları 📋</h4>
-                        <div class="row">
-                            <div class="col-md-6 detail-group">
-                                <p><strong>Fatura Numarası:</strong> {{ bill.number }}</p>
-                                <p><strong>Fatura Tarihi:</strong> {{ bill.date }}</p>
-                                <p><strong>Fatura Toplam:</strong> <span id="totalAmount">{{ bill.total_amount }}</span></p>
-
-                            </div>
-                            <div class="col-md-6 detail-group">
-                                <p><strong>Fatura Durumu:</strong> 
-                                    {% if bill.is_paid %}
-                                    <span class="badge badge-success animated-badge">Ödendi <i class="fa-solid fa-lock"></i></span>
-                                    {% else %}
-                                    <span class="badge badge-warning animated-badge">Ödenmedi <i class="fa-solid fa-unlock-keyhole"></i></span>
+                        <div class="mb-3">
+                            <h4 class="font-poppins text-primary">Fatura Detayları 📋</h4>
+                            <div class="row">
+                                <div class="col-md-6 detail-group">
+                                    <p ><strong >Fatura Satıcısı:</strong> {{ bill.seller }}</p>
+                                    <p><strong>Fatura Numarası:</strong> {{ bill.number }}</p>
+                                    <p><strong>Fatura Tarihi:</strong> {{ bill.date }}</p>
+                                    <p><strong>Fatura Toplam:</strong> <span id="totalAmount">{{ bill.total_amount }}</span></p>
+                                    {% if bill.is_delete == True %}
+                                        <h3 class="deleted_bill"><strong>Bu Fatura Silindi <i class="fa-solid fa-trash-can"></i></strong></h3>
                                     {% endif %}
-                                </p>
+                                </div>
+                                <div class="col-md-6 detail-group">
+                                    <p><strong>Fatura Durumu:</strong> 
+                                        {% if bill.is_paid %}
+                                            <span class="badge badge-success animated-badge">Ödendi <i class="fa-solid fa-lock"></i></span>
+                                        {% else %}
+                                            <span class="badge badge-warning animated-badge">Ödenmedi <i class="fa-solid fa-unlock-keyhole"></i></span>
+                                        {% endif %}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="d-flex justify-content-end mt-4">
-                        <a href="" class="btn btn-secondary btn-sm cancel-btn">Hayır, İptal Et ✖️</a>
-                    </div>
+                        <div class="d-flex justify-content-end mt-4">
+                            <a href="" class="btn btn-secondary btn-sm cancel-btn">Hayır, İptal Et ✖️</a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
+
+            {% if bill_items %}
+                <h4 class="mt-4 font-poppins">Ürünler</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-bordered" id="billTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ürün</th>
+                                <th>Miktar</th>
+                                <th>Fiyat</th>
+                                <th>İndirim 1</th>
+                                <th>İndirim 2</th>
+                                <th>İndirim 3</th>
+                                <th>KDV</th>
+                                <th>Satır Toplamı</th>
+                                <th class="text-center">Satır Sil</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in bill_items %}
+                                <tr data-id="{{ item.id }}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fa-solid fa-box fa-lg me-2 text-primary"></i>
+                                            <span class="fw-bold">{{ item.product.name }}</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-info text-dark">{{ item.quantity }}</span></td>
+                                    <td>{{ item.price|floatformat:2 }} ₺</td>
+                                    <td>{{ item.discount_1|floatformat:2 }} %</td>
+                                    <td>{{ item.discount_2|floatformat:2 }} %</td>
+                                    <td>{{ item.discount_3|floatformat:2 }} %</td>
+                                    <td>{{ item.vat|floatformat:2 }} %</td>
+                                    <td class="fw-bold">{{ item.row_total|floatformat:2 }} ₺</td>
+                                    {% if bill.is_delete == False %}
+                                        <td class="text-center"><i class="fa-solid fa-square-minus remove-item" style="cursor: pointer; color: red;"></i></td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-warning mt-4" role="alert">
+                    <i class="fa-solid fa-exclamation-triangle me-2"></i> Fatura için herhangi bir ürün bulunamadı.
+                </div>
+            {% endif %}
+
+            {% if stock_transaction %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        Çıkış Faturası <strong>#{{ stock_transaction.number }}</strong>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-primary text-center">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Çıkan Ürün</th>
+                                    <th scope="col">Çıkan Miktar</th>
+                                    <th scope="col">Çıkış Nedeni</th>
+                                    <th scope="col">İşlem Zamanı</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th scope="row">#</th>
+                                    <td>{{ stock_transaction.product }}</td>
+                                    <td>{{ stock_transaction.quantity|floatformat:3 }}</td>
+                                    <td>{{ stock_transaction.outgoing_reason.name }}</td>
+                                    <td>{{ stock_transaction.processing_time|date:"d M Y H:i" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if bill %}
+                {% if bill.is_delete == True %}
+                    <div class="deleted_bill_title">
+                        <h4>Silinen Faturaya herhangi bir işlem yapılamaz.</h4>
+                    </div>
+                {% else %}
+                    <div class="card mt-4 shadow-sm">
+                        <div class="card-header bg-bill text-white">
+                            <h4 class="font-poppins mb-0">Kalem Ekle</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="addItemForm" method="POST" action="{% url 'kalem_ekle' bill.id %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="bill_item_product" class="form-label font-poppins">Ürün</label>
+                                    <select class="form-select" id="bill_item_product" name="bill_item_product">
+                                        <option selected disabled>Ürün seçin</option>
+                                        {% for product in products %}
+                                            <option value="{{ product.id }}" data-is-inventory="{{ product.is_inventory|yesno:'true,false' }}">{{ product.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="bill_item_quantity" class="form-label font-poppins">Miktar</label>
+                                        <input type="number" step="0.001" value="" name="bill_item_quantity" id="bill_item_quantity" class="form-control" placeholder="">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="bill_item_price" class="form-label font-poppins">Fiyat</label>
+                                        <input type="number" step="0.001" name="bill_item_price" class="form-control" placeholder="0.000">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="bill_item_vat" class="form-label font-poppins">KDV (%)</label>
+                                        <input type="number" step="0.01" name="bill_item_vat" class="form-control" placeholder="0.00">
+                                    </div>
+                                </div>
+                                <div class="row g-3 mt-3">
+                                    <div class="col-md-4">
+                                        <label for="bill_item_discount_1" class="form-label font-poppins">İndirim 1 (%)</label>
+                                        <input type="number" step="0.01" name="bill_item_discount_1" class="form-control" placeholder="0.00">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="bill_item_discount_2" class="form-label font-poppins">İndirim 2 (%)</label>
+                                        <input type="number" step="0.01" name="bill_item_discount_2" class="form-control" placeholder="0.00">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="bill_item_discount_3" class="form-label font-poppins">İndirim 3 (%)</label>
+                                        <input type="number" step="0.01" name="bill_item_discount_3" class="form-control" placeholder="0.00">
+                                    </div>
+                                    <div id="serial_number_group" class="form-group mt-3 d-none">
+                                        <input class="form-control" id="serial_number" name="serial_number" type="number" step="0.001" placeholder="Seri Numarası">
+                                    </div>
+                                    <div id="barcode_1_group" class="form-group d-none mt-3">
+                                        <input class="form-control" id="barcode-1" name="barcode_1" type="number" placeholder="Barkod - 1">
+                                    </div>
+                                    <div id="barcode_2_group" class="form-group d-none mt-3">
+                                        <input class="form-control" id="barcode-2" name="barcode_2" type="number" placeholder="Barkod - 2">
+                                    </div>
+                                    <div id="barcode_3_group" class="form-group d-none mt-3">
+                                        <input class="form-control" id="barcode-3" name="barcode_3" type="number" placeholder="Barkod - 3">
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <button type="submit" id="addBillItemBtn" class="btn btn-success btn-block">Ekle</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+            <script>
+                $(document).ready(function() {
+                    // Ürün seçim kutusunu başlat
+                    $('#bill_item_product').select2();
             
+                    // Ürün seçiminde meydana gelen değişiklikleri ele al
+                    $('#bill_item_product').on('change', function() {
+                        const selectedOption = $(this).find('option:selected');
+                        const isInventory = selectedOption.data('is-inventory') === true;
+                        console.log(isInventory)
+                        const quantityInput = $('#bill_item_quantity');
+            
+                        if (isInventory) {
+                            // Envanter ürünü ise miktarı 1 yap ve sadece okunabilir yap
+                            quantityInput.val(1).prop('readonly', true);
+                        } else {
+                            // Envanter ürünü değilse miktarı boşalt ve düzenlenebilir yap
+                            quantityInput.val('').prop('readonly', false);
+                        }
+                    });
+                });
+            </script>
+            <script>
+                $(document).ready(function() {
+                    // Initialize Select2
+                    $('#bill_item_product').select2();
+        
+                    // Handle change event for Select2
+                    $('#bill_item_product').on('change', function() {
+                        const selectedOption = $(this).find('option:selected');
+                        const isInventory = selectedOption.data('is-inventory') === true;
+                        const quantityInput = $('#bill_item_quantity');
+                        const serialNumberGroup = $('#serial_number_group');
+                        const barcode1Group = $('#barcode_1_group');
+                        const barcode2Group = $('#barcode_2_group');
+                        const barcode3Group = $('#barcode_3_group');
+                        const isInventoryProductSpan = $('#is-inventory-product-span');
+        
+                        if (isInventory) {
+                            quantityInput.val(1).prop('readonly', true);
+                            serialNumberGroup.removeClass('d-none');
+                            barcode1Group.removeClass('d-none');
+                            barcode2Group.removeClass('d-none');
+                            barcode3Group.removeClass('d-none');
+                            isInventoryProductSpan.removeClass('d-none');
+                        } else {
+                            quantityInput.val('').prop('readonly', false);
+                            serialNumberGroup.addClass('d-none');
+                            barcode1Group.addClass('d-none');
+                            barcode2Group.addClass('d-none');
+                            barcode3Group.addClass('d-none');
+                            isInventoryProductSpan.addClass('d-none');
+                        }
+                    });
+                });
+            </script>
+            <script>
+                $(document).ready(function() {
+                    $('#addItemForm').on('submit', function(event) {
+                        event.preventDefault(); // Formun varsayılan gönderimini engelle
+                
+                        var formData = $(this).serialize(); // Form verilerini al
+                
+                        $.ajax({
+                            type: 'POST',
+                            url: $(this).attr('action'),
+                            data: formData,
+                            dataType: 'json',
+                            success: function(response) {
+                                if (response.error) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Hata',
+                                        text: response.error
+                                    });
+                                } else {
+                                    // Yeni bir satır oluştur
+                                    var newRow = `
+                                        <tr data-id="${response.bill_item_id}">
+                                            <td>${response.bill_item_product}</td>
+                                            <td>${response.bill_item_quantity}</td>
+                                            <td>${response.bill_item_price}</td>
+                                            <td>${response.bill_item_discount_1}</td>
+                                            <td>${response.bill_item_discount_2}</td>
+                                            <td>${response.bill_item_discount_3}</td>
+                                            <td>${response.bill_item_vat}</td>
+                                            <td>${response.row_total}</td>
+                                            <td class="text-center">
+                                                <i class="fa-solid fa-square-minus remove-item" style="cursor: pointer; color: red;"></i>
+                                            </td>
+                                        </tr>`;
+                                    
+                                    // Tablonun gövdesine yeni satırı ekle
+                                    $('#billTable tbody').append(newRow);
+                
+                                    // Toplam tutarı güncelle
+                                    $('#totalAmount').text(response.new_total_amount);
+                
+                                    // Formu temizle
+                                    $('#addItemForm')[0].reset();
+                
+                                    // Seçim kutusunu sıfırla
+                                    $('#bill_item_product').val(null).trigger('change');
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.log('Error:', xhr.responseText);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Hata',
+                                    text: 'Bir hata oluştu!'
+                                });
+                            }
+                        });
+                    });
+                
+                    // Ürün silme işlemi
+                    $('#billTable').on('click', '.remove-item', function() {
+                        var row = $(this).closest('tr'); // Tıklanan satırı bul
+                        var itemId = row.data('id'); // Satırdan öğe ID'sini al
+                
+                        if (!itemId) {
+                            console.log('Silinecek öğe ID\'si alınamadı!');
+                            return;
+                        }
+                
+                        $.ajax({
+                            type: 'POST',
+                            url: '/delete-item/', // Sunucuya gönderilecek URL
+                            data: {
+                                'item_id': itemId,
+                                'csrfmiddlewaretoken': '{{ csrf_token }}'
+                            },
+                            dataType: 'json',
+                            success: function(response) {
+                                if (response.success) {
+                                    row.remove(); // Başarılıysa satırı kaldır
+                                    $('#totalAmount').text(response.new_total_amount); // Yeni toplamı güncelle
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Hata',
+                                        text: response.error
+                                    });
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.log('Error:', xhr.responseText);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Hata',
+                                    text: 'Silme işlemi sırasında bir hata oluştu!'
+                                });
+                            }
+                        });
+                    });
+                });
+            </script>
+                        
             <!-- Stil ve Animasyonlar -->
             <style>
         
@@ -84,304 +410,20 @@
                     background-color: #e60000;
                     transform: scale(1.1);
                 }
-                .detail-group {
-                    transition: transform 0.2s;
-                }
-                .detail-group:hover {
-                    transform: rotate(-1deg) scale(1.05);
+                .detail-group{
+                    background-color: #9DBDFF;
                 }
             </style>
-                <!-- Diğer bill alanları eklenebilir -->
-                {% if bill_items %}
-                <h4 class="mt-4 font-poppins">Ürünler</h4>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle table-bordered" id="billTable">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Ürün</th>
-                                <th>Miktar</th>
-                                <th>Fiyat</th>
-                                <th>İndirim 1</th>
-                                <th>İndirim 2</th>
-                                <th>İndirim 3</th>
-                                <th>KDV</th>
-                                <th>Satır Toplamı</th>
-                                <th class="text-center">Satır Sil</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in bill_items %}
-                                <tr data-id="{{ item.id }}">
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <i class="fa-solid fa-box fa-lg me-2 text-primary"></i>
-                                            <span class="fw-bold">{{ item.product.name }}</span>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge bg-info text-dark">{{ item.quantity }}</span></td>
-                                    <td>{{ item.price|floatformat:2 }} ₺</td>
-                                    <td>{{ item.discount_1|floatformat:2 }} %</td>
-                                    <td>{{ item.discount_2|floatformat:2 }} %</td>
-                                    <td>{{ item.discount_3|floatformat:2 }} %</td>
-                                    <td>{{ item.vat|floatformat:2 }} %</td>
-                                    <td class="fw-bold">{{ item.row_total|floatformat:2 }} ₺</td>
-                                    <td class="text-center"><i class="fa-solid fa-square-minus remove-item" style="cursor: pointer; color: red;"></i></td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-warning mt-4" role="alert">
-                    <i class="fa-solid fa-exclamation-triangle me-2"></i> Fatura için herhangi bir ürün bulunamadı.
-                </div>
-            {% endif %}
-            {% elif stock_transaction %}
-
-            <div class="card">
-                <div class="card-header">
-                  Çıkış Faturası  <strong>#{{ stock_transaction.number }}</strong>
-                </div>
-                <div class="card-body">
-                  <h5 class="card-title"></h5>
-                  <table class="table table-primary text-center">
-                    <thead>
-                      <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Çıkan Ürün</th>
-                        <th scope="col">Çıkan Miktar</th>
-                        <th scope="col">Çıkış Nedeni</th>
-                        <th scope="col">İşlem Zamanı</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <th scope="row">#</th>
-                        <td>{{ stock_transaction.product }}</td>
-                        <td>{{ stock_transaction.quantity|floatformat:3 }}</td>
-                        <td>{{ stock_transaction.outgoing_reason.name }}</td>
-                        <td>{{ stock_transaction.processing_time|date:"d M Y H:i" }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            {% else %}
-                <p>Belirtilen fatura numarası için bilgi bulunamadı.</p>
-            {% endif %}
-            
-            <!-- Kalem Ekle Kısmı -->
-            {% if bill %}
             <style>
                 .bg-bill{
                     background-color: #4158A6;
                 }
             </style>
-            <div class="card mt-4 shadow-sm">
-                <div class="card-header bg-bill text-white">
-                    <h4 class="font-poppins mb-0">Kalem Ekle</h4>
-                </div>
-                <div class="card-body">
-                    <form id="addItemForm" method="POST" action="{% url 'kalem_ekle' bill.id %}">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="bill_item_product" class="form-label font-poppins">Ürün</label>
-                            <select class="form-select" id="bill_item_product" name="bill_item_product">
-                                <option selected disabled>Ürün seçin</option>
-                                {% for product in products %}
-                                <option value="{{ product.id }}" data-is-inventory="{{ product.is_inventory|yesno:'true,false' }}">{{ product.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label for="bill_item_quantity" class="form-label font-poppins">Miktar</label>
-                                <input type="number" step="0.001" name="bill_item_quantity" class="form-control" placeholder="0.000">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="bill_item_price" class="form-label font-poppins">Fiyat</label>
-                                <input type="number" step="0.001" name="bill_item_price" class="form-control" placeholder="0.000">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="bill_item_vat" class="form-label font-poppins">KDV (%)</label>
-                                <input type="number" step="0.01" name="bill_item_vat" class="form-control" placeholder="0.00">
-                            </div>
-                        </div>
-            
-                        <div class="row g-3 mt-3">
-                            <div class="col-md-4">
-                                <label for="bill_item_discount_1" class="form-label font-poppins">İndirim 1 (%)</label>
-                                <input type="number" step="0.01" name="bill_item_discount_1" class="form-control" placeholder="0.00">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="bill_item_discount_2" class="form-label font-poppins">İndirim 2 (%)</label>
-                                <input type="number" step="0.01" name="bill_item_discount_2" class="form-control" placeholder="0.00">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="bill_item_discount_3" class="form-label font-poppins">İndirim 3 (%)</label>
-                                <input type="number" step="0.01" name="bill_item_discount_3" class="form-control" placeholder="0.00">
-                            </div>
-                        </div>
-            
-                        <div id="serial_number_group" class="form-group mt-3 d-none">
-                            <input class="form-control" id="serial_number" name="serial_number" type="number" step="0.001" placeholder="Seri Numarası">
-                        </div>
-                        <div id="barcode_1_group" class="form-group d-none mt-3">
-                            <input class="form-control" id="barcode-1" name="barcode_1" type="number" placeholder="Barkod - 1">
-                        </div>
-                        <div id="barcode_2_group" class="form-group d-none mt-3">
-                            <input class="form-control" id="barcode-2" name="barcode_2" type="number" placeholder="Barkod - 2">
-                        </div>
-                        <div id="barcode_3_group" class="form-group d-none mt-3">
-                            <input class="form-control" id="barcode-3" name="barcode_3" type="number" placeholder="Barkod - 3">
-                        </div>
-            
-                        <div class="d-flex justify-content-end mt-4">
-                            {% if not bill.is_paid %}
-                            <button id="addItemBtn" type="submit" class="btn btn-primary">
-                                Kaydet
-                            </button>
-                            {% else %}
-                            <button id="addItemBtn" type="button" class="btn btn-danger" disabled>
-                                Ödenen Faturaya Kalem Eklenemez
-                            </button>
-                            {% endif %}
-                        </div>
-                    </form>
-                </div>
-            </div>
-            {% endif %}
-            <script>
-                $(document).ready(function() {
-                    // Initialize Select2
-                    $('#bill_item_product').select2();
-            
-                    // Handle change event for Select2
-                    $('#bill_item_product').on('change', function() {
-                        const selectedOption = $(this).find('option:selected');
-                        const isInventory = selectedOption.data('is-inventory') === true;
-                        const quantityInput = $('#bill_item_quantity');
-                        const serialNumberGroup = $('#serial_number_group');
-                        const barcode1Group = $('#barcode_1_group');
-                        const barcode2Group = $('#barcode_2_group');
-                        const barcode3Group = $('#barcode_3_group');
-                        const isInventoryProductSpan = $('#is-inventory-product-span');
-            
-                        if (isInventory) {
-                            quantityInput.val(1).prop('readonly', true);
-                            serialNumberGroup.removeClass('d-none');
-                            barcode1Group.removeClass('d-none');
-                            barcode2Group.removeClass('d-none');
-                            barcode3Group.removeClass('d-none');
-                            isInventoryProductSpan.removeClass('d-none');
-                        } else {
-                            quantityInput.val('').prop('readonly', false);
-                            serialNumberGroup.addClass('d-none');
-                            barcode1Group.addClass('d-none');
-                            barcode2Group.addClass('d-none');
-                            barcode3Group.addClass('d-none');
-                            isInventoryProductSpan.addClass('d-none');
-                        }
-                    });
-                });
-            </script>
-            <script>
-                $(document).ready(function() {
-                    // Ürün ekleme işlemi
-                    $('#addItemBtn').on('click', function(event) {
-                        event.preventDefault(); // Varsayılan form gönderimini engelle
-                        var formData = $('#addItemForm').serialize();
-            
-                        $.ajax({
-                            type: 'POST',
-                            url: $('#addItemForm').attr('action'),
-                            data: formData,
-                            dataType: 'json',
-                            success: function(response) {
-                                console.log(response);  // Dönen cevabı kontrol et
-                                if (response.error) {
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Hata',
-                                        text: response.error
-                                    });
-                                } else {
-                                    // Bill item ID'nin undefined olmadığını kontrol edin
-                                    var billItemId = response.bill_item_id || 'No ID'; // Geçici bir çözüm olarak 'No ID' ekledik
-                                    var newRow = `
-                                        <tr data-id="${billItemId}">
-                                            <td>${response.bill_item_product}</td>
-                                            <td>${response.bill_item_quantity}</td>
-                                            <td>${response.bill_item_price}</td>
-                                            <td>${response.bill_item_discount_1}</td>
-                                            <td>${response.bill_item_discount_2}</td>
-                                            <td>${response.bill_item_discount_3}</td>
-                                            <td>${response.bill_item_vat}</td>
-                                            <td>${response.row_total}</td>
-                                            <td class="text-center">
-                                                <i class="fa-solid fa-square-minus remove-item" style="cursor: pointer; color: red;"></i>
-                                            </td>
-                                        </tr>`;
-                                    $('#billTable tbody').append(newRow);
-                                    $('#totalAmount').text(response.new_total_amount);
-                                    $('#addItemForm')[0].reset(); // Formu temizle
-            
-                                    // Option seçeneğini sıfırla
-                                    $('#bill_item_product').val(null).trigger('change');
-                                }
-                            },
-                            error: function(xhr, status, error) {
-                                console.log('Error:', xhr.responseText);
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Hata',
-                                    text: 'Bir hata oluştu!'
-                                });
-                            }
-                        });
-                    });
-            
-                    // Ürün silme işlemi
-                    $('#billTable').on('click', '.remove-item', function() {
-                        var row = $(this).closest('tr'); // Tıklanan satırı bul
-                        var itemId = row.data('id'); // Satırdan öğe ID'sini al
-            
-                        if (!itemId) {
-                            console.log('Silinecek öğe ID\'si alınamadı!');
-                            return;
-                        }
-            
-                        $.ajax({
-                            type: 'POST',
-                            url: '/delete-item/', // Sunucuya gönderilecek URL
-                            data: {
-                                'item_id': itemId,
-                                'csrfmiddlewaretoken': '{{ csrf_token }}'
-                            },
-                            dataType: 'json',
-                            success: function(response) {
-                                if (response.success) {
-                                    row.remove(); // Başarılıysa satırı kaldır
-                                    $('#totalAmount').text(response.new_total_amount); // Yeni toplamı güncelle
-                                } else {
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Hata',
-                                        text: response.error
-                                    });
-                                }
-                            },
-                            error: function(xhr, status, error) {
-                                console.log('Error:', xhr.responseText);
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Hata',
-                                    text: 'Silme işlemi sırasında bir hata oluştu!'
-                                });
-                            }
-                        });
-                    });
-                });
-            </script>
+            <style>
+                .deleted_bill_title{
+                    text-align: center;
+                    background-color: #F39C12;
+                    border-radius: 50px;
+                }
+             </style>
 {% endblock content %}

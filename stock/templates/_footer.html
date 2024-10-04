@@ -1,172 +1,249 @@
 <head>
-	<script src="https://kit.fontawesome.com/3b161c540c.js" crossorigin="anonymous"></script>
+  <script src="https://kit.fontawesome.com/3b161c540c.js" crossorigin="anonymous"></script>
 </head>
+<style>
+  #error-report-modal .modal-header {
+    background-color: #c0392b;
+    color: white;
+    font-weight: bold;
+  }
+  #error-report-modal .btn-close {
+    color: white;
+    font-weight: bolder;
+  }
+  #error-report-modal .form-label {
+    font-family: 'Poppins', sans-serif;
+    font-weight: bolder;
+  }
+</style>
+<!-- Error Report Modal Start -->
+<div class="modal fade" id="error-report-modal" tabindex="-1" aria-labelledby="errorReportModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="errorReportModalLabel"><strong>Hata Bildir</strong></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+	  <form action="{% url 'hata_bildir' %}" method="POST" enctype="multipart/form-data">
+		{% csrf_token %}
+      <div class="modal-body">
+        <form id="error-report-form">
+          <div class="mb-3">
+            <label for="error-title" class="form-label">Hata Başlığı :</label>
+            <input type="text" class="form-control" name="error_title"id="error-title" placeholder="Hatanın başlığını girin" required />
+          </div>
+          <div class="mb-3">
+            <label for="error-description" class="form-label">Hata Açıklaması :</label>
+            <textarea class="form-control" name="error_description" id="error-description" rows="5" placeholder="Hatanın detaylarını girin" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="error-screenshot" class="form-label">Ekran Görüntüsü (isteğe bağlı) :</label>
+            <input type="file" class="form-control" name="error_screenshot" id="error-screenshot" accept="image/*" />
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary">Gönder</button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+	</form>
+    </div>
+  </div>
+</div>
+<!-- Error Report Modal End -->
 
 <body>
-	<footer class="footer">
-		<div class="container row">
-			<div class="footer-col">
-				<h4>company</h4>
-				<ul>
-					<li><a href="#">Hakkımızda</a></li>
-					<li><a href="#">Servislerimiz</a></li>
-					<li><a href="#">Politikalarımız</a></li>
-					<li><a href="#">Bize Ulaşın</a></li>
-                    
-				</ul>
-			</div>
-			<div class="footer-col">
-				<h4>Destek Konuları</h4>
-				<ul>
-					<li><a href="#">s.s.s</a></li>
-					<li><a href="#">Hatalar</a></li>
-					<li><a href="#">Hata Bildir</a></li>
-					<li><a href="#">Sipariş Detayları</a></li>
-					<li><a href="#">Ödeme Seçenekleri</a></li>
-				</ul>
-			</div>
-			<div class="footer-col">
-				<h4>bize ulaşın</h4>
-				<ul>
-					<li><a href="#"><i class="fa-regular fa-envelope"></i> info@infossoft.com.tr</a></li>
-					<li><a href="#"><i class="fa-solid fa-phone"></i> 0242424242</a></li>
-					<li><a href="#"><i class="fa-brands fa-chrome"></i> ssoft.com.tr</a></li>
-					<li><a href="#">all version</a></li>
-				</ul>
-			</div>
-			<div class="footer-col">
-				<h4>bizi takip edin</h4>
-				<div class="social-links">
-					<a href="#"><i class="fa-brands fa-facebook-f"></i></a>
-					<a href="#"><i class="fa-brands fa-x-twitter"></i></a>
-					<a href="#"><i class="fa-brands fa-instagram"></i></a>
-					<a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
-				</div>
-			</div>
-		</div>
-	</footer>
+  <footer class="footer">
+    <div class="container row">
+      <div class="footer-col">
+        <h4>company</h4>
+        <ul>
+          <li>
+            <a href="#">Hakkımızda</a>
+          </li>
+          <li>
+            <a href="#">Servislerimiz</a>
+          </li>
+          <li>
+            <a href="#">Politikalarımız</a>
+          </li>
+          <li>
+            <a href="#">Bize Ulaşın</a>
+          </li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Destek Konuları</h4>
+        <ul>
+          <li>
+            <a href="#">s.s.s</a>
+          </li>
+          <li>
+            <a href="#">Hatalar</a>
+          </li>
+          <li>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#error-report-modal">Hata Bildir</a>
+          </li>
+          <li>
+            <a href="#">Sipariş Detayları</a>
+          </li>
+          <li>
+            <a href="#">Ödeme Seçenekleri</a>
+          </li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>bize ulaşın</h4>
+        <ul>
+          <li>
+            <a href="#"><i class="fa-regular fa-envelope"></i> info@infossoft.com.tr</a>
+          </li>
+          <li>
+            <a href="#"><i class="fa-solid fa-phone"></i> 0242424242</a>
+          </li>
+          <li>
+            <a href="#"><i class="fa-brands fa-chrome"></i> ssoft.com.tr</a>
+          </li>
+          <li>
+            <a href="#">all version</a>
+          </li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>bizi takip edin</h4>
+        <div class="social-links">
+          <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
+          <a href="#"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+        </div>
+      </div>
+    </div>
+  </footer>
 </body>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
-*,
-*::before,
-*::after {
-	box-sizing: border-box;
-}
-
-* {
-	margin: 0;
-	padding: 0;
-}
-
-body {
-	line-height: 1.5;
-	font-family: 'Poppins', sans-serif;
-}
-
-.footer {
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+  
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    line-height: 1.5;
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .footer {
     margin-top: 600px; /* Footer'ı sayfanın en altında tutar */
     background-color: rgba(255, 255, 255, 0.95);
     padding: 80px 0;
-}
-
-.container {
-	max-width: 1170px;
-	margin: auto;
-}
-
-.row {
-	display: flex;
-	flex-wrap: wrap;
-}
-
-ul {
-	list-style: none;
-}
-
-.footer-col {
-	width: 25%;
-	padding: 0 15px;
-}
-
-.footer-col h4 {
-	font-size: 18px;
-	color: black;
-	margin-bottom: 35px;
-	font-weight: 500;
-	position: relative;
-}
-
-.footer-col h4::before {
-	content: "";
-	position: absolute;
-	left: 0;
-	bottom: -10px;
-	background-color: #F6FB7A;
-	width: 50px;
-	height: 2px;
-}
-/* List item'ların altındaki çizgi */
-.footer-col ul li::after {
-    content: "";
+  }
+  
+  .container {
+    max-width: 1170px;
+    margin: auto;
+  }
+  
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  ul {
+    list-style: none;
+  }
+  
+  .footer-col {
+    width: 25%;
+    padding: 0 15px;
+  }
+  
+  .footer-col h4 {
+    font-size: 18px;
+    color: black;
+    margin-bottom: 35px;
+    font-weight: 500;
+    position: relative;
+  }
+  
+  .footer-col h4::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -10px;
+    background-color: #f6fb7a;
+    width: 50px;
+    height: 2px;
+  }
+  /* List item'ların altındaki çizgi */
+  .footer-col ul li::after {
+    content: '';
     display: block;
-    background-color: #B60071;
+    background-color: #b60071;
     height: 1px;
     width: 50%;
     margin-top: 5px;
-}
-
-/* Son item için çizgi eklemeyi kaldır */
-.footer-col ul li:last-child::after {
+  }
+  
+  /* Son item için çizgi eklemeyi kaldır */
+  .footer-col ul li:last-child::after {
     display: none;
-}
-.footer-col ul li:not(:last-child) {
-	margin-bottom: 10px;
-}
-
-.footer-col ul li a {
-	color: #131842;
-	display: block;
-	font-size: 1rem;
-	font-weight: 300;
-	text-decoration: none;
-	transition: all 0.3s ease;
-}
-
-.footer-col ul li a:hover {
-	color: #134B70;
-	padding-left: 7px;
-}
-
-.footer-col .social-links a {
-	color: #FFF;
-	background-color: #201E43;
-	display: inline-block;
-	height: 40px;
-	width: 40px;
-	border-radius: 50%;
-	text-align: center;
-	margin: 0 10px 10px 0;
-	line-height: 40px;
-	transition: all 0.5s ease;
-}
-
-.footer-col .social-links a:hover {
-	color: #151515;
-	background-color: green;
-}
-
-@media(max-width: 767px) {
-	.footer-col {
-		width: 50%;
-		margin-bottom: 30px;
-	}
-}
-
-@media(max-width: 574px) {
-	.footer-col {
-		width: 100%;
-	}
-}
+  }
+  .footer-col ul li:not(:last-child) {
+    margin-bottom: 10px;
+  }
+  
+  .footer-col ul li a {
+    color: #131842;
+    display: block;
+    font-size: 1rem;
+    font-weight: 300;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+  
+  .footer-col ul li a:hover {
+    color: #134b70;
+    padding-left: 7px;
+  }
+  
+  .footer-col .social-links a {
+    color: #fff;
+    background-color: #201e43;
+    display: inline-block;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    text-align: center;
+    margin: 0 10px 10px 0;
+    line-height: 40px;
+    transition: all 0.5s ease;
+  }
+  
+  .footer-col .social-links a:hover {
+    color: #151515;
+    background-color: green;
+  }
+  
+  @media (max-width: 767px) {
+    .footer-col {
+      width: 50%;
+      margin-bottom: 30px;
+    }
+  }
+  
+  @media (max-width: 574px) {
+    .footer-col {
+      width: 100%;
+    }
+  }
 </style>

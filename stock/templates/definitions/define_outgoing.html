@@ -1,20 +1,30 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
+{% block title %}
+{{ company.code }} | Çıkış Tanımla
+{% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'outgoing.png' %}">
+
+{% endblock icon %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-light">
+                <div class="card-header bg-coral text-white">
                     <h4>Çıkış Nedeni Oluştur veya Güncelle</h4>
                 </div>
                 <div class="card-body">
                     <form action="{% url 'cikis_nedeni_olustur' company.code %}" method="POST">
                         {% csrf_token %}
-                        <div class="input-group mb-3">
+                        <div class="mb-3">
                             <input type="hidden" id="reason_id" name="reason_id">
-                            <input type="text" id="outgoing_reason" name="outgoing_reason" class="form-control" placeholder="Çıkış Nedeni" required>
-                            <button type="submit" class="btn btn-success">Kaydet</button>
+                            <label for="outgoing_reason" class="form-label">Çıkış Nedeni</label>
+                            <input type="text" id="outgoing_reason" name="outgoing_reason" class="form-control" placeholder="Çıkış nedenini giriniz" required>
+                            <div class="invalid-feedback">Çıkış nedenini giriniz.</div>
                         </div>
+                        <button type="submit" class="btn btn-coral">Kaydet</button>
                     </form>
                 </div>
             </div>
@@ -22,9 +32,9 @@
     </div>
 
     <div class="row justify-content-center mt-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-secondary text-white">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-light">
+                <div class="card-header bg-dark-blue text-white">
                     <h4>Mevcut Çıkış Nedenleri</h4>
                 </div>
                 <div class="card-body">
@@ -32,23 +42,22 @@
                         {% for reason in reasons %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span>{{ reason.name }}</span>
-                            <span class="badge {{ reason.is_active|yesno:'bg-success,text-white bg-danger' }}">{{ reason.is_active|yesno:"Active,Inactive" }}</span>
+                            <span class="badge {{ reason.is_active|yesno:'bg-success text-dark bg-danger text-white' }}">{{ reason.is_active|yesno:"Aktif,Pasif" }}</span>
                             <div class="btn-group" role="group">
-                                <form action="{% url 'cikis_nedenini_sil' company.code reason.id %}" method="POST">
+                                <form action="{% url 'cikis_nedenini_sil' company.code reason.id %}" method="POST" style="display:inline;">
                                     {% csrf_token %}
-                                    <button class="btn btn-sm btn-delete"style="margin-right: 4px;">Sil</button>
+                                    <button type="submit" class="btn btn-sm btn-danger" style="margin-right: 4px;">Sil</button>
                                 </form>
-                                <button class="btn btn-sm btn-update" style="margin-right: 4px;" data-bs-toggle="modal" data-bs-target="#editOutgoing_{{reason.id}}">Düzenle</button>
-                                <a href="{% url 'cikis_sebebini_degistir' reason.id %}" class="btn btn-sm btn-status">Durumu Değiştir</a>
+                                <button type="button" class="btn btn-sm btn-warning" style="margin-right: 4px;" data-bs-toggle="modal" data-bs-target="#editOutgoing_{{ reason.id }}">Düzenle</button>
                             </div>
                         </li>
 
                         <!-- Modal -->
-                        <div class="modal fade" id="editOutgoing_{{reason.id}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <div class="modal fade" id="editOutgoing_{{ reason.id }}" tabindex="-1" aria-labelledby="editOutgoingLabel_{{ reason.id }}" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="exampleModalLabel">Çıkış Nedeni Düzenle</h5>
+                                    <div class="modal-header bg-dark-blue text-white">
+                                        <h5 class="modal-title" id="editOutgoingLabel_{{ reason.id }}">Çıkış Nedeni Düzenle</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                     <form action="{% url 'cikis_nedenini_güncelle' company.code reason.id %}" method="POST">
@@ -58,6 +67,10 @@
                                             <div class="mb-3">
                                                 <label for="outgoing_reason_{{ reason.id }}" class="form-label">Çıkış Nedeni</label>
                                                 <input type="text" id="outgoing_reason_{{ reason.id }}" name="outgoing_reason" class="form-control" value="{{ reason.name }}" required>
+                                            </div>
+                                            <div class="mb-3 form-check">
+                                                <input type="checkbox" id="is_active_{{ reason.id }}" name="is_active" class="form-check-input" {% if reason.is_active %}checked{% endif %}>
+                                                <label for="is_active_{{ reason.id }}" class="form-check-label">Aktif mi?</label>
                                             </div>
                                         </div>
                                         <div class="modal-footer">
@@ -75,33 +88,88 @@
         </div>
     </div>
 </div>
+{% if unit %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const unitModal = new bootstrap.Modal(document.getElementById('unitModal'));
+
+        document.querySelectorAll('.btn-change-status').forEach(button => {
+            button.addEventListener('click', function() {
+                const unitId = this.getAttribute('data-id');
+                const unitName = this.getAttribute('data-name');
+                const unitStatus = this.getAttribute('data-status');
+
+                // Formun action URL'sini güncelle
+                const form = document.querySelector('#unitModal form');
+                form.action = `{% url 'birimi_guncelle' company.code 'PLACEHOLDER_ID' %}`.replace('PLACEHOLDER_ID', unitId);
+
+                // Modal içeriğini güncelle
+                document.getElementById('unit_id').value = unitId;
+                document.getElementById('modal_unit_name').value = unitName;
+                document.getElementById('modal_status').value = unitStatus ? 'True' : 'False';
+
+                unitModal.show();
+            });
+        });
+    });
+</script>
+{% endif %}
 <style>
-    .btn-sm{
-        border-radius: 30px!important;
+    .card {
+        border-radius: 8px;
+        background-color: #FFFFFF; /* Beyaz arka plan */
     }
-    .btn-update{
-        color: white;
-        background-color: #6A9C89;
+    .card-header {
+        background-color: #FF6F61; /* Mercan */
     }
-    .btn-update:hover{
-        color: white;
-        background-color: #6A9C89;
+    .btn-coral {
+        background-color: #FF6F61; /* Mercan */
+        color: #FFFFFF;
     }
-    .btn-delete{
-        color: white;
-        background-color: #921A40;
+    .btn-coral:hover {
+        background-color: #ffa061; /* Mercan hover */
+        color: #FFFFFF;
     }
-    .btn-delete:hover{
-        color: white;
-        background-color: #921A40;
+    .btn-warning {
+        background-color: #F7DC6F; /* Açık Sarı */
+        color: #212529;
     }
-    .btn-status{
-        color: white;
-        background-color: #FFAF00;
+    .btn-warning:hover {
+        background-color: #F7DC6F; /* Açık Sarı hover */
+        color: #212529;
     }
-    .btn-status:hover{
-        color: white;
-        background-color: #FFAF00;
+    .btn-danger {
+        background-color: #C0392B; /* Koyu Kırmızı */
+        color: #FFFFFF;
+    }
+    .btn-danger:hover {
+        background-color: #A93226; /* Koyu Kırmızı hover */
+        color: #FFFFFF;
+    }
+    .True {
+        background-color: #2ECC71; /* Yeşil */
+        color: #FFFFFF;
+    }
+    .False {
+        background-color: #C0392B; /* Koyu Kırmızı */
+        color: #FFFFFF;
+    }
+    .bg-dark-blue {
+        background-color: #2E4053; /* Koyu Lacivert */
+    }
+    .form-label {
+        font-weight: 500;
+    }
+    .modal-content {
+        background-color: #FFFFFF; /* Beyaz modal arka planı */
+    }
+    .modal-header {
+        background-color: #2E4053; /* Koyu Lacivert */
+        color: #FFFFFF;
+    }
+    .list-group-item {
+        background-color: #ECF0F1; /* Açık Gri arka plan */
+        border: 1px solid #BDC3C7; /* Açık Gri kenar */
     }
 </style>
 {% endblock content %}

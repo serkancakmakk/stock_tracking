@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -39,9 +40,8 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
 INSTALLED_APPS = [
-    
-    # 'stock.apps.StockConfig',
     'channels',
     'django_tables2',
     'stock',
@@ -65,6 +65,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+AUTHENTICATION_BACKENDS = [
+    
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 ROOT_URLCONF = 'stock_tracking.urls'
 # Static files (CSS, JavaScript, Images)
@@ -84,7 +88,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'stock.context_processors.waiting_for_support',
-                'stock.context_processors.user_permissions',
+                # 'stock.context_processors.user_permissions',
                 'stock.context_processors.today_date',
                 'stock.context_processors.low_stock_count',
                 'django.template.context_processors.debug',
@@ -142,7 +146,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'tr-TR'
 
 TIME_ZONE = 'UTC'
 

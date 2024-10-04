@@ -1,13 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
 {% load tz %}
-
+{% load static %}
+{% block title %}
+Vade Tarihi Yaklaşan Faturalar | {{company.code}}
+{% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'calendar.png' %}">
+{% endblock icon %}
 <div class="container my-4 profile-content">
     <div class="row">
         <div class="col-md-4">
             <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title">Expiry Date Report</h3>
+                <div class="card-header bg-expiry text-white">
+                    <h3 class="card-title">Tarihi Yaklaşan Faturalar</h3>
                 </div>
                 <div class="card-body">
                     <form action="{% url 'vade_tarihi_gelen_faturalar' company.code None %}" method="POST" class="form-inline">
@@ -15,7 +21,7 @@
                         <div class="form-group mx-sm-3 mb-2">
                             <label for="expiry_date" class="sr-only">Expiry Date</label>
                             <input type="date" value="{% now "Y-m-d" %}" class="form-control" id="expiry_date" name="expiry_date" placeholder="Select expiry date">                        </div>
-                        <button type="submit" class="btn btn-primary mb-2">Getir</button>
+                        <button type="submit" class="btn btn-date-button mb-2">Getir</button>
                     </form>
                 </div>
             </div>
@@ -32,7 +38,8 @@
                                 <table class="table table-striped">
                                     <thead>
                                         <tr>
-                                            <th scope="col">Bill Number</th>
+                                            <th scope="col">Fatura Numarası</th>
+                                            <th scope="col">Toplam Tutar</th>
                                             <th scope="col">Öde</th>
                                             <!-- Add other relevant columns -->
                                         </tr>
@@ -42,10 +49,34 @@
                                         <tr>
                                             <td>{{ bill.number }}</td>
                                             <td>
-                                                <form method="POST" action="{% url 'fatura_öde' bill.id %}">
+                                                {{ bill.total_amount }} ₺
+                                            </td>
+                                            <td>
+                                                <form id="payment-form" method="POST" action="{% url 'fatura_ödemesi' bill.id company.code%}">
                                                     {% csrf_token %}
-                                                    <button type="submit" id="paid_ico" title="Öde" class="fa-solid fa-wallet"></button>
+                                                    <button type="submit" id="paid_ico" title="Öde" class="fa-solid fa-file-invoice"></button>
                                                 </form>
+                                                
+                                                <script>
+                                                    document.getElementById('payment-form').addEventListener('submit', function(event) {
+                                                        event.preventDefault(); // Formun otomatik olarak gönderilmesini engelle
+                                                
+                                                        Swal.fire({
+                                                            title: 'Faturayı ödemek istiyor musunuz?',
+                                                            imageUrl: '{% static 'bill.png' %}', // Özel ikon URL'si
+                                                            imageWidth: 256,
+                                                            imageHeight: 256,
+                                                            showCancelButton: true,
+                                                            confirmButtonText: 'Evet, öde',
+                                                            cancelButtonText: 'Hayır, iptal et'
+                                                        }).then((result) => {
+                                                            if (result.isConfirmed) {
+                                                                // Kullanıcı onayladıysa formu gönder
+                                                                this.submit();
+                                                            }
+                                                        });
+                                                    });
+                                                </script>
                                             </td>
                                             <!-- Add other relevant columns -->
                                         </tr>
@@ -80,7 +111,7 @@
                                         <tr>
                                             <td>{{ bill.number }}</td>
                                             <td>
-                                                <form method="POST" action="{% url 'fatura_ödemesini_geri_al' bill.id %}">
+                                                <form method="POST" action="{% url 'fatura_ödemesi' bill.id company.code %}">
                                                     {% csrf_token %}
                                                     <button type="submit" id="unpaid_ico" title="Ödemeyi Geri Al" class="fa-solid fa-wallet"></button>
                                                 </form>
@@ -101,6 +132,17 @@
     </div>
 </div>
 <style>
+    .btn-date-button{
+        background-color: #FF6F61;
+        color:#2E4053;
+    }
+    .btn-date-button:hover{
+        background-color: #ffa061;
+        color:white;
+    }
+    .bg-expiry{
+        background-color: #FF6F61;
+    }
     .text-white{
         color:white;
     }

@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<head>
+    <style>
+        @media screen and (max-width: 375px) {
+            .mt-5 {
+              width: 50%;
+            }
+          }
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+        .font-kanit {
+            font-family: 'Kanit', sans-serif;
+        }
+
+        .font-poppins {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .form-control, .select2-container--default .select2-selection--single {
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+            width: 100%; /* Ensure select2 is 100% width */
+            height: 2.5rem; /* Consistent height for select2 */
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 2.5rem; /* Vertically center the text */
+            padding-left: 0.75rem; /* Padding to match inputs */
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 2.5rem;
+            top: 0;
+            right: 0.5rem; /* Adjust arrow position */
+        }
+
+        .select2-dropdown {
+            border-radius: 0.25rem; /* Match border radius */
+        }
+
+        body {
+            background-image: url("{% static 'us_dollars.png' %}");
+            background-color: wheat;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-position: center;
+        }
+
+        .navbar {
+            filter: blur(4px);
+            transition: filter 0.3s ease;
+        }
+
+        .navbar:hover {
+            filter: blur(0);
+        }
+
+        .form-container {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .form-control {
+            border: none;
+            border-bottom: 2px solid #ccc;
+            border-radius: 0;
+            box-shadow: none;
+            width: 100%;
+            padding: 0.5rem 0;
+            transition: border-color 0.3s;
+            background-color: transparent;
+        }
+
+        .form-control:focus {
+            border-bottom-color: #007bff;
+            outline: none;
+        }
+
+        .form-label {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            color: #999;
+        }
+
+        .form-control:focus + .form-label,
+        .form-control:not(:placeholder-shown) + .form-label {
+            top: -10px;
+            font-size: 0.75rem;
+            color: #068c4b;
+        }
+
+        .form-select {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: none;
+            width: 100%;
+            padding: 0.5rem 0;
+            transition: border-color 0.3s;
+            background-color: #fff;
+        }
+
+        .form-select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            transition: background 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+</head>
+
+{% if messages %}
+    <div class="alert alert-info">
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="container mt-5">
+    <h2 class="mb-4 text-center font-kanit">Fatura Oluştur & Düzenle</h2>
+    <form class="form-container" method="POST" action="{% url 'fatura_olustur' company.code %}">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-12 mb-3 form-group">
+                <input class="form-control" id="bill_number" name="bill_number" type="text" required placeholder=" ">
+                <label for="bill_number" class="font-poppins form-label">Fatura Numarası</label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="form-group">
+                    <label for="bill_seller" class="font-poppins">Satıcı</label>
+                    <select class="form-control form-select" id="bill_seller" name="bill_seller" required>
+                        <option selected disabled>Seçiniz...</option>
+                        {% for seller in sellers %}
+                            <option value="{{ seller.id }}" {% if seller.id == bill.seller.id %}selected{% endif %}>{{ seller.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="expiry_date" class="font-poppins">Vade Tarihi</label>
+                    <input type="date" class="form-control" id="expiry_date" name="bill_expiry_date" value="{{ bill.expiry_date }}" required placeholder=" ">
+                </div>
+                <div class="form-group">
+                    <label for="bill_product" class="font-poppins">Ürün</label>
+                    <select class="form-control form-select" id="bill_product" name="bill_item_product" required>
+                        <option selected disabled>Seçiniz...</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}" data-is-inventory="{{ product.is_inventory|yesno:'true,false' }}">{{ product.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input class="form-control" id="bill_item_quantity" name="bill_item_quantity" type="number" step="0.001" required placeholder=" ">
+                    <label for="bill_item_quantity" class="font-poppins form-label">Miktar</label>
+                    <span class="badge bg-info d-none" id="is-inventory-product-span">Seri Numaralı Ürünlerde Tek Tek Giriş Yapılabilir.</span>
+                </div>
+                <div class="form-group">
+                    <input class="form-control" id="bill_item_price" name="bill_item_price" type="number" step="0.001" required placeholder=" ">
+                    <label for="bill_item_price" class="font-poppins form-label">Fiyat</label>
+                </div>
+                <div class="form-group">
+                    <input class="form-control" id="bill_item_discount_1" name="bill_item_discount_1" type="number" step="0.001" placeholder=" ">
+                    <label for="bill_item_discount_1" class="font-poppins form-label">İskonto 1</label>
+                </div>
+                <div class="form-group">
+                    <input class="form-control" id="bill_item_discount_2" name="bill_item_discount_2" type="number" step="0.001" placeholder=" ">
+                    <label for="bill_item_discount_2" class="font-poppins form-label">İskonto 2</label>
+                </div>
+                <div class="form-group">
+                    <input class="form-control" id="bill_item_discount_3" name="bill_item_discount_3" type="number" step="0.001" placeholder=" ">
+                    <label for="bill_item_discount_3" class="font-poppins form-label">İskonto 3</label>
+                </div>
+                <div class="form-group">
+                    <input class="form-control" id="bill_item_vat" name="bill_item_vat" type="number" step="0.001" placeholder=" ">
+                    <label for="bill_item_vat" class="font-poppins form-label">KDV</label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group d-none" id="serial_number_group">
+                    <input class="form-control" id="serial_number" name="serial_number" type="number" step="0.001"  placeholder=" ">
+                    <label for="serial_number" class="font-poppins form-label">Seri Numarası</label>
+                </div>
+                <div class="form-group d-none" id="barcode_1_group">
+                    <input class="form-control" id="barcode-1" name="barcode_1" type="number" placeholder=" ">
+                    <label for="barcode-1" class="font-poppins form-label">Barkod - 1</label>
+                </div>
+                <div class="form-group d-none" id="barcode_2_group">
+                    <input class="form-control" id="barcode-2" name="barcode_2" type="number"  placeholder=" ">
+                    <label for="barcode-2" class="font-poppins form-label">Barkod - 2</label>
+                </div>
+                <div class="form-group d-none" id="barcode_3_group">
+                    <input class="form-control" id="barcode-3" name="barcode_3" type="number"  placeholder=" ">
+                    <label for="barcode-3" class="font-poppins form-label">Barkod - 3</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 text-right">
+                <button type="submit" class="btn btn-primary mt-2">Submit</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+    $(document).ready(function() {
+        $('#bill_seller, #bill_product').select2({
+            width: '100%' // Ensures select2 dropdowns are 100% width
+        });
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        // Initialize Select2
+        $('#bill_product').select2();
+
+        // Handle change event for Select2
+        $('#bill_product').on('change', function() {
+            const selectedOption = $(this).find('option:selected');
+            const isInventory = selectedOption.data('is-inventory') === true;
+            const quantityInput = $('#bill_item_quantity');
+            const serialNumberGroup = $('#serial_number_group');
+            const barcode1Group = $('#barcode_1_group');
+            const barcode2Group = $('#barcode_2_group');
+            const barcode3Group = $('#barcode_3_group');
+            const isInventoryProductSpan = $('#is-inventory-product-span');
+
+            if (isInventory) {
+                quantityInput.val(1).prop('readonly', true);
+                serialNumberGroup.removeClass('d-none');
+                barcode1Group.removeClass('d-none');
+                barcode2Group.removeClass('d-none');
+                barcode3Group.removeClass('d-none');
+                isInventoryProductSpan.removeClass('d-none');
+            } else {
+                quantityInput.val('').prop('readonly', false);
+                serialNumberGroup.addClass('d-none');
+                barcode1Group.addClass('d-none');
+                barcode2Group.addClass('d-none');
+                barcode3Group.addClass('d-none');
+                isInventoryProductSpan.addClass('d-none');
+            }
+        });
+    });
+</script>
+{% endblock content %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+{% block title %}
+Kritik Stok Raporu | {{company.code}}
+{% endblock title %}
+{% block icon %}
+<link rel="shortcut icon" href="{% static 'report.png' %}" type="image/x-icon">
+{% endblock icon %}
+    <div class="container mt-5">
+        <h2 class="font-poppins text-center" id="stock_title">Kritik Stok Seviyesinin Altındaki Ürünler</h2>
+        <h6 id="stock_tagline">Kontrol edilen şirket kodu - <strong> {{company.code}}</strong></h6>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th class="text-center">#</th>
+                    <th>Ürün Adı</th>
+                    <th>Mevcut Stok</th>
+                    <th>Kritik Stok Seviyesi</th>
+                    <th>Kategori</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in critical_products %}
+                <tr>
+                    <td class="text-center"><i class="fa-solid fa-triangle-exclamation fa-beat icons"></i></td>
+                    <td>{{ product.name }}</td>
+                    <td class="current_stock">{{ product.current_stock }}</td>
+                    <td>{{ product.critical_stock_level }}</td>
+                    <td>{{ product.category.name }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">Kritik seviyenin altında ürün bulunmamaktadır.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+<style>
+    thead th{
+        background-color: #FF6F61 !important;
+        color:#ECF0F1 !important;
+    }
+    .current_stock{
+        background-color: #C0392B !important;
+        font-weight: bold;
+        color: white !important;
+    }
+    .icons{
+        color:red;
+        text-align: ;
+    }
+</style>
+    {% endblock content %}

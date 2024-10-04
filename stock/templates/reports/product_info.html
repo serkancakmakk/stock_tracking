@@ -1,5 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'packing-list.png' %}">
+{% endblock icon %}
+{% block title %}
+Ürün Listesi | {{company.code}}
+{% endblock title %}
 <head>
     
 </head>
@@ -25,9 +32,10 @@
         color: #721c24; /* Dark red text */
     }
 </style>
-<div class="container">
+<div class="container mt-5">
     <div class="row">
-        <h1 class="text-center">Ürün Listesi</h1>
+        <h1 class="text-center font-poppins" id="stock_title">Ürün Listesi</h1>
+        <h6 id="stock_tagline">Kontrol edilen şirket # {{company.code}}</h6>
         <table class="product-table" id="product-table1">
             <thead>
                 <tr>

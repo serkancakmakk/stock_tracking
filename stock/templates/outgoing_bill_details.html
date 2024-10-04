@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+{% block title %}
+Çıkış Faturası | {{stock_transaction.number}} | {{company.code}}
+{% endblock title %}
+{% block icon %}
+<link rel="icon" type="image/x-icon" href="{% static 'bill-details.png' %}">
+{% endblock icon %}
+
+<div class="container mt-4">
+    <div class="invoice">
+        <div class="invoice-header">
+            <div class="row">
+                <div class="col-md-6">
+                    <h1>Fatura</h1>
+                    <p><strong>Firma Adı:</strong> {{company.name}}</p>
+                    <p><strong>Adres:</strong> {{company.address}}</p>
+                    <p><strong>Telefon:</strong> {{company.phone}}</p>
+                </div>
+                <div class="col-md-6 text-right">
+                    <p><strong>Fatura Numarası:</strong> {{ stock_transaction.number }}</p>
+                    <p><strong>İşlem Tarihi:</strong> {{ stock_transaction.processing_time|date:"d F Y H:i" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="invoice-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Çıkış Sebebi:</strong> {{ stock_transaction.outgoing_reason.name }}</p>
+                    <hr class="dotted_line">
+                    <p><strong>Ürün Adı:</strong> {{ stock_transaction.product.name }}</p>
+                    <hr class="dotted_line">
+                    <p><strong>Seri Numarası:</strong> {{ stock_transaction.serial_number }}</p>
+                    <hr class="dotted_line">
+                    <p><strong>Çıkış Miktarı:</strong> {{ stock_transaction.quantity }}</p>
+                    <hr class="dotted_line">
+                    <style>
+                        .dotted_line{
+                            border-top: 2px dotted #007bff;
+                            opacity: 1;
+                        }
+                    </style>
+                </div>
+                <div class="col-md-6 text-right">
+                    <h3>Toplam Tutar:</h3>
+                    <p class="total-amount">{{ stock_transaction.outgoing_total_amount|floatformat:2 }} TL</p>
+                </div>
+            </div>
+
+            {% if bill_items %}
+                <div class="invoice-items mt-4">
+                    <h4>Fatura Kalemleri</h4>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Ürün Adı</th>
+                                <th>Miktar</th>
+                                <th>Birim Fiyatı (TL)</th>
+                                <th>Toplam Fiyat (TL)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in bill_items %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.unit_price|floatformat:2 }}</td>
+                                <td>{{ item.total_price|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>Fatura kalemi bulunmamaktadır.</p>
+            {% endif %}
+        </div>
+
+        {% if not stock_transaction.is_paid %}
+            <div class="invoice-footer mt-4 text-right">
+                <form method="post" action="{% url 'delete_bill' stock_transaction.id company.code %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Faturayı Sil</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- CSS -->
+<style>
+    .invoice {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        font-family: Arial, sans-serif;
+    }
+    .invoice-header {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .invoice-header h1 {
+        margin: 0;
+        font-size: 28px;
+    }
+    .invoice-header p {
+        margin: 5px 0;
+    }
+    .invoice-body {
+        margin-bottom: 20px;
+    }
+    .invoice-items h4 {
+        margin-bottom: 15px;
+    }
+    .invoice-items .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .invoice-items th, .invoice-items td {
+        padding: 10px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+    .invoice-items th {
+        background-color: #f4f4f4;
+    }
+    .invoice-items td {
+        font-size: 14px;
+    }
+    .total-amount {
+        font-size: 24px;
+        font-weight: bold;
+        color: #007bff;
+    }
+    .invoice-footer {
+        margin-top: 20px;
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        border: none;
+        color: #fff;
+    }
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+</style>
+{% endblock content %}

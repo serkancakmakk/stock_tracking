@@ -23,16 +23,37 @@
                     <input type="text" name="address" class="form-control" id="seller_address" placeholder="Cari Adres">
                     <label for="seller_address">Cari Adres</label>
                 </div>
+                <div class="form-floating mb-4">
+                    <input type="text" name="phone" class="form-control" id="seller_address" placeholder="Cari Adres">
+                    <label for="seller_address">Cari Telefon</label>
+                </div>
+                <div class="form-floating mb-4">
+                    <input type="text" name="email" class="form-control" id="seller_address" placeholder="Cari Adres">
+                    <label for="seller_address">E-Mail</label>
+                </div>
                 <button type="submit" class="btn btn-save w-100">Cariyi Kaydet</button>
             </form>
         </div>
-        <div class="col-lg-8 mt-5">
-            <h4 class="mb-3">Tanımlı Cariler</h4>
-            <table class="table shadow-sm rounded overflow-hidden" style="background-color: #fff; border-collapse: separate; border-spacing: 0;">
+        <div class="col-lg-8 col-md-8 mt-5">
+            <div id="table-title">
+                <h4 class="mb-3 font-poppins">Tanımlı Cariler</h4>
+            </div>
+            <style>
+                #table-title{
+                    background-color: #FF6F61;
+                    text-align: center;
+                    width: 50%;
+                    font-weight: bold;
+                    border-radius: 50px;
+                }
+            </style>
+            <table class="table table-lg shadow-lg rounded overflow-hidden" style="background-color: #fff; border-collapse: separate; border-spacing: 0;">
                 <thead class="bg-primary text-white">
                     <tr>
                         <th class="p-3 text-start">Cari Adı</th>
                         <th class="p-3 text-start">Cari Adres</th>
+                        <th class="p-3 text-start">Cari Telefon</th>
+                        <th class="p-3 text-start">Cari E-Posta</th>
                         <th class="p-3 text-center">Cari Durum</th>
                         <th class="p-3 text-center">İşlemler</th>
                         <th class="p-3 text-center">Sil</th>
@@ -43,6 +64,8 @@
                     <tr class="align-middle" style="border-bottom: 1px solid #dee2e6;">
                         <td class="p-3">{{ seller.name }}</td>
                         <td class="p-3">{{ seller.address }}</td>
+                        <td class="p-3">{{ seller.phone }}</td>
+                        <td class="p-3">{{ seller.email }}</td>
                         <td class="text-center p-3">
                             {% if seller.status %}
                             <span class="badge bg-success">Aktif</span>
@@ -198,7 +221,7 @@
                 const form = document.getElementById('updateSellerForm');
                 const formData = new FormData(form);
     
-                fetch(`{% url 'cari_güncelle' company.code 0 %}`.replace('/0/', `/${sellerId}/`), {
+                fetch(`{% url 'cari_guncelle' company.code 0 %}`.replace('/0/', `/${sellerId}/`), {
                     method: 'POST',
                     body: formData,
                 })
