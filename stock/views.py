@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import date, timedelta, datetime
 from decimal import Decimal, InvalidOperation
 import random
 import timeit
@@ -1914,9 +1914,24 @@ def incoming_outgoing_reports(request, code):
     today = date.today()
     start_date_str = request.GET.get("start_date")
     end_date_str = request.GET.get("end_date")
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else today
-    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else today
-    end_date = datetime.combine(end_date, datetime.max.time())
+    
+    # Tarihleri kontrol eden try-except blokları
+    try:
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        else:
+            start_date = today
+        
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        else:
+            end_date = today
+        
+        end_date = datetime.combine(end_date, datetime.max.time())
+    
+    except ValueError:
+        messages.error(request, "Tarihler uygun formatta değil. Lütfen GG-AA-YYYY formatında giriniz.")
+        return redirect('stok_giris_cikislari', code=company.code)
 
     stock_transactions = StockTransactions.objects.filter(
         processing_time__range=(start_date, end_date), company=company
