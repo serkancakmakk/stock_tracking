@@ -30,14 +30,14 @@ from .forms import (
 )
 from django.db import models
 import json
-
+@login_required
 def companies(request, company_code):
     company = get_object_or_404(Company, code=company_code)
     
     # `ssoft` değil ve `list_company` izni yoksa
-    # if request.user.username != 'ssoft' and not request.user.permissions.list_company:
-    #     messages.error(request, 'Bu Sayfaya Ulaşamazsınız.')
-    #     return redirect('dashboard', company.code)
+    if request.user.username != 'ssoft' and not request.user.permissions.list_company:
+        messages.error(request, 'Bu Sayfaya Ulaşamazsınız.')
+        return redirect('dashboard', company.code)
     
     companies = Company.objects.all()
     
@@ -49,6 +49,7 @@ def companies(request, company_code):
 def generate_unique_code():
     """Generate a unique 9-digit code."""
     return str(random.randint(100000000, 999999999))
+@login_required
 def parameter(request, code):
     company = get_object_or_404(Company, code=code)
     parameters = Parameter.objects.filter(company=company)
@@ -65,7 +66,7 @@ def parameter(request, code):
         form = ParameterForm(request.POST, instance=parameter)
         if form.is_valid():
             form.save()
-            return redirect('parameter', code=code)  # Kendi view'ınıza göre güncelleyin
+            return redirect('parametre', code=code)
     else:
         form = ParameterForm(instance=parameter)
 
@@ -74,6 +75,7 @@ def parameter(request, code):
         'company': company,
     }
     return render(request, 'parameter.html', context)
+@login_required
 def edit_parameter(request, company_code, parameter_id):
     company = get_object_or_404(Company, code=company_code)
     parameter, created = Parameter.objects.get_or_create(id=parameter_id, company=company)
@@ -82,39 +84,39 @@ def edit_parameter(request, company_code, parameter_id):
         form = ParameterForm(request.POST, instance=parameter)
         if form.is_valid():
             form.save()
-            return redirect('company_parameters', company_code=company_code)
+            return redirect('parametre', company_code=company_code)
     else:
         form = ParameterForm(instance=parameter)
 
     return render(request, 'edit_parameter.html', {'company': company, 'form': form})
-def master_create_company(request):
-        # Belirtilen değerlerle yeni bir Company kaydı oluştur
-        user = User.objects.first()  # Burada, ID'si 1 olan kullanıcıyı alıyoruz, kendi kullanıcı seçiminize göre ayarlayın
-        contract_end_date = timezone.now() + timezone.timedelta(days=365)
+# def master_create_company(request):
+#         # Belirtilen değerlerle yeni bir Company kaydı oluştur
+#         user = User.objects.first()  # Burada, ID'si 1 olan kullanıcıyı alıyoruz, kendi kullanıcı seçiminize göre ayarlayın
+#         contract_end_date = timezone.now() + timezone.timedelta(days=365)
 
-        Company.objects.create(
-            code=1,
-            name='Company 1',
-            owner='Owner 1',
-            address='Address 1',
-            phone='111-111-1111',
-            city='City 1',
-            country='Country 1',
-            email='email1@example.com',
-            other_info='Other info 1',
-            contract_end_date=contract_end_date,
-            create_user=user
-        )
-        User.objects.create(
-            company=Company.objects.first(),
-            username="ssoft",
-            unique_id = "b8836c81-c16b-47e2-ba43-9e3c317b8850",
-            password="Antalya9!"
+#         Company.objects.create(
+#             code=1,
+#             name='Company 1',
+#             owner='Owner 1',
+#             address='Address 1',
+#             phone='111-111-1111',
+#             city='City 1',
+#             country='Country 1',
+#             email='email1@example.com',
+#             other_info='Other info 1',
+#             contract_end_date=contract_end_date,
+#             create_user=user
+#         )
+#         User.objects.create(
+#             company=Company.objects.first(),
+#             username="ssoft",
+#             unique_id = "b8836c81-c16b-47e2-ba43-9e3c317b8850",
+#             password="Antalya9!"
             
-        )
-        return redirect('success_url')  # Başarı URL'si kendi URL'nize göre ayarlayın
+#         )
+#         return redirect('success_url')  # Başarı URL'si kendi URL'nize göre ayarlayın
 
-
+@login_required
 def create_company(request, code):
     # Şirketi al
     company = get_object_or_404(Company, code=code)
@@ -157,7 +159,7 @@ def create_company(request, code):
 # Rastgele Şirket Kodunu oluşturan fonksiyon
 def generate_unique_code():
     return get_random_string(length=9, allowed_chars='1234567890')
-
+@login_required
 def payment(request, id,company_code):
     
     company = get_object_or_404(Company, code=company_code)
@@ -187,6 +189,7 @@ def payment(request, id,company_code):
 
     # Render the payment form for GET requests
     return render(request, 'payment_form.html', {'seller': seller})
+@login_required
 def seller_detail(request, id ,code):
     company = get_object_or_404(Company,code=code)
     seller = get_object_or_404(Seller, id=id,company=company)
@@ -212,7 +215,7 @@ def seller_detail(request, id ,code):
     }
 
     return render(request, 'seller_page.html', context)
-
+@login_required
 def user_edit(request, code, uuid4):
     if not request.user.is_authenticated:
         messages.error(request, 'Giriş yapmalısınız.')
@@ -255,6 +258,7 @@ def user_edit(request, code, uuid4):
         form = UserEditForm(instance=user)
     
     return render(request, 'user_page/user_detail.html', {'form': form, 'company': company, 'user': user})
+@login_required
 def edit_permissions(request, code, uuid4):
     if not (request.user.username == 'ssoft' or request.user.company.code == code):
         messages.error(request, 'Sadece kendi firmanız için işlem yapabilirsiniz.')
@@ -281,7 +285,7 @@ def edit_permissions(request, code, uuid4):
         'company': company,
         'user': user
     })
-
+@login_required
 def change_password(request,uuid):
     if request.method == 'POST':
         form = ChangePasswordForm(request.POST)
@@ -309,6 +313,7 @@ def change_password(request,uuid):
         form = ChangePasswordForm()
 
     return render(request, 'change_password.html', {'form': form})
+@login_required
 def user_login(request):
     if request.method == "POST":
         username = request.POST.get('username')
@@ -388,8 +393,8 @@ def user_detail(request, code, uuid4):
     return render(request, 'user_page/user_detail.html', context)
 
 
-# @login_required
 
+@login_required
 def dashboard(request, code):
     company = get_object_or_404(Company, code=code)
 
@@ -488,7 +493,7 @@ def dashboard(request, code):
     return render(request, 'dashboard.html', context)
 
 
-
+@login_required
 def check_user_permissions(request, company):
     user_is_ssoft = request.user.username == 'ssoft'
     user_is_company_owner = request.user.company.code == company.code
@@ -510,6 +515,7 @@ def check_user_permissions(request, company):
     # Kullanıcı yetkili değilse kendi dashboardına yönlendir
     messages.info(request, 'Kendi firmanıza yönlendirildiniz.')
     return False, redirect('dashboard', request.user.company.code)
+@login_required
 def register(request, code):
     company = get_object_or_404(Company, code=code)
     users = User.objects.filter(company=company)
@@ -550,7 +556,7 @@ def register(request, code):
     }
     return render(request, 'definitions/define_user.html', context)
     
-    
+@login_required   
 def stock_by_category(request, code):
     # Şirketi al
     company = get_object_or_404(Company, code=code)
@@ -570,7 +576,7 @@ def stock_by_category(request, code):
     }
     
     return render(request, 'reports/stock_by_category.html', context)
-
+@login_required
 def update_unit(request, company_code ,unit_id):
     company = get_object_or_404(Company,code=company_code)
     print('Şirket Bulundu',company)
@@ -586,6 +592,7 @@ def update_unit(request, company_code ,unit_id):
         form = UpdateUnitForm(instance=unit)
 
     return redirect('birim_olustur',company_code)
+@login_required
 def delete_unit(request, unit_id, code):
     company = get_object_or_404(Company, code=code)
     user_company_code = request.user.company.code
@@ -625,6 +632,7 @@ def delete_unit(request, unit_id, code):
         messages.add_message(request, messages.SUCCESS, "Birim başarıyla silindi / geri alındı.")
     
     return redirect(request.META.get('HTTP_REFERER', '/'))
+@login_required
 def check_company_access(request, company_code):
     # Şirketi al veya 404 döndür
     company = get_object_or_404(Company, code=company_code)
@@ -639,7 +647,7 @@ def check_company_access(request, company_code):
         return redirect('dashboard', request.user.company.code)  # Dashboard sayfasına yönlendir
 
     return company  # Şirket nesnesini döndür
-
+@login_required
 def create_unit_page(request, code):
     # Şirket doğrulamasını yap
     company = check_company_access(request, code)
@@ -656,6 +664,7 @@ def create_unit_page(request, code):
     }
 
     return render(request, 'definitions/define_unit.html', context)
+@login_required
 def create_unit(request, code):
     # Yalnızca POST isteklerine izin verilir
     if request.method != "POST":
@@ -690,7 +699,7 @@ def create_unit(request, code):
     messages.success(request, "Birim başarıyla eklendi.")
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
-
+@login_required
 def create_outgoing_reasons_page(request,code):
     company = check_company_access(request, code)
 
@@ -702,7 +711,7 @@ def create_outgoing_reasons_page(request,code):
         'reasons':reasons,
     }
     return render(request,'definitions/define_outgoing.html',context)
-
+@login_required
 def create_outgoing_reasons(request, code):
     # Yalnızca POST istekleri kabul edilir
     # Şirketin var olup olmadığını kontrol et
@@ -735,6 +744,7 @@ def create_outgoing_reasons(request, code):
     # Başarı mesajı göster ve yönlendir
     messages.success(request, f"{cikis_nedeni.name} adlı stok çıkış nedeni oluşturuldu")
     return redirect('cikis_tanimlama_sayfasi', request.user.company.code)
+@login_required
 def delete_outgoing_reason(request, code, reason_id):
     # Şirket doğrulamasını yap
     company = check_company_access(request, code)
@@ -760,6 +770,7 @@ def delete_outgoing_reason(request, code, reason_id):
     reason.save()
     messages.success(request, f'{reason.name} adlı çıkış nedeni başarıyla silindi.')
     return redirect('cikis_tanimlama_sayfasi', company.code)
+@login_required
 def update_outgoing_reason(request, code, reason_id):
     # Şirketi doğrula
     company = get_object_or_404(Company, code=code)
@@ -792,6 +803,7 @@ def update_outgoing_reason(request, code, reason_id):
     }
     
     return render(request, 'definitions/update_outgoing_reason.html', context)
+@login_required
 def change_seller_status(request,code,seller_id):
     company = check_company_access(request, code)
 
@@ -809,6 +821,7 @@ def change_seller_status(request,code,seller_id):
     seller.save()
     messages.success(request, "Cari Durumu Güncellendi")
     return redirect(request.META.get('HTTP_REFERER', '/'))
+@login_required
 def create_seller(request, code):
     company = check_company_access(request, code)
 
@@ -843,7 +856,7 @@ def create_seller(request, code):
     seller.save()
     messages.success(request, "Cari Oluşturuldu")
     return redirect(request.META.get('HTTP_REFERER', '/'))
-    
+@login_required    
 def update_seller(request, company_code, seller_id):
     company = check_company_access(request, company_code)
 
@@ -860,6 +873,7 @@ def update_seller(request, company_code, seller_id):
         return JsonResponse({'success': True})
     
     return JsonResponse({'success': False})
+@login_required
 def delete_seller(request, company_code, seller_id):
     company = check_company_access(request, company_code)
 
@@ -881,6 +895,7 @@ def delete_seller(request, company_code, seller_id):
     seller.save()
     messages.success(request, "Satıcı başarıyla silindi.")
     return redirect('cari_tanimla',request.user.company.code)
+@login_required
 def kategori_guncelle(request, company_code, category_id):
     # İlgili kategoriyi ve şirketi alın
     company = check_company_access(request, company_code)
@@ -904,7 +919,7 @@ def kategori_guncelle(request, company_code, category_id):
     messages.success(request, "Güncelleme Başarılı")
     return redirect('kategori_tanimla',request.user.company.code)
 
-
+@login_required
 def create_category_page(request,code):
     company = check_company_access(request, code)
 
@@ -916,10 +931,12 @@ def create_category_page(request,code):
         'categories':categories,
     }
     return render(request,'definitions/define_category.html',context)
+@login_required
 def generate_room_name():
     return str(uuid.uuid4())
 
 # Oda oluşturma view'i
+@login_required
 def destek_view(request, code):
     company = get_object_or_404(Company, code=code)
     room_name = generate_room_name()
@@ -931,6 +948,7 @@ def destek_view(request, code):
     room.status = False
     room.save()    # Kullanıcıyı chat odasına yönlendir
     return redirect('room', room_name=room_name, code=code)
+@login_required
 def end_chat(request, room_name):
     room = get_object_or_404(ChatRoom, name=room_name)
     if room.supportive == request.user:
@@ -966,11 +984,13 @@ def end_chat(request, room_name):
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
 @csrf_exempt
+@login_required
 def set_notifications(request):
     if request.method == 'POST':
         # İşlem yap
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error'}, status=400)
+@login_required
 def room_detail(request,room_name,code):
     company = get_object_or_404(Company,code=code)
     room = get_object_or_404(ChatRoom,name = room_name)
@@ -981,6 +1001,7 @@ def room_detail(request,room_name,code):
         'message':message,
     }
     return render(request,'room_detail.html',context)
+@login_required
 def check_chat_room(request,code):
     company = get_object_or_404(Company,code=code)
 
@@ -993,6 +1014,7 @@ def check_chat_room(request,code):
         'rooms':rooms
     }
     return render(request,'check_chat_room.html',context)
+@login_required
 def room(request, room_name, code):
     company = get_object_or_404(Company, code=code)
     room = get_object_or_404(ChatRoom, name=room_name)
@@ -1011,11 +1033,12 @@ def room(request, room_name, code):
         'company': company,
         'room': room,
     })
+@login_required
 def rating_supporter(request,room_name):
     if not request.method == "POST":
         room = get_object_or_404(ChatRoom,name=room_name)
         room.supportive.rating
-
+@login_required
 def give_support(request):
     room = ChatRoom.objects.filter(status=False).first()
     if room:
@@ -1025,12 +1048,7 @@ def give_support(request):
    
     else:
         return render(request, 'no_available_rooms.html')
-def get_company_or_redirect(request, code, error_message="Şirket Bulunamadı"):
-    try:
-        return get_object_or_404(Company, code=code)
-    except:
-        messages.add_message(request, messages.INFO, error_message)
-        return redirect(request.META.get('HTTP_REFERER', '/'))
+@login_required
 def change_category_status(request,id,code):
     company = check_company_access(request, code)
 
@@ -1051,7 +1069,7 @@ def change_category_status(request,id,code):
     messages.add_message(request, messages.SUCCESS, f"{category.name} Durumu Değiştirildi")
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
-
+@login_required
 def create_category(request, code):
     
     company = check_company_access(request, code)
@@ -1078,6 +1096,7 @@ def create_category(request, code):
     
     return redirect(request.META.get('HTTP_REFERER', '/'))
 @login_required(login_url='/login/')
+@login_required
 def product_add_page(request, code):
     company = get_object_or_404(Company, code=code)
     if not (
@@ -1100,6 +1119,7 @@ def product_add_page(request, code):
     }
     
     return render(request, 'definitions/define_product.html', context)
+@login_required
 def create_product(request, code):
     company = get_object_or_404(Company, code=code)
     
@@ -1138,6 +1158,7 @@ def create_product(request, code):
     else:
         form = ProductForm()
         return render(request, 'product/create_product.html', {'form': form})
+@login_required
 def update_product(request, company_code, product_id):
     # İlgili ürün ve şirketi kontrol et
     product = get_object_or_404(Product, id=product_id, company__code=company_code)
@@ -1174,7 +1195,7 @@ def update_product(request, company_code, product_id):
     return redirect('urun_olustur', company_code)
         
     
-        
+@login_required        
 def delete_product(request,company_code,product_id):
     company = check_company_access(request, company_code)
     if isinstance(company, HttpResponseRedirect):
@@ -1194,7 +1215,7 @@ def delete_product(request,company_code,product_id):
     product.save()
     messages.info(request, "Ürün Silindi") 
     return redirect(request.META.get('HTTP_REFERER', '/')) 
-
+@login_required
 def check_product_name(request):
     name = request.GET.get('name', '')
     company_code = request.GET.get('company_code', '')
@@ -1211,7 +1232,8 @@ def check_product_name(request):
         exists = False
     
     return JsonResponse({'exists': exists})
-@require_POST  # Bu dekoratör sadece POST isteklerini kabul eder
+@require_POST
+@login_required  # Bu dekoratör sadece POST isteklerini kabul eder
 def delete_item(request):
     item_id = request.POST.get('item_id')  # POST isteğinden item_id'yi alın
     try:
@@ -1237,6 +1259,7 @@ def delete_item(request):
         return JsonResponse({'success': False, 'error': 'Öğe bulunamadı.'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+@login_required
 def add_bill(request, code):
     company = get_object_or_404(Company, code=code)
     sellers = Seller.objects.filter(company=company,status=True) # şirketle alakalı aktif olan satıcıları getir
@@ -1388,7 +1411,7 @@ def add_bill(request, code):
     }
     return render(request, 'add_bill.html', context)
         
-
+@login_required
 def outgoing_bills(request, company_code):
     company = get_object_or_404(Company, code=company_code)
     selected_reasons = request.GET.getlist('reasons')
@@ -1427,7 +1450,7 @@ def outgoing_bills(request, company_code):
         'end_date': end_date,
     }
     return render(request, 'reports/outgoing_bills.html', context)
-
+@login_required
 def product_info(request,code):
     company = get_object_or_404(Company,code=code)
     products = Product.objects.filter(company=company)
@@ -1436,6 +1459,7 @@ def product_info(request,code):
         'products':products,
     }
     return render(request,'reports/product_info.html',context)
+@login_required
 def bill_details(request, bill_number, company_code):
     company = get_object_or_404(Company, code=company_code)
     products = Product.objects.filter(company=company)
@@ -1450,6 +1474,7 @@ def bill_details(request, bill_number, company_code):
         'bill_items': bill_items,
     }
     return render(request, 'bill_details.html', context)
+@login_required
 def outgoing_bill_details(request, bill_number, company_code):
     company = get_object_or_404(Company, code=company_code)
     products = Product.objects.filter(company=company)
@@ -1466,7 +1491,7 @@ def outgoing_bill_details(request, bill_number, company_code):
     }
     return render(request, 'outgoing_bill_details.html', context)
 
-
+@login_required
 def bills(request,code):
     company = get_object_or_404(Company,code=code)
     bills = Bill.objects.filter(company=company)
@@ -1482,7 +1507,7 @@ def bills(request,code):
     }
     return render(request, 'bills.html', context)
 
-
+@login_required
 def delete_bill(request, bill_number, company_code):
     company = get_object_or_404(Company, code=company_code)
 
@@ -1582,7 +1607,7 @@ def delete_bill(request, bill_number, company_code):
 
 
 
-    
+@login_required    
 def deleted_bills(request):
     deleted_bills = Bill.objects.filter(is_delete=True)
     bill_items = {bill.id: BillItem.objects.filter(bill=bill, is_delete=True) for bill in deleted_bills}
@@ -1709,7 +1734,7 @@ def add_billitem(request, bill_id):
 
 
 
-
+@login_required
 def inventory(request, code):
     company = get_object_or_404(Company, code=code)
     outgoing_reasons = OutgoingReasons.objects.filter(company=company)
@@ -1735,7 +1760,7 @@ def inventory(request, code):
     }
 
     return render(request, 'inventory.html', context)
-
+@login_required
 def outgoing_inventory(request, code):
     company = get_object_or_404(Company, code=code)
     serial_number = request.POST.get('serial_number')
@@ -1792,6 +1817,7 @@ def outgoing_inventory(request, code):
         messages.error(request, f'Bir hata oluştu: {str(e)}')
         print(e)
         return redirect(request.META.get('HTTP_REFERER', '/'))
+@login_required
 def issued_inventories(request,company_code):
     company = get_object_or_404(Company,code=company_code)
     issued_inventories = Inventory.objects.filter(company=company_code,is_released=True)
@@ -1800,6 +1826,7 @@ def issued_inventories(request,company_code):
         'issued_inventories':issued_inventories,
     }
     return render(request,'reports/issued_inventories_reports.html',context)
+@login_required
 def stock_difference_report(request,code):
     # Tüm ürünleri al
     company = get_object_or_404(Company,code=code)
@@ -1834,7 +1861,9 @@ def stock_difference_report(request,code):
 #     Raporlar views bölümü   #
 # # # # # # # # # # # # # # # # 
 
+
 # Stok Durum Raporları
+@login_required
 def stock_status(request, code):
     company = get_object_or_404(Company, code=code)
     access_check = check_company_access(request, code)
@@ -1880,6 +1909,7 @@ def stock_status(request, code):
     return render(request, 'stock_status_report.html', context)
 
 # Kritik Stok Raporları
+@login_required
 def critical_stock_level(request,company_code):
     company = get_object_or_404(Company,code=company_code)
     company = check_company_access(request, company_code)
@@ -1899,6 +1929,7 @@ def critical_stock_level(request,company_code):
     return render(request,'reports/critical_stock_reports.html',context)
 
 # Gelen Giden Stok Raporları
+@login_required
 def incoming_outgoing_reports(request, code):
     company = get_object_or_404(Company, code=code)
     company = check_company_access(request, code)
@@ -1947,10 +1978,11 @@ def incoming_outgoing_reports(request, code):
 
     return render(request, 'reports/incoming_outgoing_reports.html', context)
 
-
+@login_required
 def get_stock_transactions(product_id):
     return StockTransactions.objects.filter(product=product_id).order_by('-processing_time')
 # Vade Tarihi Gelen Faturalar
+@login_required
 def due_date_reports(request, code, expiry_date=None):
     company = get_object_or_404(Company,code=code)
     company = check_company_access(request, code)
@@ -1987,6 +2019,7 @@ def due_date_reports(request, code, expiry_date=None):
     }
     return render(request, 'reports/expiry_date_reports.html', context)
 # Düşük Stok Uyarı Raporı
+@login_required
 def low_stock_reports(request, code):
     company = get_object_or_404(Company,code=code)
     company = check_company_access(request, code)
@@ -2005,6 +2038,7 @@ def low_stock_reports(request, code):
     return render(request, 'reports/low_stock_products.html', context)
 
 # Silinen Öğeler Raporu
+@login_required
 def deleted_items(request, company_code):
     company = get_object_or_404(Company, code=company_code)
     company = check_company_access(request, company_code)
@@ -2033,7 +2067,7 @@ def deleted_items(request, company_code):
 
     return render(request, 'definitions/deleted_items.html', context)
 
-
+@login_required
 def stock_transactions(request, code):
     company = get_object_or_404(Company, code=code)
     products = Product.objects.filter(company=company)
@@ -2062,6 +2096,7 @@ def stock_transactions(request, code):
         }
     
     return render(request, 'reports/product_transactions.html', context)
+@login_required
 def toggle_bill_payment_status(request, bill_id, company_code):
     company = get_object_or_404(Company, code=company_code)
     company = check_company_access(request, company_code)
@@ -2089,6 +2124,7 @@ def toggle_bill_payment_status(request, bill_id, company_code):
     
     bill.save()
     return redirect(request.META.get('HTTP_REFERER', '/'))
+@login_required
 def get_inventory_products(request):
     product_id = request.GET.get('product_id')
     company_id = request.GET.get('company_id')  # company_id'yi alıyoruz
@@ -2104,6 +2140,7 @@ def get_inventory_products(request):
     data = list(inventory_products.values('id', 'serial_number'))
     
     return JsonResponse(data, safe=False)
+@login_required
 def process_stock_outgoing(request, code):
     company = get_object_or_404(Company, code=code)
     products = Product.objects.filter(company=company)
@@ -2228,7 +2265,7 @@ def process_stock_outgoing(request, code):
 def logout(request):
     auth_logout(request)
     return redirect('login')
-
+@login_required
 def set_company_status(request,company_code):
     if not request.method == "POST":
         messages.info(request,'Bu istekler geçersizdir.')
@@ -2252,6 +2289,7 @@ def set_company_status(request,company_code):
 #           Sil                 #
 # # # # # # # # # # # # # # # # #
 # Hata Bildir
+@login_required
 def report_bug(request):
     if not request.method == 'POST':
         return redirect(request.META.get('HTTP_REFERER', '/'))
@@ -2267,6 +2305,7 @@ def report_bug(request):
 
     return redirect(request.META.get('HTTP_REFERER', '/'))   
 # Tüm hataların listelendiği sayfa
+@login_required
 def report_bugs_page(request,company_code):
     company = check_company_access(request, company_code)
 
@@ -2284,6 +2323,7 @@ def report_bugs_page(request,company_code):
 # Hataların Durumunu değiştir
 from django.views.decorators.http import require_http_methods
 @require_http_methods(["PATCH"])
+@login_required
 def read_unread_bug(request, id):
     try:
         bug = get_object_or_404(ErrorMessage, id=id)
@@ -2296,6 +2336,7 @@ def read_unread_bug(request, id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)  # 500 Internal Server Error
 # Hataları Sil
+@login_required
 def delete_bug(request, id):
     if request.method != "POST":
         messages.error(request, 'Bu istekler kabul edilmez.')
